@@ -1,0 +1,44 @@
+{{- if and .Values.global.ingress.enabled (not .Values.global.create_istio_virtual_service )  -}}
+{{- if and .Values.global.ingress.className (not (semverCompare ">=1.18-0" .Capabilities.KubeVersion.GitVersion)) }}
+  {{- if not (hasKey .Values.global.ingress.annotations "kubernetes.io/ingress.class") }}
+  {{- $_ := set .Values.global.ingress.annotations "kubernetes.io/ingress.class" .Values.global.ingress.className}}
+  {{- end }}
+{{- end }}
+{{- if semverCompare ">=1.19-0" .Capabilities.KubeVersion.GitVersion -}}
+apiVersion: networking.k8s.io/v1
+{{- else if semverCompare ">=1.14-0" .Capabilities.KubeVersion.GitVersion -}}
+apiVersion: networking.k8s.io/v1beta1
+{{- else -}}
+apiVersion: extensions/v1beta1
+{{- end }}
+kind: Ingress
+metadata:
+  name: {{ .Release.Name }}-enbuild-ing
+  labels:
+      {{- include "enbuild-helm-chart.labels" . | nindent 4 }}
+  {{- with .Values.global.ingress.annotations }}
+  annotations:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+spec:
+  {{- if and .Values.global.ingress.classname (semverCompare ">=1.18-0" .Capabilities.KubeVersion.GitVersion) }}
+  ingressClassName: {{ .Values.global.ingress.classname }}
+  {{- end }}
+  {{- if .Values.global.ingress.tls }}
+  tls:
+    - hosts:
+        - {{ .Values.enbuildUi.hostname }}.{{ .Values.global.domain }}
+      secretName: {{ .Values.global.ingress.tls_secret }}
+  {{- end }}
+  rules:
+    - host: {{ .Values.enbuildUi.hostname }}.{{ .Values.global.domain }}
+      http:
+        paths:
+          - path: "/"
+            pathType: ImplementationSpecific
+            backend:
+              service:
+                name: {{ .Release.Name }}-enbuild-ui
+                port:
+                  number: 80
+{{- end }}

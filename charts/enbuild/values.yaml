@@ -1,0 +1,203 @@
+## @section Global parameters
+## @param global.domain What domain to use to expose the ENBUILD using istio or Ingress
+## @param global.disable_tls_gitlab [default: false] Set to true if you are using self-signed certificates
+## @param global.ingress.enabled [default: false] Should we create the Ingress Resources ?
+## @param global.ingress.tls [default: false] Is Ingress TLS enabled ?
+## @param global.ingress.tls_secret [string] If Ingress is TLS enabled, Provide the Secret for the TLS Certificate.
+## @param global.ingress.classname [string] Ingress classname if enabled.
+## @param global.ingress.annotations [array] Ingress annotations if enabled.
+## @param global.istio.enabled [default: false]   Should we create the Istio Resources ?
+## @param global.istio.gateway Istio gateway to use for creating Virtual Service.
+##
+global:
+  domain: ijuned.com
+  disable_tls_gitlab: false  # Set to true if you are using self-signed certificates
+  ingress:
+    enabled: false
+    tls: false
+    tls_secret: vivplatform-cert
+    classname:
+    annotations:
+      cert-manager.io/cluster-issuer: "letsencrypt-prod"
+  istio:
+    enabled: false
+    gateway: istio-system/public-gateway
+
+## @section Container Registry Parameters
+## @param imageCredentials.registry  Container registry Path
+## @param imageCredentials.username  Container registry Username
+## @param imageCredentials.password  Container registry password
+imageCredentials:
+  registry: registry.gitlab.com
+  username: registry_user_name
+  password: registry_password
+
+## @section Jupyterhub Parameters
+## @skip jupyterhub.proxy
+## @skip jupyterhub.hub
+## @param jupyterhub.cull.enabled  [default: false] Deploy Jupyterhub 
+jupyterhub:
+  proxy:
+    service:
+      type: ClusterIP
+  hub:
+    config:
+      JupyterHub:
+        authenticator_class: dummy
+        allow_named_servers: False
+      Authenticator:
+        auto_login: false
+  cull:
+    enabled: false
+
+## @section ENBUILD RabbitMQ parameters
+## @param rabbitmq.enabled  [default: true] Set to false to use existing RabbitMQ
+## @param rabbitmq.replicaCount  RabbitMQ replicaCount
+## @param rabbitmq.auth.username  RabbitMQ username
+## @param rabbitmq.auth.password  RabbitMQ password
+## @param rabbitmq.auth.erlangCookie  RabbitMQ erlangCookie
+## @skip rabbitmq.clustering
+## @param rabbitmq.host [nullable,string] If `rabbitmq.enabled` is false , provide the right rabbitmq endpoint
+## @skip rabbitmq.env
+## @param rabbitmq.queue_prefix Queue Prefix for all RabbitMQ Queues
+rabbitmq:
+  enabled: true
+  replicaCount: 3
+  auth:
+    username: juned
+    password: memon
+    erlangCookie: lamba
+  clustering:
+    forceBoot: true
+  host: rabbitmq.rabbitmq # Needed only rabbitmq.enabled is false
+  env: prod
+  queue_prefix: enbuild-prod
+
+## @section ENBUILD Backend/DB parameters
+## @param mongodb.enabled  [default: false] Set to true to Deploy the MongoDB.
+## @param mongodb.mongo_root_username [string] DB username. If `mongodb.enabled` this is used to to set the username. Else this is username for existing Cosmos or DocumentDB
+## @param mongodb.mongo_root_password [string]  DB Password. If `mongodb.enabled` this is used to to set the password. Else this is password for existing Cosmos or DocumentDB
+## @param mongodb.mongo_server [nullable,string] If `mongodb.enabled` is false , provide the right cosmosDB/DocumentDB endpoint
+## @param mongodb.image.repository Container repository for mongodb Container
+## @param mongodb.image.tag Container tag for mongodb Container
+## @param mongodb.image.pullPolicy Container ImagePullPolicy for mongodb Container
+mongodb:
+  enabled: false
+  mongo_root_username: "enbuild-dev"
+  mongo_root_password: "mongo_root_password"
+  mongo_server: "If you are using cosmosDB then set the right cosmosDB endpoint as mongo_server and set the enabled=false"
+  image:
+    repository: registry.gitlab.com/enbuild-staging/container_registry/opensource-mongodb/mongodb
+    tag: 4.4.5
+    pullPolicy: Always
+
+## @section ENBUILD UI Services parameters
+## @param enbuildUi.image.repository  Container repository for enbuildUi
+## @param enbuildUi.image.pullPolicy  Container image pullPolicy
+## @param enbuildUi.image.tag  Container image tag. Skip to use the HelmChart appVersion as Image Tag
+## @param enbuildUi.replicas Container enbuildUI Replicas
+## @param enbuildUi.service_type  enbuildUI service_type
+## @param enbuildUi.node_port  enbuildUI node_port
+## @param enbuildUi.hostname  enbuild service hostname. `enbuildUi.hostname`.`global.domain` becomes your FQDN
+## @param enbuildUi.kiali_url  kiali_url 
+## @param enbuildUi.grafana_url  grafana_url 
+## @param enbuildUi.loki_url  loki_url 
+## @param enbuildUi.kubecost_url  kubecost_url 
+enbuildUi:
+  image:
+    repository: registry.gitlab.com/enbuild-staging/vivsoft-platform-ui/enbuild-frontend
+    pullPolicy: Always
+  replicas: 1
+  service_type: ClusterIP
+  node_port: 30080
+  hostname: enbuild # hostname.domain become FQDN
+  kiali_url: https://kiali.vivplatform.io/kiali/
+  grafana_url: https://grafana.vivplatform.io/d/os6Bh8Omk/kubernetes-cluster?orgId=1&refresh=30s
+  loki_url: https://grafana.vivplatform.io/d/liz0yRCZz/logs-app?orgId=1
+  kubecost_url: https://kubecost.vivplatform.io/overview.html
+
+## @section ENBUILD Backend Services parameters
+## @param enbuildBk.image.repository  Container repository for enbuildBk
+## @param enbuildBk.image.pullPolicy  Container image pullPolicy
+## @param enbuildUk.image.tag  [nullable] Container image tag. Skip to use the HelmChart appVersion as Image Tag
+## @param enbuildBk.replicas Container enbuildBk Replicas
+## @param enbuildBk.service_type  enbuildBk service_type
+## @param enbuildBk.encryption_key  encryption_key to be used by Backend
+enbuildBk:
+  image:
+    repository: registry.gitlab.com/enbuild-staging/vivsoft-platform-ui/enbuild-backend
+    pullPolicy: Always
+  replicas: 1
+  service_type: ClusterIP
+  encryption_key: "encryption_key"
+
+## @section ENBUILD USER Services parameters
+## @param enbuildUser.image.repository  Container repository for enbuildUser
+## @param enbuildUser.image.pullPolicy  Container image pullPolicy
+## @param enbuildUi.image.tag [nullable] Container image tag. Skip to use the HelmChart appVersion as Image Tag
+## @param enbuildUser.replicas Container enbuildUser Replicas
+## @param enbuildUser.service_type  enbuildUser service_type
+enbuildUser:
+  image:
+    repository: registry.gitlab.com/enbuild-staging/vivsoft-platform-ui/enbuild-user
+    pullPolicy: Always
+  replicas: 1
+  service_type: ClusterIP
+
+## @section ENBUILD Sync Services parameters
+## @param enbuildSync.image.repository  Container repository for enbuildSync
+## @param enbuildSync.image.pullPolicy  Container image pullPolicy
+## @param enbuildUi.image.tag [nullable] Container image tag. Skip to use the HelmChart appVersion as Image Tag
+## @param enbuildSync.replicas Container enbuildSync Replicas
+enbuildSync:
+  image:
+    repository: registry.gitlab.com/enbuild-staging/vivsoft-platform-ui/enbuild-cronjob
+    pullPolicy: Always
+  replicas: 1
+
+## @section ENBUILD ML Services parameters
+## @param enbuildMl.enabled [default: false] Should we create the ENBUILD ML microservice ?
+## @param enbuildMl.image.repository  Container repository for enbuildMl
+## @param enbuildMl.image.pullPolicy  Container image pullPolicy
+## @param enbuildUi.image.tag  [nullable] Container image tag. Skip to use the HelmChart appVersion as Image Tag
+## @param enbuildMl.replicas Container enbuildMl Replicas
+## @param enbuildMl.service_type  enbuildMl service_type
+enbuildMl:
+  enabled: false
+  image:
+    repository: registry.gitlab.com/enbuild-staging/vivsoft-platform-ui/enbuild-ml
+    pullPolicy: Always
+  replicas: 1
+  service_type: ClusterIP
+
+## @section ENBUILD GenAI Services parameters
+## @param enbuildGenAI.enabled [default: false] Should we create the ENBUILD GenAI microservice ?
+## @param enbuildGenAI.image.repository  Container repository for enbuildGenAI
+## @param enbuildGenAI.image.pullPolicy  Container image pullPolicy
+## @param enbuildUi.image.tag  [nullable] Container image tag. Skip to use the HelmChart appVersion as Image Tag
+## @param enbuildGenAI.replicas Container enbuildGenAI Replicas
+## @param enbuildGenAI.service_type  enbuildGenAI service_type
+## @param enbuildGenAI.api_key  api_key for OpenAI service.
+enbuildGenAI:
+  enabled: false
+  api_key: "dummy"
+  image:
+    repository: registry.gitlab.com/enbuild-staging/vivsoft-platform-ui/enbuild-genai
+    pullPolicy: Always
+  replicas: 1
+  service_type: ClusterIP
+
+## @section ENBUILD Request Services parameters
+## @param enbuildRequest.enabled [default: false] Should we create the ENBUILD Request microservice ?
+## @param enbuildRequest.image.repository  Container repository for enbuildRequest
+## @param enbuildRequest.image.pullPolicy  Container image pullPolicy
+## @param enbuildUi.image.tag [nullable] Container image tag. Skip to use the HelmChart appVersion as Image Tag
+## @param enbuildRequest.replicas Container enbuildRequest Replicas
+## @param enbuildRequest.service_type  enbuildRequest service_type
+enbuildRequest:
+  enabled: false
+  image:
+    repository: registry.gitlab.com/enbuild-staging/vivsoft-platform-ui/enbuild-request
+    pullPolicy: Always
+  replicas: 1
+  service_type: ClusterIP

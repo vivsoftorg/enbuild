@@ -1,0 +1,84 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ .Release.Name }}-enbuild-user
+  labels:
+    app: user
+    app.kubernetes.io/component: user
+  {{- include "enbuild-helm-chart.labels" . | nindent 4 }}
+spec:
+  replicas: {{ .Values.enbuildUser.replicas }}
+  selector:
+    matchLabels:
+      app: user
+    {{- include "enbuild-helm-chart.selectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      labels:
+        app: user    
+        app.kubernetes.io/component: user
+      {{- include "enbuild-helm-chart.selectorLabels" . | nindent 8 }}
+    spec:
+      containers:
+      - env:
+        - name: MONGODB_ENDPOINT
+          value: mongodb://$(MONGO_INITDB_ROOT_USERNAME):$(MONGO_INITDB_ROOT_PASSWORD)@$(MONGO_SERVER)
+        envFrom:
+        - secretRef:
+            name: {{ .Release.Name }}-mongo-secrets
+        - secretRef:
+            name: {{ .Release.Name }}-backend-secret
+        image: {{ .Values.enbuildUser.image.repository }}:{{ .Values.enbuildUser.image.tag | default .Chart.AppVersion }}
+        imagePullPolicy: {{ .Values.enbuildUser.image.pullPolicy }}
+        livenessProbe:
+          failureThreshold: 3
+          httpGet:
+            path: /api/health
+            port: 8083
+          initialDelaySeconds: 3
+          periodSeconds: 10
+          successThreshold: 1
+          timeoutSeconds: 2
+        name: enbuild-user
+        ports:
+        - containerPort: 8083
+        readinessProbe:
+          failureThreshold: 3
+          httpGet:
+            path: /api/health
+            port: 8083
+          initialDelaySeconds: 3
+          periodSeconds: 10
+          successThreshold: 1
+          timeoutSeconds: 2
+        resources: {}
+        securityContext:
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop:
+            - ALL
+          privileged: false
+          runAsGroup: 1001
+          runAsNonRoot: true
+          runAsUser: 1001
+      imagePullSecrets:
+      - name: {{ .Release.Name }}-image-pull-secret
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ .Release.Name }}-enbuild-user
+  labels:
+    app: user
+    app.kubernetes.io/component: user
+  {{- include "enbuild-helm-chart.labels" . | nindent 4 }}
+spec:
+  type: {{ .Values.enbuildUser.service_type }}
+  selector:
+    app: user
+    app.kubernetes.io/component: user
+  {{- include "enbuild-helm-chart.selectorLabels" . | nindent 4 }}
+  ports:
+  - port: 80
+    protocol: TCP
+    targetPort: 8083

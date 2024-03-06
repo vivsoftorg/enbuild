@@ -1,0 +1,81 @@
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ .Release.Name }}-enbuild-ui
+  labels:
+    app: ui
+    app.kubernetes.io/component: ui
+  {{- include "enbuild-helm-chart.labels" . | nindent 4 }}
+spec:
+  replicas: {{ .Values.enbuildUi.replicas }}
+  selector:
+    matchLabels:
+      app: ui
+    {{- include "enbuild-helm-chart.selectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      labels:
+        app: ui
+        app.kubernetes.io/component: ui
+      {{- include "enbuild-helm-chart.selectorLabels" . | nindent 8 }}
+    spec:
+      containers:
+      - env:
+        - name: NODE_ENV
+          value: production
+        - name: SERVICE_MESH_KIALI_IFRAME_URL
+          value: {{ .Values.enbuildUi.kiali_url }}
+        - name: MONITORING_GRAFANA_IFRAME_URL
+          value: {{ .Values.enbuildUi.grafana_url }}
+        - name: LOGS_GRAFANA_IFRAME_URL
+          value: {{ .Values.enbuildUi.grafana_url }}
+        - name: COST_UTILIZATION_KUBECOST_IFRAME_URL
+          value: {{ .Values.enbuildUi.kubecost_url }}
+        image: {{ .Values.enbuildUi.image.repository }}:{{ .Values.enbuildUi.image.tag | default .Chart.AppVersion }}
+        imagePullPolicy: {{ .Values.enbuildUi.image.pullPolicy }}
+        name: enbuild-ui
+        resources: {}
+        volumeMounts:
+        - mountPath: /etc/nginx/html/config.js
+          name: frontend-config
+          subPath: config.js
+        - mountPath: /etc/nginx/conf.d/default.conf
+          name: nginx-conf
+          subPath: default.conf
+      imagePullSecrets:
+      - name: {{ .Release.Name }}-image-pull-secret
+      volumes:
+      - configMap:
+          defaultMode: 0755
+          name: {{ .Release.Name }}-frontend-config
+        name: frontend-config
+      - configMap:
+          items:
+          - key: default.conf
+            path: default.conf
+          name: {{ .Release.Name }}-nginx-conf
+        name: nginx-conf
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ .Release.Name }}-enbuild-ui
+  labels:
+    app: ui
+    app.kubernetes.io/component: ui
+  {{- include "enbuild-helm-chart.labels" . | nindent 4 }}
+spec:
+  type: {{ .Values.enbuildUi.service_type }}
+  selector:
+    app: ui
+    app.kubernetes.io/component: ui
+  {{- include "enbuild-helm-chart.selectorLabels" . | nindent 4 }}
+  ports:
+  - port: 80
+    protocol: TCP
+    targetPort: 8080
+    {{- if eq .Values.enbuildUi.service_type "NodePort" }}
+    nodePort: {{ .Values.enbuildUi.node_port}}
+    {{- end }}

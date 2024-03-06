@@ -1,0 +1,9 @@
+dependencies:
+- name: rabbitmq
+  repository: https://charts.bitnami.com/bitnami
+  version: 11.13.0
+- name: jupyterhub
+  repository: https://jupyterhub.github.io/helm-chart
+  version: 2.0.0
+digest: sha256:f464b292e3459fe112dc8ecd729e409b61b302c090a2c52ade5f6904053c2571
+generated: "2024-02-27T18:52:28.936906+05:30"

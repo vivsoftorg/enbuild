@@ -1,0 +1,22 @@
+{{- if and .Values.global.istio.enabled (not .Values.global.ingress.enabled ) -}}
+apiVersion: networking.istio.io/v1beta1
+kind: VirtualService
+metadata:
+  name: {{ .Release.Name }}-enbuild-ui
+  labels:
+  {{- include "enbuild-helm-chart.labels" . | nindent 4 }}
+spec:
+  gateways:
+  - {{ .Values.global.istio.gateway }}
+  hosts:
+  - {{ .Values.enbuildUi.hostname }}.{{ .Values.global.domain }}
+  http:
+  - match:
+    - uri:
+        prefix: /
+    route:
+    - destination:
+        host: {{ .Release.Name }}-enbuild-ui
+        port:
+          number: 80
+{{- end }}

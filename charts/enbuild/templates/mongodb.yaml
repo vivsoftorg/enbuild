@@ -1,0 +1,87 @@
+{{- if .Values.mongodb.enabled -}}
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: {{ .Release.Name }}-mongodb
+  labels:
+    app: mongo
+  {{- include "enbuild-helm-chart.labels" . | nindent 4 }}
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: mongo
+      {{- include "enbuild-helm-chart.selectorLabels" . | nindent 6 }}
+  serviceName: mongo
+  template:
+    metadata:
+      labels:
+        app: mongo
+        {{- include "enbuild-helm-chart.selectorLabels" . | nindent 8 }}
+    spec:
+      containers:
+      - envFrom:
+        - secretRef:
+            name: {{ .Release.Name }}-mongo-secrets
+        image: {{ .Values.mongodb.image.repository }}:{{ .Values.mongodb.image.tag }}
+        imagePullPolicy: {{ .Values.mongodb.image.pullPolicy }}
+        name: mongo
+        ports:
+        - containerPort: 27017
+          name: mongo
+          protocol: TCP
+        securityContext:
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop:
+            - ALL
+          privileged: false
+          runAsGroup: 996
+          runAsNonRoot: true
+          runAsUser: 998
+        terminationMessagePath: /dev/termination-log
+        terminationMessagePolicy: File
+        volumeMounts:
+        - mountPath: /data/db
+          name: data
+      dnsPolicy: ClusterFirst
+      imagePullSecrets:
+      - name: {{ .Release.Name }}-image-pull-secret
+      restartPolicy: Always
+      schedulerName: default-scheduler
+      securityContext:
+        fsGroup: 996
+      terminationGracePeriodSeconds: 30
+  updateStrategy:
+    rollingUpdate:
+      partition: 0
+    type: RollingUpdate
+  volumeClaimTemplates:
+  - apiVersion: v1
+    kind: PersistentVolumeClaim
+    metadata:
+      name: data
+    spec:
+      accessModes:
+      - ReadWriteOnce
+      resources:
+        requests:
+          storage: 10Gi
+      volumeMode: Filesystem
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ .Release.Name }}-mongo
+  labels:
+  {{- include "enbuild-helm-chart.labels" . | nindent 4 }}
+spec:
+  type: {{ .Values.mongodb.type }}
+  selector:
+    app: mongo
+  {{- include "enbuild-helm-chart.selectorLabels" . | nindent 4 }}
+  ports:
+  - port: 27017
+    targetPort: 27017
+  type: ClusterIP
+{{- end }}

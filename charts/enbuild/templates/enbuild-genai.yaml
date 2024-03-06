@@ -1,0 +1,71 @@
+{{- if .Values.enbuildGenAI.enabled -}}
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ .Release.Name }}-enbuild-genai
+  labels:
+    app: genai
+    app.kubernetes.io/component: genai
+  {{- include "enbuild-helm-chart.labels" . | nindent 4 }}
+spec:
+  replicas: {{ .Values.enbuildGenAI.replicas }}
+  selector:
+    matchLabels:
+      app: genai
+      app.kubernetes.io/component: genai
+    {{- include "enbuild-helm-chart.selectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      labels:
+        app: genai
+        app.kubernetes.io/component: genai
+      {{- include "enbuild-helm-chart.selectorLabels" . | nindent 8 }}
+    spec:
+      containers:
+      - env:
+        - name: MONGODB_ENDPOINT
+          value: mongodb://$(MONGO_INITDB_ROOT_USERNAME):$(MONGO_INITDB_ROOT_PASSWORD)@$(MONGO_SERVER)
+        envFrom:
+        - secretRef:
+            name: {{ .Release.Name }}-mongo-secrets
+        - secretRef:
+            name: {{ .Release.Name }}-backend-secret
+        image: {{ .Values.enbuildGenAI.image.repository }}:{{ .Values.enbuildGenAI.image.tag | default .Chart.AppVersion }}
+        imagePullPolicy: {{ .Values.enbuildGenAI.image.pullPolicy }}
+        name: enbuild-genai
+        ports:
+        - containerPort: 8086
+        resources: {}
+        securityContext:
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop:
+            - ALL
+          privileged: false
+          runAsGroup: 1001
+          runAsNonRoot: true
+          readOnlyRootFilesystem: true
+          runAsUser: 1001
+      imagePullSecrets:
+      - name: {{ .Release.Name }}-image-pull-secret
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ .Release.Name }}-enbuild-genai
+  labels:
+    app: genai
+    app.kubernetes.io/component: genai
+  {{- include "enbuild-helm-chart.labels" . | nindent 4 }}
+spec:
+  type: {{ .Values.enbuildGenAI.service_type }}
+  selector:
+    app: genai
+    app.kubernetes.io/component: genai
+  {{- include "enbuild-helm-chart.selectorLabels" . | nindent 4 }}
+  ports:
+  - port: 80
+    protocol: TCP
+    targetPort: 8086
+{{- end }}

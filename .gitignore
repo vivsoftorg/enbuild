@@ -1,0 +1,9 @@
+.envrc
+Notes.md
+target/
+**/docker_config.json
+.deploy/
+.cr-release-packages/
+release.sh
+charts/enbuild/charts/*
+**/node_modules/*

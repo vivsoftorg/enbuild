@@ -1,0 +1,43 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ .Release.Name }}-nginx-conf
+  labels:
+{{- include "enbuild-helm-chart.labels" . | nindent 4 }}
+data:
+  default.conf: |-
+    server {
+      listen 8080 default_server;
+      server_name _;
+      proxy_pass_header Authorization;
+      proxy_set_header Host $host;
+
+      location /enbuild-bk/ {
+        proxy_pass http://{{ .Release.Name }}-enbuild-backend/;
+      }
+
+      location /enbuild-user/ {
+        proxy_pass http://{{ .Release.Name }}-enbuild-user/;
+      }
+
+{{- if .Values.enbuildMl.enabled }}
+
+      location /enbuild-ml/ {
+        proxy_pass http://{{ .Release.Name }}-enbuild-ml/;
+      }
+{{- end }}
+
+{{- if .Values.enbuildRequest.enabled }}
+
+      location /enbuild-request/ {
+        proxy_pass http://{{ .Release.Name }}-enbuild-request/;
+      }
+{{- end }}
+
+{{- if .Values.enbuildGenAI.enabled }}
+
+      location /enbuild-genai/ {
+        proxy_pass http://{{ .Release.Name }}-enbuild-genai/;
+      }
+{{- end }}
+    }

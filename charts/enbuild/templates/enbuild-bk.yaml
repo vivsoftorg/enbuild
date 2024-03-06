@@ -1,0 +1,85 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ .Release.Name }}-enbuild-backend
+  labels:
+    app: bk
+    app.kubernetes.io/component: backend
+  {{- include "enbuild-helm-chart.labels" . | nindent 4 }}
+spec:
+  replicas: {{ .Values.enbuildBk.replicas }}
+  selector:
+    matchLabels:
+      app: bk
+      app.kubernetes.io/component: backend
+    {{- include "enbuild-helm-chart.selectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      labels:
+        app: bk
+        app.kubernetes.io/component: backend
+      {{- include "enbuild-helm-chart.selectorLabels" . | nindent 8 }}
+    spec:
+      containers:
+      - env:
+        - name: MONGODB_ENDPOINT
+          value: mongodb://$(MONGO_INITDB_ROOT_USERNAME):$(MONGO_INITDB_ROOT_PASSWORD)@$(MONGO_SERVER)
+        envFrom:
+        - secretRef:
+            name: {{ .Release.Name }}-mongo-secrets
+        - secretRef:
+            name: {{ .Release.Name }}-backend-secret
+        image: {{ .Values.enbuildBk.image.repository }}:{{ .Values.enbuildBk.image.tag | default .Chart.AppVersion }}
+        imagePullPolicy: {{ .Values.enbuildBk.image.pullPolicy }}
+        livenessProbe:
+          failureThreshold: 3
+          httpGet:
+            path: /api/health
+            port: 8080
+          initialDelaySeconds: 3
+          periodSeconds: 10
+          successThreshold: 1
+          timeoutSeconds: 2
+        name: enbuild-bk
+        ports:
+        - containerPort: 8080
+        readinessProbe:
+          failureThreshold: 3
+          httpGet:
+            path: /api/health
+            port: 8080
+          initialDelaySeconds: 3
+          periodSeconds: 10
+          successThreshold: 1
+          timeoutSeconds: 2
+        resources: {{- toYaml .Values.enbuildBk.resources | nindent 10 }}
+        securityContext:
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop:
+            - ALL
+          privileged: false
+          runAsGroup: 1001
+          runAsNonRoot: true
+          runAsUser: 1001
+      imagePullSecrets:
+      - name: {{ .Release.Name }}-image-pull-secret
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ .Release.Name }}-enbuild-backend
+  labels:
+    app: bk
+    app.kubernetes.io/component: backend
+  {{- include "enbuild-helm-chart.labels" . | nindent 4 }}
+spec:
+  type: {{ .Values.enbuildBk.service_type }}
+  selector:
+    app: bk
+    app.kubernetes.io/component: backend
+  {{- include "enbuild-helm-chart.selectorLabels" . | nindent 4 }}
+  ports:
+  - port: 80
+    protocol: TCP
+    targetPort: 8080

@@ -1,0 +1,4 @@
+target/
+keycloak_install/charts/*
+Notes.md
+istio_install/public-cert.yaml
