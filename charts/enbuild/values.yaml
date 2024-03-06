@@ -62,7 +62,7 @@ jupyterhub:
 ## @param rabbitmq.queue_prefix Queue Prefix for all RabbitMQ Queues
 rabbitmq:
   enabled: true
-  replicaCount: 3
+  replicaCount: 1
   auth:
     username: juned
     password: memon
@@ -82,7 +82,7 @@ rabbitmq:
 ## @param mongodb.image.tag Container tag for mongodb Container
 ## @param mongodb.image.pullPolicy Container ImagePullPolicy for mongodb Container
 mongodb:
-  enabled: false
+  enabled: true
   mongo_root_username: "enbuild-dev"
   mongo_root_password: "mongo_root_password"
   mongo_server: "If you are using cosmosDB then set the right cosmosDB endpoint as mongo_server and set the enabled=false"

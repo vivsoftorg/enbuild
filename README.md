@@ -74,7 +74,7 @@ To uninstall/delete the `enbuild` deployment:
 | Name                         | Description                                                          | Value          |
 | ---------------------------- | -------------------------------------------------------------------- | -------------- |
 | `rabbitmq.enabled`           | Set to false to use existing RabbitMQ                                | `true`         |
-| `rabbitmq.replicaCount`      | RabbitMQ replicaCount                                                | `3`            |
+| `rabbitmq.replicaCount`      | RabbitMQ replicaCount                                                | `1`            |
 | `rabbitmq.auth.username`     | RabbitMQ username                                                    | `juned`        |
 | `rabbitmq.auth.password`     | RabbitMQ password                                                    | `memon`        |
 | `rabbitmq.auth.erlangCookie` | RabbitMQ erlangCookie                                                | `lamba`        |
