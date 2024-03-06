@@ -1,17 +1,4 @@
-global:
-  disable_tls_gitlab: true
 imageCredentials:
   registry: registry.gitlab.com
   username: registry_user_name
   password: registry_password
-rabbitmq:
-  enabled: true
-  replicaCount: 1
-  auth:
-    username: admin
-    password: admin
-    erlangCookie: lamba
-mongodb:
-  enabled: true
-  mongo_root_username: admin
-  mongo_root_password: admin
