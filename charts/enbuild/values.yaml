@@ -119,7 +119,7 @@ enbuildUi:
 ## @section ENBUILD Backend Services parameters
 ## @param enbuildBk.image.repository  Container repository for enbuildBk
 ## @param enbuildBk.image.pullPolicy  Container image pullPolicy
-## @param enbuildUk.image.tag  [nullable] Container image tag. Skip to use the HelmChart appVersion as Image Tag
+## @param enbuildBk.image.tag  [nullable] Container image tag. Skip to use the HelmChart appVersion as Image Tag
 ## @param enbuildBk.replicas Container enbuildBk Replicas
 ## @param enbuildBk.service_type  enbuildBk service_type
 ## @param enbuildBk.encryption_key  encryption_key to be used by Backend
@@ -134,7 +134,7 @@ enbuildBk:
 ## @section ENBUILD USER Services parameters
 ## @param enbuildUser.image.repository  Container repository for enbuildUser
 ## @param enbuildUser.image.pullPolicy  Container image pullPolicy
-## @param enbuildUi.image.tag [nullable] Container image tag. Skip to use the HelmChart appVersion as Image Tag
+## @param enbuildUser.image.tag [nullable] Container image tag. Skip to use the HelmChart appVersion as Image Tag
 ## @param enbuildUser.replicas Container enbuildUser Replicas
 ## @param enbuildUser.service_type  enbuildUser service_type
 enbuildUser:
@@ -147,7 +147,7 @@ enbuildUser:
 ## @section ENBUILD Sync Services parameters
 ## @param enbuildSync.image.repository  Container repository for enbuildSync
 ## @param enbuildSync.image.pullPolicy  Container image pullPolicy
-## @param enbuildUi.image.tag [nullable] Container image tag. Skip to use the HelmChart appVersion as Image Tag
+## @param enbuildSync.image.tag [nullable] Container image tag. Skip to use the HelmChart appVersion as Image Tag
 ## @param enbuildSync.replicas Container enbuildSync Replicas
 enbuildSync:
   image:
@@ -159,7 +159,7 @@ enbuildSync:
 ## @param enbuildMl.enabled [default: false] Should we create the ENBUILD ML microservice ?
 ## @param enbuildMl.image.repository  Container repository for enbuildMl
 ## @param enbuildMl.image.pullPolicy  Container image pullPolicy
-## @param enbuildUi.image.tag  [nullable] Container image tag. Skip to use the HelmChart appVersion as Image Tag
+## @param enbuildMl.image.tag  [nullable] Container image tag. Skip to use the HelmChart appVersion as Image Tag
 ## @param enbuildMl.replicas Container enbuildMl Replicas
 ## @param enbuildMl.service_type  enbuildMl service_type
 enbuildMl:
@@ -174,7 +174,7 @@ enbuildMl:
 ## @param enbuildGenAI.enabled [default: false] Should we create the ENBUILD GenAI microservice ?
 ## @param enbuildGenAI.image.repository  Container repository for enbuildGenAI
 ## @param enbuildGenAI.image.pullPolicy  Container image pullPolicy
-## @param enbuildUi.image.tag  [nullable] Container image tag. Skip to use the HelmChart appVersion as Image Tag
+## @param enbuildGenAI.image.tag  [nullable] Container image tag. Skip to use the HelmChart appVersion as Image Tag
 ## @param enbuildGenAI.replicas Container enbuildGenAI Replicas
 ## @param enbuildGenAI.service_type  enbuildGenAI service_type
 ## @param enbuildGenAI.api_key  api_key for OpenAI service.
@@ -191,7 +191,7 @@ enbuildGenAI:
 ## @param enbuildRequest.enabled [default: false] Should we create the ENBUILD Request microservice ?
 ## @param enbuildRequest.image.repository  Container repository for enbuildRequest
 ## @param enbuildRequest.image.pullPolicy  Container image pullPolicy
-## @param enbuildUi.image.tag [nullable] Container image tag. Skip to use the HelmChart appVersion as Image Tag
+## @param enbuildRequest.image.tag [nullable] Container image tag. Skip to use the HelmChart appVersion as Image Tag
 ## @param enbuildRequest.replicas Container enbuildRequest Replicas
 ## @param enbuildRequest.service_type  enbuildRequest service_type
 enbuildRequest:
