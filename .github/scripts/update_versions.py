@@ -11,7 +11,7 @@ from ruamel.yaml import YAML
 
 yaml = YAML(typ='rt')
 yaml.indent(mapping=2, sequence=4, offset=2)
-PREFIX = pathlib.PurePath('charts', '.')
+PREFIX = pathlib.PurePath('charts', 'enbuild')
 
 
 def _parse_command_line():

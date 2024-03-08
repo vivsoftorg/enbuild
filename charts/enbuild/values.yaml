@@ -94,7 +94,7 @@ mongodb:
 ## @section ENBUILD UI Services parameters
 ## @param enbuildUi.image.repository  Container repository for enbuildUi
 ## @param enbuildUi.image.pullPolicy  Container image pullPolicy
-## @param enbuildUi.image.tag  Container image tag. Skip to use the HelmChart appVersion as Image Tag
+## @param enbuildUi.image.tag  [nullable] Container image tag. Skip to use the HelmChart appVersion as Image Tag
 ## @param enbuildUi.replicas Container enbuildUI Replicas
 ## @param enbuildUi.service_type  enbuildUI service_type
 ## @param enbuildUi.node_port  enbuildUI node_port

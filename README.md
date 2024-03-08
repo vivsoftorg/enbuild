@@ -115,7 +115,7 @@ To uninstall/delete the `enbuild` deployment:
 | ---------------------------- | ---------------------------------------------------------------------- | ------------------------------------------------------------------------- |
 | `enbuildBk.image.repository` | Container repository for enbuildBk                                     | `registry.gitlab.com/enbuild-staging/vivsoft-platform-ui/enbuild-backend` |
 | `enbuildBk.image.pullPolicy` | Container image pullPolicy                                             | `Always`                                                                  |
-| `enbuildUk.image.tag`        | Container image tag. Skip to use the HelmChart appVersion as Image Tag | `undefined`                                                               |
+| `enbuildBk.image.tag`        | Container image tag. Skip to use the HelmChart appVersion as Image Tag | `undefined`                                                               |
 | `enbuildBk.replicas`         | Container enbuildBk Replicas                                           | `1`                                                                       |
 | `enbuildBk.service_type`     | enbuildBk service_type                                                 | `ClusterIP`                                                               |
 | `enbuildBk.encryption_key`   | encryption_key to be used by Backend                                   | `encryption_key`                                                          |
@@ -126,7 +126,7 @@ To uninstall/delete the `enbuild` deployment:
 | ------------------------------ | ---------------------------------------------------------------------- | ---------------------------------------------------------------------- |
 | `enbuildUser.image.repository` | Container repository for enbuildUser                                   | `registry.gitlab.com/enbuild-staging/vivsoft-platform-ui/enbuild-user` |
 | `enbuildUser.image.pullPolicy` | Container image pullPolicy                                             | `Always`                                                               |
-| `enbuildUi.image.tag`          | Container image tag. Skip to use the HelmChart appVersion as Image Tag | `undefined`                                                            |
+| `enbuildUser.image.tag`        | Container image tag. Skip to use the HelmChart appVersion as Image Tag | `undefined`                                                            |
 | `enbuildUser.replicas`         | Container enbuildUser Replicas                                         | `1`                                                                    |
 | `enbuildUser.service_type`     | enbuildUser service_type                                               | `ClusterIP`                                                            |
 
@@ -136,7 +136,7 @@ To uninstall/delete the `enbuild` deployment:
 | ------------------------------ | ---------------------------------------------------------------------- | ------------------------------------------------------------------------- |
 | `enbuildSync.image.repository` | Container repository for enbuildSync                                   | `registry.gitlab.com/enbuild-staging/vivsoft-platform-ui/enbuild-cronjob` |
 | `enbuildSync.image.pullPolicy` | Container image pullPolicy                                             | `Always`                                                                  |
-| `enbuildUi.image.tag`          | Container image tag. Skip to use the HelmChart appVersion as Image Tag | `undefined`                                                               |
+| `enbuildSync.image.tag`        | Container image tag. Skip to use the HelmChart appVersion as Image Tag | `undefined`                                                               |
 | `enbuildSync.replicas`         | Container enbuildSync Replicas                                         | `1`                                                                       |
 
 ### ENBUILD ML Services parameters
@@ -146,7 +146,7 @@ To uninstall/delete the `enbuild` deployment:
 | `enbuildMl.enabled`          | Should we create the ENBUILD ML microservice ?                         | `false`                                                              |
 | `enbuildMl.image.repository` | Container repository for enbuildMl                                     | `registry.gitlab.com/enbuild-staging/vivsoft-platform-ui/enbuild-ml` |
 | `enbuildMl.image.pullPolicy` | Container image pullPolicy                                             | `Always`                                                             |
-| `enbuildUi.image.tag`        | Container image tag. Skip to use the HelmChart appVersion as Image Tag | `undefined`                                                          |
+| `enbuildMl.image.tag`        | Container image tag. Skip to use the HelmChart appVersion as Image Tag | `undefined`                                                          |
 | `enbuildMl.replicas`         | Container enbuildMl Replicas                                           | `1`                                                                  |
 | `enbuildMl.service_type`     | enbuildMl service_type                                                 | `ClusterIP`                                                          |
 
@@ -157,7 +157,7 @@ To uninstall/delete the `enbuild` deployment:
 | `enbuildGenAI.enabled`          | Should we create the ENBUILD GenAI microservice ?                      | `false`                                                                 |
 | `enbuildGenAI.image.repository` | Container repository for enbuildGenAI                                  | `registry.gitlab.com/enbuild-staging/vivsoft-platform-ui/enbuild-genai` |
 | `enbuildGenAI.image.pullPolicy` | Container image pullPolicy                                             | `Always`                                                                |
-| `enbuildUi.image.tag`           | Container image tag. Skip to use the HelmChart appVersion as Image Tag | `undefined`                                                             |
+| `enbuildGenAI.image.tag`        | Container image tag. Skip to use the HelmChart appVersion as Image Tag | `undefined`                                                             |
 | `enbuildGenAI.replicas`         | Container enbuildGenAI Replicas                                        | `1`                                                                     |
 | `enbuildGenAI.service_type`     | enbuildGenAI service_type                                              | `ClusterIP`                                                             |
 | `enbuildGenAI.api_key`          | api_key for OpenAI service.                                            | `dummy`                                                                 |
@@ -169,6 +169,6 @@ To uninstall/delete the `enbuild` deployment:
 | `enbuildRequest.enabled`          | Should we create the ENBUILD Request microservice ?                    | `false`                                                                   |
 | `enbuildRequest.image.repository` | Container repository for enbuildRequest                                | `registry.gitlab.com/enbuild-staging/vivsoft-platform-ui/enbuild-request` |
 | `enbuildRequest.image.pullPolicy` | Container image pullPolicy                                             | `Always`                                                                  |
-| `enbuildUi.image.tag`             | Container image tag. Skip to use the HelmChart appVersion as Image Tag | `undefined`                                                               |
+| `enbuildRequest.image.tag`        | Container image tag. Skip to use the HelmChart appVersion as Image Tag | `undefined`                                                               |
 | `enbuildRequest.replicas`         | Container enbuildRequest Replicas                                      | `1`                                                                       |
 | `enbuildRequest.service_type`     | enbuildRequest service_type                                            | `ClusterIP`                                                               |
