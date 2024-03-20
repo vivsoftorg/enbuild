@@ -24,13 +24,14 @@ global:
     gateway: istio-system/public-gateway
 
 ## @section Container Registry Parameters
-## @param imageCredentials.registry  Container registry Path
-## @param imageCredentials.username  Container registry Username
-## @param imageCredentials.password  Container registry password
-imageCredentials:
-  registry: registry.gitlab.com
-  username: registry_user_name
-  password: registry_password
+## @param imageCredentials [nullable,object] Should we use a private container registry? if yes provide the following parameters
+## @param imageCredentials.registry [nullable,string]  Container registry Path
+## @param imageCredentials.username [nullable,string]  Container registry Username
+## @param imageCredentials.password  [nullable,string] Container registry password
+imageCredentials: {}
+  # registry: registry.gitlab.com
+  # username: registry_user_name
+  # password: registry_password
 
 ## @section Jupyterhub Parameters
 ## @skip jupyterhub.proxy

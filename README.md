@@ -57,11 +57,12 @@ To uninstall/delete the `enbuild` deployment:
 
 ### Container Registry Parameters
 
-| Name                        | Description                 | Value                 |
-| --------------------------- | --------------------------- | --------------------- |
-| `imageCredentials.registry` | Container registry Path     | `registry.gitlab.com` |
-| `imageCredentials.username` | Container registry Username | `registry_user_name`  |
-| `imageCredentials.password` | Container registry password | `registry_password`   |
+| Name                        | Description                                                                         | Value |
+| --------------------------- | ----------------------------------------------------------------------------------- | ----- |
+| `imageCredentials`          | Should we use a private container registry? if yes provide the following parameters | `{}`  |
+| `imageCredentials.registry` | Container registry Path                                                             | `""`  |
+| `imageCredentials.username` | Container registry Username                                                         | `""`  |
+| `imageCredentials.password` | Container registry password                                                         | `""`  |
 
 ### Jupyterhub Parameters
 
