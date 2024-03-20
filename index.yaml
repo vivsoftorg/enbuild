@@ -3,6 +3,36 @@ entries:
   enbuild:
   - apiVersion: v2
     appVersion: 1.0.8
+    created: "2024-03-20T09:18:07.51251875Z"
+    dependencies:
+    - condition: rabbitmq.enabled
+      name: rabbitmq
+      repository: https://charts.bitnami.com/bitnami
+      version: 11.13.0
+    - condition: jupyterhub.cull.enabled
+      name: jupyterhub
+      repository: https://jupyterhub.github.io/helm-chart
+      version: 2.0.0
+    description: A Helm chart for ENBUILD
+    digest: 2aaf1c804c9c8c6d11fb10f6b54169826114c01b00988da465cced326c3d8747
+    home: https://www.vivsoft.io/
+    icon: https://github.com/vivsoftorg/docs-enbuild/blob/main/assets/cover.png
+    keywords:
+    - enbuild
+    - bigbang
+    kubeVersion: '>=1.25.0-0'
+    maintainers:
+    - email: jmemon@vivsoft.io
+      name: Juned Memon
+    name: enbuild
+    sources:
+    - https://github.com/jupyterhub/zero-to-jupyterhub-k8s
+    type: application
+    urls:
+    - https://github.com/vivsoftorg/enbuild_helm_chart/releases/download/enbuild-0.0.5/enbuild-0.0.5.tgz
+    version: 0.0.5
+  - apiVersion: v2
+    appVersion: 1.0.8
     created: "2024-03-13T08:40:25.202892807Z"
     dependencies:
     - condition: rabbitmq.enabled
@@ -91,4 +121,4 @@ entries:
     urls:
     - https://github.com/vivsoftorg/enbuild_helm_chart/releases/download/enbuild-0.0.2/enbuild-0.0.2.tgz
     version: 0.0.2
-generated: "2024-03-13T08:40:25.202906001Z"
+generated: "2024-03-20T09:18:07.512532966Z"
