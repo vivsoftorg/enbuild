@@ -64,8 +64,10 @@ spec:
           runAsGroup: 1001
           runAsNonRoot: true
           runAsUser: 1001
+      {{- if .Values.imageCredentials -}}
       imagePullSecrets:
       - name: {{ .Release.Name }}-image-pull-secret
+      {{- end }}
 ---
 apiVersion: v1
 kind: Service

@@ -1,3 +1,0 @@
-# ENBUILD HELM CHART
-
-#----

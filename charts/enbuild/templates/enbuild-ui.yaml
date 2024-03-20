@@ -44,8 +44,10 @@ spec:
         - mountPath: /etc/nginx/conf.d/default.conf
           name: nginx-conf
           subPath: default.conf
+{{- if .Values.imageCredentials }}
       imagePullSecrets:
-      - name: {{ .Release.Name }}-image-pull-secret
+        - name: {{ .Release.Name }}-image-pull-secret
+{{- end }}
       volumes:
       - configMap:
           defaultMode: 0755

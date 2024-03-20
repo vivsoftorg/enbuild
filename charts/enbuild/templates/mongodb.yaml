@@ -45,8 +45,10 @@ spec:
         - mountPath: /data/db
           name: data
       dnsPolicy: ClusterFirst
+{{- if .Values.imageCredentials }}
       imagePullSecrets:
-      - name: {{ .Release.Name }}-image-pull-secret
+        - name: {{ .Release.Name }}-image-pull-secret
+{{- end }}
       restartPolicy: Always
       schedulerName: default-scheduler
       securityContext:
