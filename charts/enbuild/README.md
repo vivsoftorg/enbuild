@@ -6,13 +6,13 @@ This helm chart installs the ENBUILD application.
 
 This Helm chart repository enables you to install a ENBUILD
 Helm chart directly from it into your Kubernetes cluster. Please refer to the
-[ENBUILD documentation](https://enbuild-docs.vivplatform.io/) for all
+[ENBUILD documentation](https://vivsoftorg.github.io/enbuild/) for all
 the additional details required.
 
 ```shell
 # Let helm the command line tool know about a Helm chart repository
 # that we decide to name enbuild.
-❯ helm repo add vivsoft https://vivsoftorg.github.io/enbuild_helm_chart
+❯ helm repo add vivsoft https://vivsoftorg.github.io/enbuild
 
 # Update the Helm chart repository.
 ❯ helm repo update vivsoft
