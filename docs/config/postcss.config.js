@@ -57,10 +57,12 @@ module.exports = {
         'page-item',
         'page-link',
         ...whitelister([
+          './assets/scss/**/*.css',
           './assets/scss/**/*.scss',
+          './node_modules/katex/dist/katex.css',
           './node_modules/@hyas/doks-core/assets/scss/components/_code.scss',
           './node_modules/@hyas/doks-core/assets/scss/components/_expressive-code.scss',
-          './node_modules/@hyas/doks-core/assets/scss/common/_syntax.scss',
+          './node_modules/@hyas/doks-core/assets/scss/common/_syntax.scss'
         ]),
       ],
     }),
