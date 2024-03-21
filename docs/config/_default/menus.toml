@@ -1,6 +1,6 @@
 [[main]]
   name = "GitHub"
-  url = "https://github.com/VivSoftOrg/docs-enbuild"
+  url = "https://github.com/VivSoftOrg/enbuild"
   weight = 10
 
 [[social]]
