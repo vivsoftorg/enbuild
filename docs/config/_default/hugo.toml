@@ -1,4 +1,4 @@
-title = "My Docs"
+title = "ENBUILD"
 baseurl = "/"
 canonifyURLs = false
 disableAliases = true
@@ -17,10 +17,13 @@ defaultContentLanguage = "en"
 disableLanguages = ["de", "nl"]
 defaultContentLanguageInSubdir = false
 
-copyRight = "Copyright (c) 2020-2024 Hyas"
+copyRight = "Copyright (c) 2024 Vivsoft"
 
 [build.buildStats]
-  enable = true
+  enable = false
+
+[social]
+  twitter = "getdoks"
 
 [outputs]
   home = ["HTML", "RSS", "searchIndex"]
@@ -34,12 +37,12 @@ copyRight = "Copyright (c) 2020-2024 Hyas"
 
 # Add output format for section sitemap.xml
 [outputFormats.SITEMAP]
-  mediaType = "application/xml"
-  baseName = "sitemap"
-  isHTML = false
-  isPlainText = true
-  noUgly = true
-  rel  = "sitemap"
+mediaType = "application/xml"
+baseName = "sitemap"
+isHTML = false
+isPlainText = true
+noUgly = true
+rel  = "sitemap"
 
 [sitemap]
   changefreq = "monthly"
@@ -49,7 +52,7 @@ copyRight = "Copyright (c) 2020-2024 Hyas"
 [caches]
   [caches.getjson]
     dir = ":cacheDir/:project"
-    maxAge = -1 # "30m"
+    maxAge = "30m"
 
 [taxonomies]
   contributor = "contributors"
@@ -69,18 +72,18 @@ copyRight = "Copyright (c) 2020-2024 Hyas"
   includeNewer = true
   toLower = false
     [[related.indices]]
-      name = "categories"
-      weight = 100
+    name = "categories"
+    weight = 100
     [[related.indices]]
-      name = "tags"
-      weight = 80
+    name = "tags"
+    weight = 80
     [[related.indices]]
-      name = "date"
-      weight = 10
+    name = "date"
+    weight = 10
 
 [imaging]
-  anchor = "Center"
+  anchor = "Smart"
   bgColor = "#ffffff"
   hint = "photo"
-  quality = 85
-  resampleFilter = "Lanczos"
+  quality = 75
+  resampleFilter = "Box"
