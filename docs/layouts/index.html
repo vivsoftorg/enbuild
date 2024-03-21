@@ -2,60 +2,58 @@
 <section class="section container-fluid mt-n3 pb-3">
   <div class="row justify-content-center">
     <div class="col-lg-12 text-center">
-      <img src="{{ .Site.BaseURL | absURL }}/logo.png" alt="EMMA" height="200">
-      <h1 class="mt-0">{{ .Title }}</h1>
+      <h1>{{ .Title }}</h1>
     </div>
     <div class="col-lg-9 col-xl-8 text-center">
       <p class="lead">{{ .Params.lead | safeHTML }}</p>
-      <a class="btn btn-primary btn-lg px-4 mb-2" href="{{ "docs/getting-started/introduction/" | relURL }}" role="button">Get started</a>
-      <p class="meta">Apache Licensed.</p>
+      <a class="btn btn-primary btn-cta rounded-pill btn-lg my-3" href="/docs/{{ if site.Params.doks.docsVersioning }}{{ site.Params.doks.docsVersion }}/{{ end }}guides/example-guide/" role="button">{{ i18n "get_started" }}</a>
+      {{ .Content }}
     </div>
   </div>
 </section>
 {{ end }}
 
 {{ define "sidebar-prefooter" }}
-<section class="section section-sm">
-  <div class="container">
-    <div class="row justify-content-center text-center">
-      <div class="col-lg-5">
-        <h2 class="h4">DevSecOps Infrastrcutre as code / Configuration as code</h2>
-        <p>Ruthless automation is the key to a successful deployment of DevSecOps and AI/ML capabilities at scale. We leverage GitOps and Everything as Code to make this happen.</p>
-      </div>
-      <div class="col-lg-5">
-        <h2 class="h4">Faster deployment and Continuous ATO</h2>
-        <p>Seamless authorization thanks to the reuse of the Platform One packages across the Department of Defense and its Continuous ATO.</p>
-      </div>
-      <div class="col-lg-5">
-        <h2 class="h4">On premise and Multi Cloud Support</h2>
-        <p>Available anywhere on your premises, government Clouds and AWS/Azure as a prepackaged and automated deployment.</p>
-      </div>
-    </div>
-    <div class="row justify-content-center text-center">
-      <div class="col-lg-5">
-        <h2 class="h4">Out of the box deployment</h2>
-        <p>Turnkey deployment and parity with Platform One Big Bang. Complete compliance with the DoD Enterprise DevSecOps Ref Design 2.0</p>
-      </div>
-      <div class="col-lg-5">
-        <h2 class="h4">Data Ingestion and Automation</h2>
-        <p>DevSecOps is essential but you need more, we bring a full data ingestion capability, enabling MLOps day 1!</p>
-      </div>
-      <div class="col-lg-5">
-          <h2 class="h4">No Vendor Lockin</h2>
-          <p>No vendor lockin: Our tech stack is based on world renown open-source capabilities, accelerated by Platform One and our team.</p>
-      </div>
-    </div>
+  {{ if site.Params.doks.backgroundDots -}}
+  <div class="d-flex justify-content-start">
+    <div class="bg-dots"></div>
   </div>
-</section>
+  {{ end -}}
+  {{ if eq $.Site.Language.LanguageName "English" }}
+  <section class="section section-md section-features">
+    <div class="container">
+      <div class="row justify-content-center text-center">
+        <div class="col-lg-5">
+          <h2 class="h4">Update content</h2>
+          <p>Edit <code>content/_index.md</code> to see this page change.</p>
+        </div>
+        <div class="col-lg-5">
+          <h2 class="h4">Add new content</h2>
+          <p>Add Markdown files to <code>content</code> to create new pages.</p>
+        </div>
+        <div class="col-lg-5">
+          <h2 class="h4">Configure your site</h2>
+          <p>Edit your config in <code>config/_default/hyas/doks.toml</code>.</p>
+        </div>
+        <div class="col-lg-5">
+          <h2 class="h4">Read the docs</h2>
+          <p>Learn more in the <a href="https://getdoks.org/">Docs</a>.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+  {{ end }}
 {{ end }}
 
-
 {{ define "sidebar-footer" }}
-<section class="section section-sm container-fluid">
+{{ if site.Params.doks.sectionFooter -}}
+<section class="section section-md container-fluid bg-light">
   <div class="row justify-content-center text-center">
-      <div class="col-lg-9">
-          {{- .Content -}}
-      </div>
+    <div class="col-lg-7">
+      <h2 class="mt-2">Start building with Doks today</h2>
+      <a class="btn btn-primary rounded-pill px-4 my-2" href="/docs/{{ if site.Params.doks.docsVersioning }}{{ site.Params.doks.docsVersion }}/{{ end }}prologue/introduction/" role="button">{{ i18n "get-started" }}</a>
+    </div>
   </div>
 </section>
+{{ end -}}
 {{ end }}

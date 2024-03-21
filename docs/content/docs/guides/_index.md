@@ -1,11 +1,11 @@
 ---
-title: "Docs"
+title: "Guides"
 description: ""
 summary: ""
-date: 2023-09-07T16:12:03+02:00
-lastmod: 2023-09-07T16:12:03+02:00
+date: 2023-09-07T16:06:50+02:00
+lastmod: 2023-09-07T16:06:50+02:00
 draft: false
-weight: 999
+weight: 800
 toc: true
 seo:
   title: "" # custom title (optional)

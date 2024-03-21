@@ -1,4 +1,4 @@
-title = "ENBUILD"
+title = "My Docs"
 baseurl = "/"
 canonifyURLs = false
 disableAliases = true
@@ -17,7 +17,7 @@ defaultContentLanguage = "en"
 disableLanguages = ["de", "nl"]
 defaultContentLanguageInSubdir = false
 
-copyRight = "Copyright (c) 2020-2024 Vivsoft"
+copyRight = "Copyright (c) 2020-2024 Hyas"
 
 [build.buildStats]
   enable = true

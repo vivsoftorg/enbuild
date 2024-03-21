@@ -1,9 +1,13 @@
 {
-  "name": "docs",
-  "version": "0.0.0",
+  "name": "doks",
+  "version": "1.4.1",
   "description": "Doks theme",
   "author": "Hyas",
   "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/gethyas/doks.git"
+  },
   "scripts": {
     "dev": "exec-bin node_modules/.bin/hugo/hugo server --bind=0.0.0.0 --disableFastRender --baseURL=http://localhost --noHTTPCache",
     "dev:drafts": "exec-bin node_modules/.bin/hugo/hugo server --bind=0.0.0.0 --disableFastRender --baseURL=http://localhost --noHTTPCache --buildDrafts",
@@ -22,7 +26,8 @@
     "preinfo": "npm version",
     "info": "npm list",
     "postinfo": "exec-bin node_modules/.bin/hugo/hugo version",
-    "postinstall": "hugo-installer --version otherDependencies.hugo --extended --destination node_modules/.bin/hugo"
+    "postinstall": "hugo-installer --version otherDependencies.hugo --extended --destination node_modules/.bin/hugo",
+    "version": "auto-changelog -p && git add CHANGELOG.md"
   },
   "dependencies": {
     "@hyas/doks-core": "^1.4.1",
@@ -35,6 +40,7 @@
     "hugo-installer": "^4.0.1"
   },
   "devDependencies": {
+    "auto-changelog": "^2.4.0",
     "shx": "^0.3.4"
   },
   "otherDependencies": {
