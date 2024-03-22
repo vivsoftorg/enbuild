@@ -51,7 +51,6 @@ helm repo add vivsoft https://vivsoftorg.github.io/enbuild
 2. **Configure ENBUILD Helm Values**
 
 Before deploying ENBUILD to the Kubernetes cluster, you will need to create a custom values.yaml file so that we can specify configurations unique to this deployment. <br>
-
 For local deployment however we require minimum deployment values.
 
 :exclamation: **Note:** For more information about the complete set of ENBUILD Helm values click [here](../getting-started/enbuildHelmValues.md)!
@@ -65,7 +64,6 @@ imageCredentials:
 ```
 
 :zap: **Note:** The `imageCredentials` section is only required until the images are available publically.
-
 3. **Deploy ENBUILD**
 
 Make sure you update the values input to reference the values you created in Step 2.

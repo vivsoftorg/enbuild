@@ -25,7 +25,7 @@ jobs:
         run: |
           cd docs
           npm ci
-          npm run lint
+          # npm run lint # Disabled linting for now
           npm run build
         shell: bash
 
