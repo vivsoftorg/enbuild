@@ -157,8 +157,6 @@ Use the following command to uninstall ENBUILD from your Kubernetes cluster.
 
 ```bash
 helm uninstall enbuild -n enbuild
-```
 
-```bash
 release "enbuild" uninstalled
 ```
