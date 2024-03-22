@@ -43,17 +43,18 @@ To uninstall/delete the `enbuild` deployment:
 
 ### Global parameters
 
-| Name                         | Description                                                            | Value                         |
-| ---------------------------- | ---------------------------------------------------------------------- | ----------------------------- |
-| `global.domain`              | What domain to use to expose the ENBUILD using istio or Ingress        | `ijuned.com`                  |
-| `global.disable_tls_gitlab`  | Set to true if you are using self-signed certificates                  | `false`                       |
-| `global.ingress.enabled`     | Should we create the Ingress Resources ?                               | `false`                       |
-| `global.ingress.tls`         | Is Ingress TLS enabled ?                                               | `false`                       |
-| `global.ingress.tls_secret`  | If Ingress is TLS enabled, Provide the Secret for the TLS Certificate. | `""`                          |
-| `global.ingress.classname`   | Ingress classname if enabled.                                          | `""`                          |
-| `global.ingress.annotations` | Ingress annotations if enabled.                                        | `[]`                          |
-| `global.istio.enabled`       | Should we create the Istio Resources ?                                 | `false`                       |
-| `global.istio.gateway`       | Istio gateway to use for creating Virtual Service.                     | `istio-system/public-gateway` |
+| Name                         | Description                                                                                                                                                                                      | Value                         |
+| ---------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ----------------------------- |
+| `global.AppVersion`          | [default: ""] Provide custom appVersion, to override the default one. All the ENBUILD images will be of the same version. To use indidual tag for each service set the tag on per service basis. | `""`                          |
+| `global.domain`              | What domain to use to expose the ENBUILD using istio or Ingress                                                                                                                                  | `ijuned.com`                  |
+| `global.disable_tls_gitlab`  | Set to true if you are using self-signed certificates                                                                                                                                            | `false`                       |
+| `global.ingress.enabled`     | Should we create the Ingress Resources ?                                                                                                                                                         | `false`                       |
+| `global.ingress.tls`         | Is Ingress TLS enabled ?                                                                                                                                                                         | `false`                       |
+| `global.ingress.tls_secret`  | If Ingress is TLS enabled, Provide the Secret for the TLS Certificate.                                                                                                                           | `""`                          |
+| `global.ingress.classname`   | Ingress classname if enabled.                                                                                                                                                                    | `""`                          |
+| `global.ingress.annotations` | Ingress annotations if enabled.                                                                                                                                                                  | `[]`                          |
+| `global.istio.enabled`       | Should we create the Istio Resources ?                                                                                                                                                           | `false`                       |
+| `global.istio.gateway`       | Istio gateway to use for creating Virtual Service.                                                                                                                                               | `istio-system/public-gateway` |
 
 ### Container Registry Parameters
 
@@ -72,15 +73,15 @@ To uninstall/delete the `enbuild` deployment:
 
 ### ENBUILD RabbitMQ parameters
 
-| Name                         | Description                                                          | Value          |
-| ---------------------------- | -------------------------------------------------------------------- | -------------- |
-| `rabbitmq.enabled`           | Set to false to use existing RabbitMQ                                | `true`         |
-| `rabbitmq.replicaCount`      | RabbitMQ replicaCount                                                | `1`            |
-| `rabbitmq.auth.username`     | RabbitMQ username                                                    | `juned`        |
-| `rabbitmq.auth.password`     | RabbitMQ password                                                    | `memon`        |
-| `rabbitmq.auth.erlangCookie` | RabbitMQ erlangCookie                                                | `lamba`        |
-| `rabbitmq.host`              | If `rabbitmq.enabled` is false , provide the right rabbitmq endpoint | `""`           |
-| `rabbitmq.queue_prefix`      | Queue Prefix for all RabbitMQ Queues                                 | `enbuild-prod` |
+| Name                         | Description                                                          | Value         |
+| ---------------------------- | -------------------------------------------------------------------- | ------------- |
+| `rabbitmq.enabled`           | Set to false to use existing RabbitMQ                                | `true`        |
+| `rabbitmq.replicaCount`      | RabbitMQ replicaCount                                                | `1`           |
+| `rabbitmq.auth.username`     | RabbitMQ username                                                    | `admin`       |
+| `rabbitmq.auth.password`     | RabbitMQ password                                                    | `SuperSecret` |
+| `rabbitmq.auth.erlangCookie` | RabbitMQ erlangCookie                                                | `lamba`       |
+| `rabbitmq.host`              | If `rabbitmq.enabled` is false , provide the right rabbitmq endpoint | `""`          |
+| `rabbitmq.queue_prefix`      | Queue Prefix for all RabbitMQ Queues                                 | `enbuild`     |
 
 ### ENBUILD Backend/DB parameters
 
@@ -96,19 +97,19 @@ To uninstall/delete the `enbuild` deployment:
 
 ### ENBUILD UI Services parameters
 
-| Name                         | Description                                                                      | Value                                                                               |
-| ---------------------------- | -------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------- |
-| `enbuildUi.image.repository` | Container repository for enbuildUi                                               | `registry.gitlab.com/enbuild-staging/vivsoft-platform-ui/enbuild-frontend`          |
-| `enbuildUi.image.pullPolicy` | Container image pullPolicy                                                       | `Always`                                                                            |
-| `enbuildUi.image.tag`        | Container image tag. Skip to use the HelmChart appVersion as Image Tag           | `undefined`                                                                         |
-| `enbuildUi.replicas`         | Container enbuildUI Replicas                                                     | `1`                                                                                 |
-| `enbuildUi.service_type`     | enbuildUI service_type                                                           | `ClusterIP`                                                                         |
-| `enbuildUi.node_port`        | enbuildUI node_port                                                              | `30080`                                                                             |
-| `enbuildUi.hostname`         | enbuild service hostname. `enbuildUi.hostname`.`global.domain` becomes your FQDN | `enbuild`                                                                           |
-| `enbuildUi.kiali_url`        | kiali_url                                                                        | `https://kiali.vivplatform.io/kiali/`                                               |
-| `enbuildUi.grafana_url`      | grafana_url                                                                      | `https://grafana.vivplatform.io/d/os6Bh8Omk/kubernetes-cluster?orgId=1&refresh=30s` |
-| `enbuildUi.loki_url`         | loki_url                                                                         | `https://grafana.vivplatform.io/d/liz0yRCZz/logs-app?orgId=1`                       |
-| `enbuildUi.kubecost_url`     | kubecost_url                                                                     | `https://kubecost.vivplatform.io/overview.html`                                     |
+| Name                         | Description                                                                      | Value                                                                      |
+| ---------------------------- | -------------------------------------------------------------------------------- | -------------------------------------------------------------------------- |
+| `enbuildUi.image.repository` | Container repository for enbuildUi                                               | `registry.gitlab.com/enbuild-staging/vivsoft-platform-ui/enbuild-frontend` |
+| `enbuildUi.image.pullPolicy` | Container image pullPolicy                                                       | `Always`                                                                   |
+| `enbuildUi.image.tag`        | Container image tag. Skip to use the HelmChart appVersion as Image Tag           | `undefined`                                                                |
+| `enbuildUi.replicas`         | Container enbuildUI Replicas                                                     | `1`                                                                        |
+| `enbuildUi.service_type`     | enbuildUI service_type                                                           | `ClusterIP`                                                                |
+| `enbuildUi.node_port`        | enbuildUI node_port                                                              | `30080`                                                                    |
+| `enbuildUi.hostname`         | enbuild service hostname. `enbuildUi.hostname`.`global.domain` becomes your FQDN | `enbuild`                                                                  |
+| `enbuildUi.kiali_url`        | kiali_url                                                                        | `https://kiali.ijuned.com/kiali/`                                          |
+| `enbuildUi.grafana_url`      | grafana_url                                                                      | `https://grafana.ijuned.com/`                                              |
+| `enbuildUi.loki_url`         | loki_url                                                                         | `https://grafana.ijuned.com/d/liz0yRCZz/logs-app?orgId=1`                  |
+| `enbuildUi.kubecost_url`     | kubecost_url                                                                     | `https://kubecost.ijuned.com/overview.html`                                |
 
 ### ENBUILD Backend Services parameters
 

@@ -1,5 +1,6 @@
 ## @section Global parameters
-## @param global.domain What domain to use to expose the ENBUILD using istio or Ingress
+## @param global.AppVersion [nullable,string] [default: ""] Provide custom appVersion, to override the default one. All the ENBUILD images will be of the same version. To use indidual tag for each service set the tag on per service basis.
+## @param global.domain [default: ijuned.com] What domain to use to expose the ENBUILD using istio or Ingress
 ## @param global.disable_tls_gitlab [default: false] Set to true if you are using self-signed certificates
 ## @param global.ingress.enabled [default: false] Should we create the Ingress Resources ?
 ## @param global.ingress.tls [default: false] Is Ingress TLS enabled ?
@@ -10,6 +11,7 @@
 ## @param global.istio.gateway Istio gateway to use for creating Virtual Service.
 ##
 global:
+  AppVersion: ""
   domain: ijuned.com
   disable_tls_gitlab: false  # Set to true if you are using self-signed certificates
   ingress:
@@ -65,14 +67,14 @@ rabbitmq:
   enabled: true
   replicaCount: 1
   auth:
-    username: juned
-    password: memon
+    username: admin
+    password: SuperSecret
     erlangCookie: lamba
   clustering:
     forceBoot: true
   host: rabbitmq.rabbitmq # Needed only rabbitmq.enabled is false
   env: prod
-  queue_prefix: enbuild-prod
+  queue_prefix: enbuild
 
 ## @section ENBUILD Backend/DB parameters
 ## @param mongodb.enabled  [default: false] Set to true to Deploy the MongoDB.
@@ -84,7 +86,7 @@ rabbitmq:
 ## @param mongodb.image.pullPolicy Container ImagePullPolicy for mongodb Container
 mongodb:
   enabled: true
-  mongo_root_username: "enbuild-dev"
+  mongo_root_username: "enbuild"
   mongo_root_password: "mongo_root_password"
   mongo_server: "If you are using cosmosDB then set the right cosmosDB endpoint as mongo_server and set the enabled=false"
   image:
@@ -112,10 +114,10 @@ enbuildUi:
   service_type: ClusterIP
   node_port: 30080
   hostname: enbuild # hostname.domain become FQDN
-  kiali_url: https://kiali.vivplatform.io/kiali/
-  grafana_url: https://grafana.vivplatform.io/d/os6Bh8Omk/kubernetes-cluster?orgId=1&refresh=30s
-  loki_url: https://grafana.vivplatform.io/d/liz0yRCZz/logs-app?orgId=1
-  kubecost_url: https://kubecost.vivplatform.io/overview.html
+  kiali_url: https://kiali.ijuned.com/kiali/
+  grafana_url: https://grafana.ijuned.com/
+  loki_url: https://grafana.ijuned.com/d/liz0yRCZz/logs-app?orgId=1
+  kubecost_url: https://kubecost.ijuned.com/overview.html
 
 ## @section ENBUILD Backend Services parameters
 ## @param enbuildBk.image.repository  Container repository for enbuildBk

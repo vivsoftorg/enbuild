@@ -29,7 +29,7 @@ spec:
             name: {{ .Release.Name }}-mongo-secrets
         - secretRef:
             name: {{ .Release.Name }}-backend-secret
-        image: {{ .Values.enbuildBk.image.repository }}:{{ .Values.enbuildBk.image.tag | default .Chart.AppVersion }}
+        image: {{ .Values.enbuildBk.image.repository }}:{{ default .Chart.AppVersion (default .Values.global.AppVersion .Values.enbuildBk.image.tag) }}
         imagePullPolicy: {{ .Values.enbuildBk.image.pullPolicy }}
         livenessProbe:
           failureThreshold: 3
