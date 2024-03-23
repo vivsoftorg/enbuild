@@ -1,0 +1,137 @@
+---
+title: "Deploying ENBUILD (with Istio and Keycloak)"
+description: "Steps to deploy ENBUILD"
+summary: ""
+date: 2023-09-07T16:04:48+02:00
+lastmod: 2023-09-07T16:04:48+02:00
+draft: false
+menu:
+  docs:
+    parent: ""
+    identifier: "deployEnbuildIstioKeycloak"
+weight: 810
+toc: true
+seo:
+  title: "" # custom title (optional)
+  description: "" # custom description (recommended)
+  canonical: "" # custom canonical URL (optional)
+  noindex: false # false (default) or true
+---
+
+Follow these step-by-step instructions to deploy ENBUILD on a Kubernetes cluster using Istio as the Ingress Gateway and Keycloak for Identity and Access Management (IDAM).
+
+**Prerequisites:**
+
+- Existing Kubernetes Cluster – Ensure that you have access to a Kubernetes cluster and obtain the KubeConfig file. You will need the necessary permissions to deploy resources to the cluster.
+- ENBUILD Helm Chart – You will need access to the ENBUILD Helm Chart. You can either download it locally or use the VivSoft hosted version on GitLab.com. Ensure that you have the Helm CLI installed on your machine.
+- ENBUILD Container Images – Access to the ENBUILD container images are required for this deployment. These images will need to be staged in an existing container registry or accessed from the VivSoft managed container reigistry on Registry.GitLab.com. Make sure that you have the necessary credentials to pull these images.
+- Istioctl Binary – **Write something here.**
+
+**Deployment Steps:**
+
+1. **Deploy Istio to the Kubernetes Cluster**\
+    Generate the Istio Manifest and apply it. Creating the Istio Manifest will help manage Istio using a GitOps approach.
+
+   ```bash
+   istioctl manifest generate > istio-generated-manifest.yaml
+   kubectl create ns istio-systemkubectl apply -f istio-generated-manifest.yaml;
+   kubectl apply -f istio-generated-manifest.yaml
+   ```
+
+2. **Create the Istio Public Gateway**\
+    To access the ENBUILD application from outside of the Kubernetes cluster, we need to create the Istio Ingress Gateway. We will name this Ingress Gateway “public-gateway”.
+
+   We will configure this Ingress Gateway to redirect all http (port 80) traffic to https (port 443) traffic. In this example, we will generate and use a Self-Signed SSL Certificate. (This certificate can be swapped out with legitimate certificate issued by you or your organization.)
+
+   ```bash
+   cat <<EOF > self-sign-cert.yamlapiVersion: cert-manager.io/v1kind: Certificatemetadata: name: self-sign-cert namespace: istio-systemspec: secretName: self-sign-cert commonName: ijuned.com dnsNames: - ijuned.com - "\*.ijuned.com" issuerRef: name: self-signing-issuer kind: ClusterIssuerEOF
+   kubectl apply -f self-sign-cert.yaml
+   ```
+
+   Now we can reference this certificate which the Istio Ingress Gateway will utilize for https traffic.
+
+   ```bash
+   cat <<EOF > public-gateway.yamlapiVersion: networking.istio.io/v1beta1kind: Gatewaymetadata: name: public-gateway namespace: istio-systemspec: selector: istio: ingressgateway # use istio default controller servers: - hosts: - '_' port: name: http number: 80 protocol: HTTP tls: httpsRedirect: true - hosts: - '_' port: name: https number: 443 protocol: HTTPS tls: credentialName: self-sign-cert mode: SIMPLEEOF
+   ```
+
+3. **Deploy Keycloak to the Kubernetes Cluster**\
+    For simplicity, you can use the Keycloak Bitnami Helm Chart to deploy Keycloak.
+
+   ```bash
+   helm repo add bitnami https://charts.bitnami.com/bitnami
+   helm template keycloak bitnami/keycloak --namespace keycloak --create-namespace --version 9.4.0 --set service.type=ClusterIP > keycloak.yaml
+   kubectl create ns keycloakkubectl apply -f keycloak.yaml
+   # get the admin password kubectl get secret -n keycloak keycloak -o jsonpath='{.data.admin-password}' | base64 --decode
+   # The admin username is user
+   ```
+
+   Now let's create an Istio Virtual Service, so Keycloak can be accessed from outside of the Kubernetes cluster. Make sure you update the “hosts” value with the valid FQDN that you will be accessing Keycloak from. Also, note the FQDN, it will be required as input to the ENBUILD Helmchart Helm values.
+
+   ```bash
+   cat <<EOF > keycloak-vs.yamlapiVersion: networking.istio.io/v1alpha3kind: VirtualServicemetadata: name: keycloak namespace: keycloakspec: hosts: - "keycloak.ijuned.com" gateways: - istio-system/public-gateway http: - match: - uri: prefix: / route: - destination: host: keycloak port: number: 80EOF
+   ```
+
+4. **Create a DNS record for Keycloak**\
+    After the Istio Virtual Service is created for Keycloak, you will need to create a DNS record for this service in your DNS provider.
+
+   The IP address of the DNS will be the EXTERNAL-IP of the istio-ingressgateway service, you can find that using the command below.
+
+   ```bash
+   kubectl get svc -n istio-system istio-ingressgateway -o jsonpath='{.status.loadBalancer.ingress[*].ip}'
+   ```
+
+   Create a DNS type A record using the IP address from the command above.
+
+5. **Configure Keycloak**
+   After the DNS record is created, you access the Keycloak deployment in the browser by using the FQDN configured in the previous step.
+
+   The Admin user name is “user” and the password can be retrieved by using the command below:
+
+   ```bash
+   kubectl get secret -n keycloak keycloak -o jsonpath='{.data.admin-password}' | base64 --decode
+   ```
+
+   - **Create the enbuild Realm**\
+     Create a Realm with the name enbuild
+     {{< picture src="images/deployingEnbuildWithIstioKeycloakPage/add-realm.png" alt="Screenshot of Keycloak" >}}
+
+   - **Switch from Master to enbuild Realm**
+
+   - **Add the enbuild-ui client**
+     {{< picture src="images/deployingEnbuildWithIstioKeycloakPage/add-client.png" alt="Screenshot of Keycloak" >}}
+
+   - **Configure the enbuild-ui client and set the Valid Redirect URIs**
+     {{< picture src="images/deployingEnbuildWithIstioKeycloakPage/configure-client.png" alt="Screenshot of Keycloak" >}}
+
+   - **Add the app-user and other roles**
+     {{< picture src="images/deployingEnbuildWithIstioKeycloakPage/add-role.png" alt="Screenshot of Keycloak" >}}
+
+   - **All roles added as below**
+     {{< picture src="images/deployingEnbuildWithIstioKeycloakPage/keycloak-groups.png" alt="Screenshot of Keycloak" >}}
+
+   - **Add the first user and set their role to app-user**
+     {{< picture src="images/deployingEnbuildWithIstioKeycloakPage/assign-role-to-user.png" alt="Screenshot of Keycloak" >}}
+
+6. **Add ENBUILD Helm Chart**
+   The ENBUILD helm chart is available and hosted on GitLab.com. You will need to add the HELM repo locally to your workstation. You will need to provide your GitLab user name and GitLab API Access Token.
+
+   ```bash
+   export GITLAB_USERNAME=junaid18183
+   export GITLAB_PASSWORD=MY_GITLAB_TOKEN
+   helm repo add --username $GITLAB_USERNAME --password $GITLAB_PASSWORD vivsoft https://gitlab.com/api/v4/projects/30816323/packages/helm/stable
+   ```
+
+7. **Configure ENBUILD Helm Values**
+   Before deploying ENBUILD to the Kubernetes cluster, you will need to create a custom values.yaml file so that we can specify configurations unique to this deployment.\
+   **Example Values File:** https://gitlab.com/enbuild-staging/enbuild-helm-chart/-/blob/main/values.
+
+   **Add link // reference to Helm Values documentation**
+
+   The important configurations are:
+
+   - imageCredentials - these are the container registry credentials, to pull the enbuild images from the gitlab registry. Your personal gitlab credentials will have to have sufficient permissions to pull the images.
+   - enbuildUi.host - is set to a proper FQDN on which you want to access ENBUILD. (Since we are doing local development any FQDN will work, as we are not going to create the DNS records but will create a host entry.)
+   - Also make sure you provide the gitlab/github token and right image pull credentials
+   - Also set the enbuildUi.istio.enabled to true and provide the name of the istio gateway name in the gateway field.
+   - You can also add the specific image tags to pull the manifest repo and IAC template from them.
+   - enbuildUi.navigation_flag to enable what
