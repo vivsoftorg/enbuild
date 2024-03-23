@@ -9,9 +9,9 @@ repos:
       # default args are [--readme=chart/README.md, --values=chart/values.yaml]
       args: [--readme=README.md, --values=charts/enbuild/values.yaml]
 
-    - id: helm-readme-generator
-      # in order to run helm-readme-generator only once
-      pass_filenames: false
-      always_run: true
-      # default args are [--readme=chart/README.md, --values=chart/values.yaml]
-      args: [--readme=docs/content/docs/getting-started/enbuildHelmValues.md, --values=charts/enbuild/values.yaml]
+    # - id: helm-readme-generator
+    #   # in order to run helm-readme-generator only once
+    #   pass_filenames: false
+    #   always_run: true
+    #   # default args are [--readme=chart/README.md, --values=chart/values.yaml]
+    #   args: [--readme=docs/content/docs/getting-started/enbuildHelmValues.md, --values=charts/enbuild/values.yaml]
