@@ -7,4 +7,3 @@ target/
 release.sh
 charts/enbuild/charts/*
 **/node_modules/*
-docs/*
