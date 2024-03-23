@@ -58,7 +58,7 @@ Before deploying ENBUILD to the Kubernetes cluster, you will need to create a cu
 
 For local deployment however we require minimum deployment values.
 
-:exclamation: **Note:** For more information about the complete set of ENBUILD Helm values click [here](../getting-started/enbuildHelmValues.md)!
+:exclamation: **Note:** For more information about the complete set of ENBUILD Helm values click [here](/docs/getting-started/helm-values/)!
 
 ```yaml
 global:
