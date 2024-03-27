@@ -22,19 +22,19 @@ Follow these step-by-step instructions to deploy ENBUILD locally for testing.
 
 ## Prerequisites
 
-- ### Existing Kubernetes Cluster
+### Existing Kubernetes Cluster
 
 Ensure that you have access to a Kubernetes cluster and obtain the KubeConfig file.
 
 You can use [rancher-desktop](https://docs.rancherdesktop.io/getting-started/installation/) or [k3d](https://k3d.io/v5.6.0/) to spin up a local Kubernetes cluster.
 
-- ### ENBUILD Container Images
+### ENBUILD Container Images
 
 Access to the ENBUILD container images are required for this deployment.
 These images are published to the VivSoft managed container reigistry on `registry.gitLab.com`.
 Make sure that you have the necessary credentials to pull these images.
 
-- ### Helm CLI
+### Helm CLI
 
 The [Helm](https://helm.sh/) streamlines and automates Kubernetes deployments by managing charts, enabling users to easily package, version, and deploy complex applications.
 

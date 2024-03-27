@@ -1,5 +1,5 @@
 ---
-title: "What is ENBUILD?"
+title: "Why ENBUILD"
 description: "Key details about ENBUILD."
 summary: ""
 date: 2023-09-07T16:04:48+02:00
@@ -8,7 +8,7 @@ draft: false
 menu:
   docs:
     parent: "docs"
-    identifier: "whatIsEnbuild"
+    identifier: "whyEnbuild"
 weight: 2
 toc: true
 seo:

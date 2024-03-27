@@ -7,3 +7,7 @@ yarn-error.log
 node_modules
 public
 resources
+.bash_history
+.npm/
+core
+
