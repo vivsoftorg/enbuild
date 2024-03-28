@@ -1,0 +1,9 @@
+imageCredentials:
+  registry: registry.gitlab.com
+  username: registry_user_name
+  password: registry_password
+global:
+  domain: ijuned.com         # Set the proper doamin.
+  istio:
+    enabled: true
+    gateway: istio-system/main # set to the proper istio gateway. This istio gateway must have above domain added as `hosts` 
