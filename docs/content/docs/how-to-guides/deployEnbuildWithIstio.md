@@ -8,7 +8,7 @@ draft: false
 menu:
   docs:
     parent: ""
-    identifier: "deployEnbuildQuickstart"
+    identifier: "deployEnbuildWithIstio"
 weight: 800
 toc: true
 seo:
@@ -42,7 +42,7 @@ The [Helm](https://helm.sh/) streamlines and automates Kubernetes deployments by
 
 Istio is a service mesh that enhances connectivity, security, traffic management, and observability for microservices.
 
-You can follow the [steps](google.com) to install Istio on your cluster using the P1 Chart and Images
+You can follow the [docs](../how-to-guides/installing-istio/) to install Istio on your cluster using the P1 Chart and Images
 
 
 ## Deployment Steps:
