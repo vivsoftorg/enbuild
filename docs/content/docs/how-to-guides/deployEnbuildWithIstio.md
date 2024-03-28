@@ -7,9 +7,9 @@ lastmod: 2024-03-28T16:04:48+02:00
 draft: false
 menu:
   docs:
-    parent: ""
+    parent: "docs/how-to-guides/installing-istio/"
     identifier: "deployEnbuildWithIstio"
-weight: 800
+weight: 803
 toc: true
 seo:
   title: "" # custom title (optional)
