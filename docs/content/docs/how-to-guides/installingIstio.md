@@ -164,7 +164,6 @@ You can create them manaully if you have the `tls.key` and `tls.cert` of your pr
 
 Otherwise you can use [Certmanager](#optional---install-certmanager)
 
-
 To install the istio controlplane Helm chart.
 
 The domain input that you provide, will be used to create a `host` entry in the istio `Gateway` named `main`
