@@ -23,7 +23,7 @@ global:
       cert-manager.io/cluster-issuer: "letsencrypt-prod"
   istio:
     enabled: false
-    gateway: istio-system/public-gateway
+    gateway: istio-system/main
 
 ## @section Container Registry Parameters
 ## @param imageCredentials [nullable,object] Should we use a private container registry? if yes provide the following parameters
