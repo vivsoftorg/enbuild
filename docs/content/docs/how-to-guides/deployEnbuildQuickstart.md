@@ -1,13 +1,11 @@
 ---
 title: "Deploying ENBUILD for Local Testing"
 description: "Steps to deploy ENBUILD on local machine"
-summary: ""
-date: 2023-09-07T16:04:48+02:00
-lastmod: 2023-09-07T16:04:48+02:00
+summary: "Steps to deploy ENBUILD on local machine for quick testing"
 draft: false
 menu:
   docs:
-    parent: ""
+    parent: "docs/how-to-guides/"
     identifier: "deployEnbuildQuickstart"
 weight: 800
 toc: true
