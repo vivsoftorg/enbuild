@@ -5,9 +5,9 @@ summary: "Adding new Catalog Item in ENBUILD"
 draft: false
 menu:
   docs:
-    parent: ""
+    parent: "docs/how-to-guides/deploying-enbuild-for-local-testing/"
     identifier: "newCatalog"
-weight: 807
+weight: 207
 toc: true
 seo:
   title: "" # custom title (optional)

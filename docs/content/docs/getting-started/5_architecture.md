@@ -1,5 +1,5 @@
 ---
-title: "Architecture"
+title: "ENBUILD Architecture"
 description: "Architecture Diagram of ENBUILD"
 summary: ""
 date: 2023-09-07T16:04:48+02:00
@@ -9,7 +9,7 @@ menu:
   docs:
     parent: ""
     identifier: "architecture"
-weight: 5
+weight: 105
 toc: true
 seo:
   title: "" # custom title (optional)

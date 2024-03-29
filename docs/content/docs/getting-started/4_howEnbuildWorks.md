@@ -9,7 +9,7 @@ menu:
   docs:
     parent: "docs"
     identifier: "howEnbuildWorks"
-weight: 4
+weight: 104
 toc: true
 seo:
   title: "" # custom title (optional)

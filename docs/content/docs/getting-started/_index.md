@@ -8,12 +8,12 @@ draft: false
 menu:
   docs:
     parent: ""
-    identifier: "getting-started-4e0d0e0f89f7decc11eaad4ae9193018"
-weight: 2
+    identifier: "getting-started"
+weight: 1
 toc: true
 seo:
   title: "" # custom title (optional)
   description: "" # custom description (recommended)
-  canonical: "" # custom canonical URL (optional)
+  canonical: "/docs/getting-started/" # custom canonical URL (optional)
   noindex: false # false (default) or true
 ---

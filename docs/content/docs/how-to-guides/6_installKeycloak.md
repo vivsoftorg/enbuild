@@ -5,9 +5,9 @@ summary: "Install and Configure Keycloak for ENBUILD SSO"
 draft: false
 menu:
   docs:
-    parent: ""
+    parent: "docs/how-to-guides/"
     identifier: "installKeycloak"
-weight: 807
+weight: 206
 toc: true
 seo:
   title: "" # custom title (optional)

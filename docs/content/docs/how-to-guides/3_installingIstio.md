@@ -5,9 +5,9 @@ summary: "Steps to Install Istio"
 draft: false
 menu:
   docs:
-    parent: ""
+    parent: "docs/how-to-guides/"
     identifier: "installIstio"
-weight: 802
+weight: 203
 toc: true
 seo:
   title: "" # custom title (optional)

@@ -9,7 +9,7 @@ menu:
   docs:
     parent: "docs"
     identifier: "introduction"
-weight: 1
+weight: 100
 toc: true
 seo:
   title: "" # custom title (optional)

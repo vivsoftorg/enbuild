@@ -2,14 +2,12 @@
 title: "Frequently Asked Questions"
 description: "Frequently Asked Questions"
 summary: ""
-date: 2023-09-07T16:13:18+02:00
-lastmod: 2023-09-07T16:13:18+02:00
 draft: false
 menu:
   docs:
     parent: "/faq/"
     identifier: "faq"
-weight: 910
+weight: 401
 toc: true
 seo:
   title: "" # custom title (optional)

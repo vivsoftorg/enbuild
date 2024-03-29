@@ -6,8 +6,8 @@ draft: false
 menu:
   docs:
     parent: "/faq/"
-    identifier: "faq"
-weight: 910
+    identifier: "glossary"
+weight: 402
 toc: true
 seo:
   title: "" # custom title (optional)

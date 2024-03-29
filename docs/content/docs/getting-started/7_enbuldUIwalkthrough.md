@@ -5,9 +5,9 @@ summary: ""
 draft: false
 menu:
   docs:
-    parent: "docs"
+    parent: "docs/getting-started/enbuild-architecture/"
     identifier: "enbuildUIWalkthrough"
-weight: 806
+weight: 107
 toc: true
 seo:
   title: "" # custom title (optional)

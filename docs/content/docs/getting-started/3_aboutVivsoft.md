@@ -7,7 +7,7 @@ menu:
   docs:
     parent: "docs"
     identifier: "aboutVivsoft"
-weight: 3
+weight: 103
 toc: true
 seo:
   title: "" # custom title (optional)

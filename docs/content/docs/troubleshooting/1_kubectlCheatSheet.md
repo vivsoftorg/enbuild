@@ -7,7 +7,7 @@ menu:
   docs:
     parent: "/troubelshooting/"
     identifier: "kubectl"
-weight: 901
+weight: 301
 toc: true
 seo:
   title: "" # custom title (optional)

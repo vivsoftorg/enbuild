@@ -1,13 +1,14 @@
 ---
-title: "Deploying ENBUILD exposing the service using Istio"
-description: "Steps to deploy ENBUILD on top of Istio"
-summary: ""
+title: "Deploying ENBUILD for Local Testing"
+description: "Steps to deploy ENBUILD on local machine"
+summary: "Steps to deploy ENBUILD on local machine for quick testing"
 draft: false
 menu:
   docs:
-    parent: "docs/how-to-guides/installing-istio/"
-    identifier: "deployEnbuildWithIstio"
-weight: 803
+    parent: "docs/how-to-guides/"
+    identifier: "deployEnbuildQuickstart"
+weight: 201
+toc: true
 seo:
   title: "" # custom title (optional)
   description: "" # custom description (recommended)
@@ -35,13 +36,6 @@ Make sure that you have the necessary credentials to pull these images.
 
 The [Helm](https://helm.sh/) streamlines and automates Kubernetes deployments by managing charts, enabling users to easily package, version, and deploy complex applications.
 
-### Istio is deployed on your cluster
-
-Istio is a service mesh that enhances connectivity, security, traffic management, and observability for microservices.
-
-You can follow the [docs](../how-to-guides/installing-istio/) to install Istio on your cluster using the P1 Chart and Images
-
-
 ## Deployment Steps:
 
 Following are the steps you will need to take to deploy ENBUILD to your Kubernetes cluster.
@@ -65,15 +59,11 @@ For local deployment however we require minimum deployment values.
 :exclamation: **Note:** For more information about the complete set of ENBUILD Helm values click [here](/docs/getting-started/helm-values/)!
 
 ```yaml
+global:
 imageCredentials:
   registry: registry.gitlab.com
-  username: registry_user_name
-  password: registry_password
-global:
-  domain: ijuned.com         # Set the proper doamin.
-  istio:
-    enabled: true
-    gateway: istio-system/main # set to the proper istio gateway. This istio gateway must have above domain added as `hosts` 
+  username: MY_GITLAB_USERNAME
+  password: MY_GITLAB_TOKEN
 ```
 
 :zap: **Note:** The `imageCredentials` section is only required until the images are available publically.
@@ -139,34 +129,25 @@ enbuild-rabbitmq            ClusterIP   10.43.54.197    <none>        5672/TCP,4
 
 ### Access ENBUILD
 
-Once the ENBUILD is installed, there will be two virtul services created. 
-You can create a DNS record/host entry on your local machine pointing to these `virtul services` to the istio gateway loadbalancer/ip that you have used to install istio.
-`global.istio.gateway`  
+Use the port forwarding command to access the ENBUILD UI using your web browser.
 
 ```bash
-kubectl get vs -A
+kubectl --namespace enbuild port-forward svc/enbuild-enbuild-ui 3000:80
 
-NAMESPACE   NAME                 GATEWAYS                          HOSTS                     AGE
-enbuild     enbuild-enbuild-ui   ["istio-system/public-gateway"]   ["enbuild.ijuned.com"]    4s
-enbuild     enbuild-rabbitmq     ["istio-system/public-gateway"]   ["rabbitmq.ijuned.com"]   4s
+Forwarding from 127.0.0.1:3000 -> 8080
+Forwarding from [::1]:3000 -> 8080
 ```
 
-To find out the loadbalancer/ip of the istio gateway use the following command
-```bash
-kubectl get svc -n istio-system istio-ingressgateway
-NAMESPACE        NAME                                 TYPE           CLUSTER-IP      EXTERNAL-IP   PORT(S)                                      AGE
-istio-system     istio-ingressgateway                 LoadBalancer   10.43.60.241    <pending>     15021:32686/TCP,80:31687/TCP,443:30260/TCP   4m29s
+Navigate your web browser to **http://127.0.0.1:3000**. and set the admin password.
 
-```
+<picture><img src="/images/deployEnbuildQuickstart/initial-login.png" alt="Screenshot of ENBUILD Login Screen"></img></picture>
 
-After the DNS entry / host entry , you can access the ENBUILD using the virtual service e.g. 
+After you set the initial admin password, you should see the ENBUILD home page with BigBang Catalog.
 
-https://enbuild.ijuned.com
-
-:exclamation: **Note:** If you have used self signed certificate, the browser will complain for it.
+<picture><img src="/images/deployEnbuildQuickstart/enbuild_home_page_first_login.png" alt="Screenshot of ENBUILD Home Screen"></img></picture>
 
 
-
+:zap: ***[Proceed to Configureing ENBUILD](ocs/how-to-guides/configuring-enbuild/)***
 
 ### Uninstall ENBUILD
 

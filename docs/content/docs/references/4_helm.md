@@ -2,14 +2,12 @@
 title: "Helm"
 description: "Reference for Helm"
 summary: ""
-date: 2023-09-07T16:13:18+02:00
-lastmod: 2023-09-07T16:13:18+02:00
 draft: false
 menu:
   docs:
     parent: "/reference/"
     identifier: "helm"
-weight: 910
+weight: 504
 toc: true
 seo:
   title: "" # custom title (optional)

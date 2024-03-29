@@ -7,7 +7,7 @@ menu:
   docs:
     parent: "docs/how-to-guides/deploying-enbuild-for-local-testing/"
     identifier: "configureEnbuild"
-weight: 801
+weight: 202
 toc: true
 seo:
   title: "" # custom title (optional)

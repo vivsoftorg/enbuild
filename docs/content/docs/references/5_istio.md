@@ -2,14 +2,12 @@
 title: "Istio"
 description: "Reference for Istio"
 summary: ""
-date: 2023-09-07T16:13:18+02:00
-lastmod: 2023-09-07T16:13:18+02:00
 draft: false
 menu:
   docs:
     parent: "/reference/"
     identifier: "istio"
-weight: 910
+weight: 505
 toc: true
 seo:
   title: "" # custom title (optional)
