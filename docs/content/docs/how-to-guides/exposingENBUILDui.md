@@ -15,21 +15,32 @@ seo:
   canonical: "" # custom canonical URL (optional)
   noindex: false # false (default) or true
 ---
+# Introduction:
+In production Kubernetes environments, exposing the ENBUILD UI service requires careful consideration to ensure accessibility and security. While the [Quick install of ENBUILD](docs/how-to-guides/deploying-enbuild-for-local-testing/) facilitates local testing through port forwarding, deploying in a production scenario demands a more robust approach. This document outlines various options available for exposing the ENBUILD UI service outside the Kubernetes cluster.
 
-The [Quick install of ENBUILD](docs/how-to-guides/deploying-enbuild-for-local-testing/) is good for local testing. 
-Where you can access the ENBUILD UI using the port-forwarding of the ENBUILD UI service.
+## Option 1: Expose UI using Kubernetes Service Type LoadBalancer
 
-In production scenarios this is not feasible. There are following options available options to expose the UI service out of the kubernetes cluster.
+Setting the service type to LoadBalancer enables external access to the ENBUILD UI service.
+Simply configure the service type as LB to allow external traffic. 
+Refer to the [example helm input file](https://github.com/vivsoftorg/enbuild/blob/main/examples/enbuild/loadbalancer.yaml) for guidance.
 
-# Expose UI using kubernetes service type LoadBalancer
-Just set the service type to LB
-# Use the service type as NodePort
-Set the the service type as NodePort and access it using the node port
-# Use the ingress controller 
-For this you need to have the ingress controller installed and configure in your cluster. 
-And then expose the service using ingress
-# Expose using istio virtual service
-For this you need to have the istio installed and configured in your cluster. 
-Refer [instaling istio](docs/how-to-guides/installing-istio/) for steps to installing the istio. 
+## Option 2: Use Service Type NodePort
 
-For exposing the UI service using istio virtual service you need to set the `istio.enabled` to true and need to provide the [refer example input file](https://github.com/vivsoftorg/enbuild/blob/main/examples/enbuild/with_istio.yaml)
+Configuring the service type as NodePort provides accessibility by exposing a specific port on all nodes in the cluster.
+Access the ENBUILD UI using the designated node port.
+
+Refer to the [example helm input file](https://github.com/vivsoftorg/enbuild/blob/main/examples/enbuild/nodePort.yaml) for guidance.
+
+## Option 3: Use Ingress Controller
+
+Installation and configuration of an Ingress controller within the Kubernetes cluster are prerequisites for this option.
+Expose the ENBUILD UI service through Ingress configuration for enhanced routing and management of external traffic.
+Refer to the [example helm input file](https://github.com/vivsoftorg/enbuild/blob/main/examples/enbuild/with_ingress.yaml) for guidance.
+
+## Option 4: Expose Using Istio Virtual Service
+
+(Istio installation)[(docs/how-to-guides/installing-istio/)] and configuration are required for leveraging this option.
+Set the `istio.enabled` parameter to true and provide the necessary configurations, such as the Istio Virtual Service, to expose the ENBUILD UI service.
+Refer to the [example helm input file](https://github.com/vivsoftorg/enbuild/blob/main/examples/enbuild/with_istio.yaml) for guidance.
+
+Refer the [detailed guide of installing the ENBUILD on top of istio](docs/how-to-guides/deploying-enbuild-exposing-the-service-using-istio/)

@@ -146,6 +146,8 @@ After you set the initial admin password, you should see the ENBUILD home page w
 
 <picture><img src="/images/deployEnbuildQuickstart/enbuild_home_page_first_login.png" alt="Screenshot of ENBUILD Home Screen"></img></picture>
 
+***[Proceed to Configureing ENBUILD](ocs/how-to-guides/configuring-enbuild/)***
+
 ### Uninstall ENBUILD
 
 Use the following command to uninstall ENBUILD from your Kubernetes cluster.

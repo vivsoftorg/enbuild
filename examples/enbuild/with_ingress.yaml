@@ -1,0 +1,13 @@
+imageCredentials:
+  registry: registry.gitlab.com
+  username: registry_user_name
+  password: registry_password
+global:
+  domain: ijuned.com         # Set the proper doamin.
+  ingress:
+    enabled: true
+    tls: false
+    tls_secret: vivplatform-cert
+    classname:
+    annotations:
+      cert-manager.io/cluster-issuer: "letsencrypt-prod"

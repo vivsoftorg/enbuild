@@ -2,15 +2,12 @@
 title: "Deploying ENBUILD exposing the service using Istio"
 description: "Steps to deploy ENBUILD on top of Istio"
 summary: ""
-date: 2024-03-28T16:04:48+02:00
-lastmod: 2024-03-28T16:04:48+02:00
 draft: false
 menu:
   docs:
     parent: "docs/how-to-guides/installing-istio/"
     identifier: "deployEnbuildWithIstio"
 weight: 803
-toc: true
 seo:
   title: "" # custom title (optional)
   description: "" # custom description (recommended)

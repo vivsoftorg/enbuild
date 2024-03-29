@@ -1,0 +1,6 @@
+imageCredentials:
+  registry: registry.gitlab.com
+  username: registry_user_name
+  password: registry_password
+enbuildUi:
+  service_type: LoadBalancer
