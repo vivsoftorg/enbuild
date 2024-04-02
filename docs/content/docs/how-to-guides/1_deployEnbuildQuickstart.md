@@ -148,7 +148,7 @@ After you set the initial admin password, you should see the ENBUILD home page w
 <picture><img src="/images/deployEnbuildQuickstart/enbuild_home_page_first_login.png" alt="Screenshot of ENBUILD Home Screen"></img></picture>
 
 
-:zap: ***[Proceed to Configureing ENBUILD](ocs/how-to-guides/configuring-enbuild/)***
+:zap: ***[Proceed to Configureing ENBUILD](https://enbuild-docs.vivplatform.io/docs/how-to-guides/configuring-enbuild/)***
 
 ### Uninstall ENBUILD
 
