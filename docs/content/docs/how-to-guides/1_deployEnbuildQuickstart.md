@@ -58,8 +58,9 @@ For local deployment however we require minimum deployment values.
 
 :exclamation: **Note:** For more information about the complete set of ENBUILD Helm values click [here](/docs/getting-started/helm-values/)!
 
+Refer to the [example helm input file](https://github.com/vivsoftorg/enbuild/blob/main/examples/enbuild/quick_install.yaml) for guidance.
+
 ```yaml
-global:
 imageCredentials:
   registry: registry.gitlab.com
   username: MY_GITLAB_USERNAME
