@@ -42,5 +42,3 @@ Refer to the [example helm input file](https://github.com/vivsoftorg/enbuild/blo
 (Istio installation)[(docs/how-to-guides/installing-istio/)] and configuration are required for leveraging this option.
 Set the `istio.enabled` parameter to true and provide the necessary configurations, such as the Istio Virtual Service, to expose the ENBUILD UI service.
 Refer to the [example helm input file](https://github.com/vivsoftorg/enbuild/blob/main/examples/enbuild/with_istio.yaml) for guidance.
-
-Refer the [detailed guide of installing the ENBUILD on top of istio](docs/how-to-guides/deploying-enbuild-exposing-the-service-using-istio/)

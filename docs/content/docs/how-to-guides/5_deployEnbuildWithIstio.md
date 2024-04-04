@@ -2,7 +2,7 @@
 title: "Deploying ENBUILD exposing the service using Istio"
 description: "Steps to deploy ENBUILD on top of Istio"
 summary: ""
-draft: false
+draft: true
 menu:
   docs:
     parent: "docs/how-to-guides/installing-istio/"
