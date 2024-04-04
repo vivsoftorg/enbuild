@@ -24,7 +24,7 @@ Follow these step-by-step instructions to deploy ENBUILD locally for testing.
 
 Ensure that you have access to a Kubernetes cluster and obtain the KubeConfig file.
 
-You can use [rancher-desktop](https://docs.rancherdesktop.io/getting-started/installation/) or [k3d](../references/k3d/) to spin up a local Kubernetes cluster.
+You can use [rancher-desktop](https://docs.rancherdesktop.io/getting-started/installation/) or [k3d](../../references/k3d/) to spin up a local Kubernetes cluster.
 
 ### ENBUILD Container Images
 
@@ -148,7 +148,7 @@ After you set the initial admin password, you should see the ENBUILD home page w
 <picture><img src="/images/deployEnbuildQuickstart/enbuild_home_page_first_login.png" alt="Screenshot of ENBUILD Home Screen"></img></picture>
 
 
-:zap: ***[Proceed to Configureing ENBUILD](https://enbuild-docs.vivplatform.io/docs/how-to-guides/configuring-enbuild/)***
+:zap: ***[Proceed to Configureing ENBUILD](../configuring-enbuild/)***
 
 ### Uninstall ENBUILD
 

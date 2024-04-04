@@ -18,60 +18,60 @@ seo:
 
 This cheat sheet provides commonly used `kubectl` commands for managing Kubernetes clusters.
 
-***Basic Commands***
+# Basic Commands
 
-***List all pods***
+## List all pods
 
 ```bash
 kubectl get pods
 ```
 
-***List all pods in a specific namespace***
+## List all pods in a specific namespace
 ```bash
 kubectl get pods -n <namespace>
 ```
 
-***List all nodes***
+## List all nodes
 ```bash
 kubectl get nodes
 ```
 
-***List all services***
+## List all services
 ```bash
 kubectl get services
 ```
 
-# How to check logs of the pods
+## How to check logs of the pods
 
 ```bash
 kubectl logs <pod-name>
 ```
 
-# How to check logs of the pods in a specific namespace
+## How to check logs of the pods in a specific namespace
 
 ```bash
 kubectl logs <pod-name> -n <namespace>
 ```
 
-# How to check logs of the pods in a specific container
+## How to check logs of the pods in a specific container
 
 ```bash
 kubectl logs <pod-name> -c <container-name>
 ```
 
-# How to check logs of the pods in a specific container in a specific namespace
+## How to check logs of the pods in a specific container in a specific namespace
 
 ```bash
 kubectl logs <pod-name> -c <container-name> -n <namespace>
 ```
 
-# How to check logs of the pods in a specific container in a specific namespace with timestamps
+## How to check logs of the pods in a specific container in a specific namespace with timestamps
 
 ```bash
 kubectl logs <pod-name> -c <container-name> -n <namespace> --timestamps
 ```
 
-# How to check logs of the pods in a specific container in a specific namespace with timestamps and limit the output to 10 lines
+## How to check logs of the pods in a specific container in a specific namespace with timestamps and limit the output to 10 lines
 
 ```bash
 kubectl logs <pod-name> -c <container-name> -n <namespace> --timestamps --tail 10

@@ -88,7 +88,7 @@ ENBUILD Catalog Items are tailored to support a diverse range of use cases and t
 
 By leveraging ENBUILD Catalog Items, developers gain access to a curated library of templates and configurations that serve as starting points for their projects. These Catalog Items not only accelerate the development and deployment process but also promote consistency, reliability, and best practices across projects within the ENBUILD ecosystem.
 
-> **Q: What is an ENBUILD Version Control System (VCS)?**
+> **Q: What is an Version Control System (VCS)?**
 
 **A:** A Version Control System (VCS) is a fundamental tool used in software development to manage and track changes to source code, configuration files, and other project assets over time. It allows multiple developers to collaborate on a project concurrently while maintaining a history of all modifications made to the project files.
 
