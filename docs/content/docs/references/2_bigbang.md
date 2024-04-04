@@ -16,7 +16,7 @@ seo:
   noindex: false # false (default) or true
 ---
 
-<picture><img src="/images/bigbang/emma-grogu.png" alt="Screenshot of Platform One" width="50%" height="50%"></img></picture>
+<picture><img src="/images/emma/emma-grogu.png" alt="Screenshot of Platform One" width="50%" height="50%"></img></picture>
 <br />
 <br />
 Big Bang is a declarative, continuous delivery tool for deploying DoD hardened and approved packages into a Kubernetes cluster.

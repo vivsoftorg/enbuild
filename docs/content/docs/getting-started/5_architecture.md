@@ -20,7 +20,7 @@ seo:
 
 ## Architecture Digram
 
-<picture><img src="/images/architecture.svg" alt="Screenshot of ENBUILD Login Screen"></img></picture>
+<picture><img src="/images/getting-started/architecture.svg" alt="Screenshot of ENBUILD Login Screen"></img></picture>
 
 ### Frontend Service
 

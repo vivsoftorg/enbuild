@@ -24,7 +24,7 @@ ENBUILD operates as a bridge between developers and the Continuous Integration/C
 
 When working with GitHub, ENBUILD seamlessly communicates with the CI/CD provider through REST and GraphQL APIs. It starts by creating a Repository Project, essentially a structured workspace, using a template repository project. The user interacts with ENBUILD through an intuitive user interface (UI), providing inputs that guide the customization of files. These files are then updated based on the user's preferences. Once the configuration is complete, ENBUILD executes the predefined workflow or pipeline, automating the deployment process without the need for intricate manual steps.
 
-<picture><img src="/images/howEnbuildWorksPage/gitHubTemplateConfig.png" alt="Screenshot of GitHub Repo Configuration for Template Repository"></img></picture>
+<picture><img src="/images/getting-started/gitHubTemplateConfig.png" alt="Screenshot of GitHub Repo Configuration for Template Repository"></img></picture>
 
 ### GitLab Integration
 

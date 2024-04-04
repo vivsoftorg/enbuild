@@ -17,7 +17,7 @@ This guide outlines the steps required to create a new catalog template reposito
 
 ## Prerequisites
 
-- You must have a [GitHub](https://github.com/) [Gitlab](https://gitlab.com/) account and have access to the orgnizations you are part of.
+- You must have a [GitHub](https://github.com/) and or [Gitlab](https://gitlab.com/) account and have access to the orgnizations you are part of.
 - Familiarity with [Git](https://git-scm.com/doc) and [Github Actions](https://docs.github.com/en/actions) is recommended but not required.
 
 ## Steps
@@ -60,5 +60,5 @@ If its a Gitlab repo:
 
 ## Next Steps
 
-- [Creating a new catalog entry in ENBUILD](https://enbuild-docs.vivplatform.io/docs/how-to-guides/adding-new-catalog-item-in-enbuild/)
+- [Creating a new catalog entry in ENBUILD](../adding-new-catalog-item-in-enbuild/)
 

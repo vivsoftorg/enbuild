@@ -52,6 +52,23 @@ These are the Version Control System where ENBUILD creates repositories when you
 
 <picture><img src="/images/deployEnbuildQuickstart/setup_github_repositroy.png" alt="Screenshot of ENBUILD Github VCS Configuration Screen"></img></picture>
 
+
+## Catalog level Permissions
+
+There are four built-in roles available in ENBUILD:
+1. admin
+2. appdev
+3. dataops
+4. devops
+
+You can check the roles by going to Admin --> Roles 
+
+<picture><img src="/images/deployEnbuildQuickstart/roles.png" alt="Screenshot of ENBUILD Roles"></img></picture>
+
+And you can provide the permissions to each catalog as per your requirement for each catalog and roles.
+
+<picture><img src="/images/how-to-guides/catalogPermissions.png" alt="Catalog Permissions"></img></picture>
+
 ## Configure SSO
 
 By default ENBUILD uses Local authentication, but you can choose to use either of 

@@ -24,7 +24,7 @@ Follow these step-by-step instructions to deploy ENBUILD locally for testing.
 
 Ensure that you have access to a Kubernetes cluster and obtain the KubeConfig file.
 
-You can use [rancher-desktop](https://docs.rancherdesktop.io/getting-started/installation/) or [k3d](https://k3d.io/v5.6.0/) to spin up a local Kubernetes cluster.
+You can use [rancher-desktop](https://docs.rancherdesktop.io/getting-started/installation/) or [k3d](../references/k3d/) to spin up a local Kubernetes cluster.
 
 ### ENBUILD Container Images
 

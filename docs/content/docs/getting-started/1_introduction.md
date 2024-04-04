@@ -22,7 +22,7 @@ seo:
 
 ENBUILD is a cutting-edge software development and engineering tool designed to simplify the complexities of modern-day DevSecOps, containerization and cloud tooling. At its core, ENBUILD offers a self-service catalog featuring pre-packaged templates known as ENBUILD Catalog Items. These templates encompass Terraform Infrastructure deployments on major cloud platforms (AWS, Azure, GCP) and Helm Deployments onto Kubernetes, providing developers with a robust foundation for both infrastructure and application deployment. With automated GitLab and GitHub workflows and pipelines, ENBUILD streamlines the deployment process, allowing developers to focus on value-added work.
 
-<picture><img src="/images/enbuild_page_build_stack.png" alt="Screenshot of ENBUILD Build Stacks page"></img></picture>
+<picture><img src="/images/getting-started/enbuild_page_build_stack.png" alt="Screenshot of ENBUILD Build Stacks page"></img></picture>
 
 This tool is specifically tailored for the United States Department of Defense and Government Organizations embarking on DevSecOps Transformation, Cloud Migration, or Platform Development journeys. ENBUILD serves as a strategic accelerator for the adoption of the United States Air Force's Platform One Big Bang Tech Stack, enabling rapid and secure software development and deployment. With seamless integration into popular Continuous Integration / Continuous Deployment engines like GitLab and GitHub, ENBUILD ensures a unified development lifecycle. Moreover, its integration with identity and access management solutions, including Keycloak and Okta, ensures compliance with government regulations through robust Role-Based Access Control (RBAC).
 

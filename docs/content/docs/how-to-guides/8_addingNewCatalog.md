@@ -30,7 +30,7 @@ There are two ways of adding a new catalog item to ENBUILD:
 Login to ENBUILD as admin user.
 Navigate to **Manage Catalogs** tab and click on **Create Catalog**. You will be presented with the following form:
 
-![Add New Catalog](../../../static/images/how-to-guides/createCatalog.png)
+<picture><img src="/images/how-to-guides/createCatalog.png" alt="Add New Catalog"></img></picture>
 
 ## Choose your VCS:
 Choose the VCS of your catalog, either **Gitlab** or **Github**. In this example, we will use Gitlab.
@@ -50,7 +50,7 @@ Choose the VCS of your catalog, either **Gitlab** or **Github**. In this example
 
 ## Set up Component Details
 
-![Add New Component](../../../static/images/how-to-guides/createComponent.png)
+<picture><img src="/images/how-to-guides/createComponent.png" alt="Add New Component"></img></picture>
 
 1. Enter a **Name** for your component.
 2. Select a **Tool Type** for your component item. This is used to group components in a single group.
@@ -69,7 +69,15 @@ For now we support [AWS](https://docs.enbuild.io/en/latest/aws/) ,[Azure](https:
 You can select 1 or multiple providers for your catalog, but you must have at least one provider selected for the catalog to be valid. 
 And your catalog template should have provision to support all the selected providers. 
 
-![Setup Infrastrcture Details ](../../../static/images/how-to-guides/catalogInfraSetup.png)
+<picture><img src="/images/how-to-guides/catalogInfraSetup.png" alt="Setup Infrastrcture Details"></img></picture>
+
+## Adding the Permission for the catalogs to ENBUILD ROLES
+
+Once the Catalog is created , you need to add permissions to the catalog for a particuler role that can have access to this catalog.
+
+And you can provide the permissions to each catalog as per your requirement for each catalog and roles.
+
+<picture><img src="/images/how-to-guides/catalogPermissions.png" alt="Catalog Permissions"></img></picture>
 
 # Adding a New Catalog Item using exported JSON
 
@@ -79,5 +87,5 @@ The other way of creating the Catalog Item is providing the raw catalog json fil
 2. Navigate to **Manage Catalogs** tab and click on **Create Catalog**. and then 
 3. **Choose the VCS**  of your catalog, either **Gitlab** or **Github**. In this example, we will use Gitlab. 
 4. Click on **Upload Json** button to to proceed to import the catalog using JSON 
-![Import Catalog](../../../static/images/how-to-guides/catalogImport.png)
+<picture><img src="/images/how-to-guides/catalogImport.png" alt="Import Catalog"></img></picture>
 5. Here you can provide the raw json of any catalog exported from ENBUILD UI. OR upload a file from your local machine having the catalog json.

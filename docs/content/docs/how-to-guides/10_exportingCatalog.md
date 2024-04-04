@@ -22,5 +22,5 @@ And then use this json to import to another ENBUILD instance.
 
 1. Login to ENBUILD as admin user.
 2. Navigate to **Manage Catalogs** tab and you will see the list of all active catalogs in the ENBUILD instance.
-![CatalogList](../../../static/images/how-to-guides/exportCatalog.png)
+<picture><img src="/images/how-to-guides/exportCatalog.png" alt="CatalogList"></img></picture>
 3. Select the Catalog that you want to export and then at the **Actions** coloumn select the export icon.
