@@ -40,3 +40,39 @@ kubectl get nodes
 ```bash
 kubectl get services
 ```
+
+# How to check logs of the pods
+
+```bash
+kubectl logs <pod-name>
+```
+
+# How to check logs of the pods in a specific namespace
+
+```bash
+kubectl logs <pod-name> -n <namespace>
+```
+
+# How to check logs of the pods in a specific container
+
+```bash
+kubectl logs <pod-name> -c <container-name>
+```
+
+# How to check logs of the pods in a specific container in a specific namespace
+
+```bash
+kubectl logs <pod-name> -c <container-name> -n <namespace>
+```
+
+# How to check logs of the pods in a specific container in a specific namespace with timestamps
+
+```bash
+kubectl logs <pod-name> -c <container-name> -n <namespace> --timestamps
+```
+
+# How to check logs of the pods in a specific container in a specific namespace with timestamps and limit the output to 10 lines
+
+```bash
+kubectl logs <pod-name> -c <container-name> -n <namespace> --timestamps --tail 10
+```
