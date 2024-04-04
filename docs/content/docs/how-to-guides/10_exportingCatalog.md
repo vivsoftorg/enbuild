@@ -6,7 +6,7 @@ draft: false
 menu:
   docs:
     parent: "docs/how-to-guides/deploying-enbuild-for-local-testing/"
-    identifier: "newCatalog"
+    identifier: "exportCatalog"
 weight: 210
 toc: true
 seo:
