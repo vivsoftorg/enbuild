@@ -16,7 +16,7 @@ seo:
   noindex: false # false (default) or true
 ---
 # Introduction:
-In production Kubernetes environments, exposing the ENBUILD UI service requires careful consideration to ensure accessibility and security. While the [Quick install of ENBUILD](docs/how-to-guides/deploying-enbuild-for-local-testing/) facilitates local testing through port forwarding, deploying in a production scenario demands a more robust approach. This document outlines various options available for exposing the ENBUILD UI service outside the Kubernetes cluster.
+In production Kubernetes environments, exposing the ENBUILD UI service requires careful consideration to ensure accessibility and security. While the [Quick install of ENBUILD](../deploying-enbuild-for-local-testing/) facilitates local testing through port forwarding, deploying in a production scenario demands a more robust approach. This document outlines various options available for exposing the ENBUILD UI service outside the Kubernetes cluster.
 
 ## Option 1: Expose UI using Kubernetes Service Type LoadBalancer
 
