@@ -26,7 +26,7 @@ jobs:
         with:
           distribution: goreleaser
           version: latest
-          args: release --clean -p 1
+          args: release --snapshot --clean -p 1
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           # HOMEBREW_TAP_GITHUB_TOKEN: ${{ secrets.HOMEBREW_TAP_GITHUB_TOKEN }}

@@ -1,0 +1,49 @@
+project_name: enbuild
+before:
+  hooks:
+    - cd cli && go mod tidy
+    - cd cli && go mod download
+    - rm -rf binaries
+
+release:
+  prerelease: auto
+
+env:
+  - cosign_version=v2.2.3+carbide.1
+  - vpkg="0.0.1"
+
+builds:
+  - main: cli/main.go
+    goos:
+      - linux
+      - darwin
+      # - windows
+    goarch:
+      - amd64
+      - arm64
+    # ldflags:
+    #   - -s -w -X {{ .Env.vpkg }}.gitVersion={{ .Version }} -X {{ .Env.vpkg }}.gitCommit={{ .ShortCommit }} -X {{ .Env.vpkg }}.gitTreeState={{if .IsGitDirty}}dirty{{else}}clean{{end}} -X {{ .Env.vpkg }}.buildDate={{ .Date }}
+    hooks:
+      pre:
+        - mkdir -p cli/binaries
+        # - wget -P cmd/enbuild/binaries/ https://github.com/rancher-government-carbide/cosign/releases/download/{{ .Env.cosign_version }}/cosign-{{ .Os }}-{{ .Arch }}{{ if eq .Os "windows" }}.exe{{ end }}
+      post:
+        - rm -rf cli/binaries
+    env:
+      - CGO_ENABLED=0
+
+universal_binaries:
+  - replace: false
+
+changelog:
+  skip: false
+  use: git
+
+# brews:
+#   - name: enbuild
+#     tap:
+#       owner: vivsoft
+#       name: homebrew-tap
+#       token: "{{ .Env.HOMEBREW_TAP_GITHUB_TOKEN }}"
+#     folder: Formula
+#     description: "enbuild CLI"

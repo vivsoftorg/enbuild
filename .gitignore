@@ -7,3 +7,6 @@ target/
 release.sh
 charts/enbuild/charts/*
 **/node_modules/*
+dist/
+cli/binaries/*
+go.work
