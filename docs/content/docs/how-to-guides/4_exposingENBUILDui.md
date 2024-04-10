@@ -33,7 +33,7 @@ Refer to the [example helm input file](https://github.com/vivsoftorg/enbuild/blo
 
 ## Option 3: Use Ingress Controller
 
-Installation and configuration of an Ingress controller within the Kubernetes cluster are prerequisites for this option.
+Installation and configuration of an [Ingress controller](../ingr) within the Kubernetes cluster are prerequisites for this option.
 Expose the ENBUILD UI service through Ingress configuration for enhanced routing and management of external traffic.
 Refer to the [example helm input file](https://github.com/vivsoftorg/enbuild/blob/main/examples/enbuild/with_ingress.yaml) for guidance.
 

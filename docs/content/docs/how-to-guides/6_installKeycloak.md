@@ -194,10 +194,10 @@ these Groups are present in the realm we imported.
 
 These Groups mapped to the following roles in one to one relationship.
 - admin -- ENBUILD_ADMIN
-- appdev
-- dataops
-- devops
-- user 
+- appdev -- ENBUILD-APPDEV
+- dataops -- ENBUILD-DATAOPS
+- devops -- ENBUILD-DEVOPS 
+- user -- ENBUILD_USER 
 
 
 <picture><img src="/images/how-to-guides/keycloak/keycloak-roles.png" alt="keycloak-roles"></img></picture>
@@ -213,18 +213,18 @@ They can be assigned group membership  by clicking on the `Join Groups` button o
 
 Click on the `Add Member` button and select the group you want to add the user to, then click on the `Add` button.
 
-<picture><img src="/images/how-to-guides/keycloak/add_user_to_group_1.png" alt="add_user_to_group"></img></picture>
+<picture><img src="/images/how-to-guides/keycloak/add_user_to_group1.png" alt="add_user_to_group"></img></picture>
 
 
 # Exposing the KeyCloak service in Kubernetes.
 So far we have accessed the keycloak service from the browser by using the port-forwarding and then accessing it via local-port.
-But for production usage and to (configure it as SSO inside ENBUILD)[../configuring-enbuild/#configure-keycloak] we need to expose it on a public IP address.
+But for production usage and to [configure it as SSO inside ENBUILD](../configuring-enbuild/#configure-keycloak) we need to expose it on a public IP address.
 
 There are multiple ways to achive that -
 
 - Expose the `keycloak-http` service as LoadBalancer - This way the kubernertes will create a external loadbalancer and expose the service on a public IP address. 
 - Create an Ingress resource for the `keycloak-http` service - This way we can use a ingress controller to route traffic to the keycloak service based on the hostname.
-- If you have istio deployed and configured in your cluster, then expose it as virtual service. (This is the sample virtaul service configurations you can use)(https://github.com/vivsoftorg/enbuild/blob/main/examples/keycloak/istio-virtaul-service-for-keycloak.yaml)
+- If you have istio deployed and configured in your cluster, then expose it as virtual service. [This is the sample virtaul service configurations you can use](https://github.com/vivsoftorg/enbuild/blob/main/examples/keycloak/istio-virtaul-service-for-keycloak.yaml)
 
 :exclamation: **Note:** Make sure to adjust the `hosts` to the right value to which you want to expose the service.
 
@@ -241,4 +241,4 @@ kubectl get svc -n istio-system istio-ingressgateway -o jsonpath='{.status.loadB
 ```
 Create a DNS type A record using the IP address from the command above.
 
-Once done you can proceed to (configure keycloak as SSO for ENBUILD)[../configuring-enbuild/#configure-keycloak]
+Once done you can proceed to [configure keycloak as SSO for ENBUILD](../configuring-enbuild/#configure-keycloak)
