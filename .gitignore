@@ -9,4 +9,5 @@ charts/enbuild/charts/*
 **/node_modules/*
 dist/
 cli/binaries/*
-go.work
+cli/go.work.sum
+cli/go.work
