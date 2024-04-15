@@ -3,8 +3,6 @@ package cmd
 import (
 	"bufio"
 	"fmt"
-	"io"
-	"net/http"
 	"os"
 	"strings"
 
@@ -60,32 +58,13 @@ func createHaul(cmd *cobra.Command, args []string) error {
 
 	bbImageListFile := fmt.Sprintf("%s/bigbang_images_list_%s.txt", targetDirectory, bbVersion)
 	bbHaulFile := fmt.Sprintf("%s/hauler_bb_images_%s.yaml", targetDirectory, bbVersion)
-	if err := downloadAndSaveImageFile(fmt.Sprintf("https://umbrella-bigbang-releases.s3-us-gov-west-1.amazonaws.com/umbrella/%s/images.txt", bbVersion), bbImageListFile); err != nil {
+	if err := downloadAndSaveFile(fmt.Sprintf("https://umbrella-bigbang-releases.s3-us-gov-west-1.amazonaws.com/umbrella/%s/images.txt", bbVersion), bbImageListFile); err != nil {
 		return err
 	}
 
 	return createHaulYaml(bbImageListFile, bbVersion, bbHaulFile)
 }
 
-func downloadAndSaveImageFile(url, filepath string) error {
-	resp, err := http.Get(url)
-	if err != nil {
-		return fmt.Errorf("failed to download %s: %w", url, err)
-	}
-	defer resp.Body.Close()
-
-	out, err := os.Create(filepath)
-	if err != nil {
-		return fmt.Errorf("failed to create file %s: %w", filepath, err)
-	}
-	defer out.Close()
-
-	if _, err = io.Copy(out, resp.Body); err != nil {
-		return fmt.Errorf("failed to save file %s: %w", filepath, err)
-	}
-	// fmt.Printf("Saved BigBang Images list file: %s\n", filepath)
-	return nil
-}
 
 func createHaulYaml(inputFilePath string, bbVersion string, outpurFilePath string) error {
 	file, err := os.Open(inputFilePath)
@@ -127,5 +106,7 @@ func createHaulYaml(inputFilePath string, bbVersion string, outpurFilePath strin
 	}
 
 	fmt.Printf("Haul file created successfully: %s\n", outpurFilePath)
+	fmt.Printf("Now You can run `hauler login registry1.dso.mil`\n")
+	fmt.Printf("And then run `hauler store sync -f %s`\n", outpurFilePath)
 	return nil
 }
