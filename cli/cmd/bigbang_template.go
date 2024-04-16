@@ -2,127 +2,208 @@ package cmd
 
 import (
 	"fmt"
-	"os"
 	"io/ioutil"
+	"log"
+	"os"
+	"os/exec"
 	"strings"
-	"gopkg.in/yaml.v3"
 
 	"github.com/spf13/cobra"
+	"gopkg.in/yaml.v3"
 )
 
-// createTemplateCmd represents the createtemplate command
+const (
+	targetDirectory      = "target"
+	valuesDirectoryName  = "bb_values"
+	secretsDirectoryName = "bb_secrets"
+	repositoryKeys       = "domain offline helmRepositories registryCredentials openshift git sso flux networkPolicies imagePullPolicy packages wrapper"
+	secretsContent       = `domain: ""`
+)
+
 var createTemplateCmd = &cobra.Command{
 	Use:   "create-template",
 	Short: "Create a BigBang ENBUILD Catalog template for given version",
 	Long:  "Create a BigBang ENBUILD Catalog template for given version",
-	RunE:  createtemplate,
+	RunE:  createTemplate,
 }
 
 func init() {
 	bigbangCmd.AddCommand(createTemplateCmd)
 	createTemplateCmd.Flags().StringP("bb-version", "v", "", "Specify the BigBang version (required)")
-	_ = createTemplateCmd.MarkFlagRequired("bb-version")
+	if err := createTemplateCmd.MarkFlagRequired("bb-version"); err != nil {
+		fmt.Fprintf(os.Stderr, "Error setting bb-version flag as required: %v\n", err)
+		os.Exit(1)
+	}
 }
 
-func createtemplate(cmd *cobra.Command, args []string) error {
+func createTemplate(cmd *cobra.Command, args []string) error {
 	bbVersion, err := cmd.Flags().GetString("bb-version")
 	if err != nil {
 		return fmt.Errorf("failed to read 'bb-version' flag: %w", err)
 	}
 	fmt.Printf("Creating BigBang ENBUILD Catalog template for version %s\n", bbVersion)
 
-	targetDirectory := "target"
 	if err := os.MkdirAll(targetDirectory, 0755); err != nil {
 		return fmt.Errorf("failed to create directory %s: %w", targetDirectory, err)
 	}
 
-
-	return createBigBangTemplate(bbVersion, targetDirectory)
-}
-
-
-
-func createBigBangTemplate( bbVersion string, targetDirectory string) error {
-	valuesDirectory := fmt.Sprintf("%s/bb_values", targetDirectory)
-	secretsDirectory := fmt.Sprintf("%s/bb_secrets", targetDirectory)
-	bbvaluesFile := fmt.Sprintf("%s/values_%s.yaml", targetDirectory, bbVersion)
+	valuesDirectory := fmt.Sprintf("%s/%s", targetDirectory, valuesDirectoryName)
+	secretsDirectory := fmt.Sprintf("%s/%s", targetDirectory, secretsDirectoryName)
 
 	if err := os.MkdirAll(valuesDirectory, 0755); err != nil {
-		return fmt.Errorf("failed to create directory %s: %w", targetDirectory, err)
+		return fmt.Errorf("failed to create directory %s: %w", valuesDirectory, err)
 	}
 
 	if err := os.MkdirAll(secretsDirectory, 0755); err != nil {
-		return fmt.Errorf("failed to create directory %s: %w", targetDirectory, err)
+		return fmt.Errorf("failed to create directory %s: %w", secretsDirectory, err)
 	}
 
-	if err := downloadAndSaveFile(fmt.Sprintf("https://raw.githubusercontent.com/DoD-Platform-One/bigbang/%s/chart/values.yaml", bbVersion), bbvaluesFile); err != nil {
+	bbValuesFile := fmt.Sprintf("%s/values_%s.yaml", targetDirectory, bbVersion)
+
+	if err := ensureBBValues(bbValuesFile, bbVersion); err != nil {
 		return err
 	}
 
-	splitBBValues(bbvaluesFile, valuesDirectory)
+	if err := splitBBValues(bbValuesFile, valuesDirectory, secretsDirectory); err != nil {
+		return fmt.Errorf("failed to split BB values: %w", err)
+	}
 
-	fmt.Printf("Created BigBang ENBUILD Catalog template for version %s at %s\n", bbVersion, valuesDirectory)
 	return nil
 }
 
-
-
-func splitBBValues(bbvaluesFile string, valuesDirectory string) error {
-    // Define the repository keys
-	REPOSITORY_KEYS := "domain offline helmRepositories registryCredentials openshift git sso flux networkPolicies imagePullPolicy"
-    repositoryKeys := strings.Split(REPOSITORY_KEYS, " ")
-
-    // Read the input values file
-    content, err := ioutil.ReadFile(bbvaluesFile)
-    if err != nil {
-        return fmt.Errorf("failed to read values file: %w", err)
-    }
-
-    // Split the content into multiple files based on the key
-    values := make(map[string]interface{})
-    if err := yaml.Unmarshal(content, &values); err != nil {
-        return fmt.Errorf("failed to unmarshal values file: %w", err)
-    }
-
-    repositoryValues := make(map[string]interface{})
-    for key, value := range values {
-        if contains(repositoryKeys, key) {
-            // Add the value to the repository values
-            repositoryValues[key] = value
-        } else {
-            // Convert the value back to YAML
-            yamlContent, err := yaml.Marshal(value)
-            if err != nil {
-                return fmt.Errorf("failed to marshal value to YAML: %w", err)
-            }
-
-            // Write the YAML content to a file
-            outputFile := fmt.Sprintf("%s/%s.yaml", valuesDirectory, key)
-            if err := ioutil.WriteFile(outputFile, yamlContent, 0644); err != nil {
-                return fmt.Errorf("failed to write output file: %w", err)
-            }
-        }
-    }
-
-    // Write the repository values to repository.yaml
-    repositoryYamlContent, err := yaml.Marshal(repositoryValues)
-    if err != nil {
-        return fmt.Errorf("failed to marshal repository values to YAML: %w", err)
-    }
-    repositoryFile := fmt.Sprintf("%s/repository.yaml", valuesDirectory)
-    if err := ioutil.WriteFile(repositoryFile, repositoryYamlContent, 0644); err != nil {
-        return fmt.Errorf("failed to write repository file: %w", err)
-    }
-
-    return nil
+func ensureBBValues(bbValuesFile, bbVersion string) error {
+	_, err := os.Stat(bbValuesFile)
+	if os.IsNotExist(err) {
+		downloadURL := fmt.Sprintf("https://raw.githubusercontent.com/DoD-Platform-One/bigbang/%s/chart/values.yaml", bbVersion)
+		return downloadAndSaveFile(downloadURL, bbValuesFile)
+	} else if err != nil {
+		return fmt.Errorf("failed to stat file %s: %w", bbValuesFile, err)
+	}
+	fmt.Printf("File %s already exists. Skipping download.\n", bbValuesFile)
+	return nil
 }
 
-// Helper function to check if a slice contains a string
+func splitBBValues(bbValuesFile string, valuesDirectory string, secretsDirectory string) error {
+	keys := strings.Split(repositoryKeys, " ")
+
+	content, err := os.ReadFile(bbValuesFile)
+	if err != nil {
+		return fmt.Errorf("failed to read values file: %w", err)
+	}
+
+	values := make(map[string]interface{})
+	if err := yaml.Unmarshal(content, &values); err != nil {
+		return fmt.Errorf("failed to unmarshal values file: %w", err)
+	}
+
+	repositoryValues := make(map[string]interface{})
+	addonsValues := make(map[string]interface{})
+	for key, value := range values {
+		if key == "addons" {
+			addonValues, ok := value.(map[string]interface{})
+			if !ok {
+				return fmt.Errorf("type assertion failed for addons value, expected map[string]interface{}, got %T", value)
+			}
+			addonsValues = addonValues
+		} else if contains(keys, key) {
+			repositoryValues[key] = value
+		} else {
+			if err := writeValuesYAMLToFile(valuesDirectory, strings.ToLower(key), value); err != nil {
+				return fmt.Errorf("failed to write values file for %s: %w", key, err)
+			}
+
+			if err := createBBSecretFiles(secretsDirectory, strings.ToLower(key)); err != nil {
+				return fmt.Errorf("failed to write secret file for %s: %w", key, err)
+			}
+		}
+	}
+
+	for key, value := range addonsValues {
+		addonsContent := map[string]interface{}{
+			"addons": map[string]interface{}{
+				key: value,
+			},
+		}
+
+		if err := writeValuesYAMLToFile(valuesDirectory, strings.ToLower(key), addonsContent); err != nil {
+			return fmt.Errorf("failed to write values file for %s: %w", key, err)
+		}
+		if err := createBBSecretFiles(secretsDirectory, strings.ToLower(key)); err != nil {
+			return fmt.Errorf("failed to write secret file for %s: %w", key, err)
+		}
+	}
+
+	if err := writeValuesYAMLToFile(valuesDirectory, "repo", repositoryValues); err != nil {
+		return fmt.Errorf("failed to write repository.yaml file: %w", err)
+	}
+
+	if err := createBBSecretFiles(secretsDirectory, "repo"); err != nil {
+		return fmt.Errorf("failed to write secret file for repo: %w", err)
+	}
+
+	return nil
+}
+
+// contains checks if a string is inside a slice.
 func contains(slice []string, str string) bool {
-    for _, v := range slice {
-        if v == str {
-            return true
-        }
-    }
-    return false
+	for _, v := range slice {
+		if v == str {
+			return true
+		}
+	}
+	return false
+}
+
+// writeValuesYAMLToFile marshals the given interface{} into YAML and writes it to the specified file.
+func writeValuesYAMLToFile(dir string, filename string, content interface{}) error {
+	filePath := fmt.Sprintf("%s/%s.yaml", dir, filename)
+	yamlData, err := yaml.Marshal(content)
+	if err != nil {
+		return fmt.Errorf("failed to marshal content: %w", err)
+	}
+
+	err = os.WriteFile(filePath, yamlData, 0644)
+	if err != nil {
+		return fmt.Errorf("failed to write YAML file: %w", err)
+	}
+
+	log.Printf("Created the BB Values File %s", filePath)
+
+	return nil
+}
+
+// writeSecretsYAMLToFile writes the secrets content to the specified file as kubernetes secrets yaml file
+func createBBSecretFiles(secretsDirectory string, key string) error {
+	const tmpDir = "/tmp"
+	component := strings.ToLower(key)
+	switch key {
+	case "repository-credentials":
+		cmd := exec.Command("kubectl", "create", "secret", "generic", "repository-credentials", "--from-literal=username=dummy", "--from-literal=password=topsecret", "--dry-run=client", "-o", "yaml")
+		output, err := cmd.Output()
+		if err != nil {
+			log.Fatal(err)
+		}
+		secretFile := secretsDirectory + "/repository-credentials.enc.yaml"
+		ioutil.WriteFile(secretFile, output, 0644)
+		log.Printf("Secret file created: %s", secretFile)
+		return nil
+	default:
+		secretInputFile := tmpDir + "/" + key + "-secret.yaml"
+		ioutil.WriteFile(secretInputFile, []byte("{}"), 0644)
+	}
+
+	secretInputFile := tmpDir + "/" + key + "-secret.yaml"
+	cmd := exec.Command("kubectl", "create", "secret", "generic", component+"-values", "--dry-run=client", "-o", "yaml", "--from-file", "values.yaml="+secretInputFile)
+	output, err := cmd.Output()
+	if err != nil {
+		log.Fatal(err)
+	}
+	secretFile := secretsDirectory + "/" + component + ".enc.yaml"
+	ioutil.WriteFile(secretFile, output, 0644)
+	log.Printf("Secret file created: %s", secretFile)
+
+	if err := os.Remove(secretInputFile); err != nil {
+		return fmt.Errorf("failed to remove temporary secret file %s: %w", secretInputFile, err)
+	}
+	return nil
 }

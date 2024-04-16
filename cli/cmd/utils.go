@@ -23,16 +23,6 @@ func downloadAndSaveFile(url, filepath string) error {
 	if _, err = io.Copy(out, resp.Body); err != nil {
 		return fmt.Errorf("failed to save file %s: %w", filepath, err)
 	}
-	// fmt.Printf("Saved BigBang Images list file: %s\n", filepath)
+	fmt.Printf("Downloaded file %s\n", filepath)
 	return nil
-}
-
-// Helper function to check if a slice contains a string
-func contains(slice []string, str string) bool {
-    for _, v := range slice {
-        if v == str {
-            return true
-        }
-    }
-    return false
 }
