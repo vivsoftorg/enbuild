@@ -50,6 +50,12 @@ helm repo add vivsoft https://vivsoftorg.github.io/enbuild
 "vivsoft" has been added to your repositories
 ```
 
+:exclamation: **Note:** If the helm repo is already present on you machine , update it to get the latest version
+
+```bash
+❯ helm repo update vivsoft
+```
+
 ### Configure ENBUILD Helm Values
 
 Before deploying ENBUILD to the Kubernetes cluster, you will need to create a custom values.yaml file so that we can specify configurations unique to this deployment.
@@ -60,14 +66,8 @@ For local deployment however we require minimum deployment values.
 
 Refer to the [example helm input file](https://github.com/vivsoftorg/enbuild/blob/main/examples/enbuild/quick_install.yaml) for guidance.
 
-```yaml
-imageCredentials:
-  registry: registry.gitlab.com
-  username: MY_GITLAB_USERNAME
-  password: MY_GITLAB_TOKEN
-```
 
-:zap: **Note:** The `imageCredentials` section is only required until the images are available publically.
+:zap: **Note:** The `imageCredentials` section is only required if the images are not public.
 
 ### Deploy ENBUILD HELM Chart
 

@@ -31,8 +31,8 @@ spec:
             name: {{ .Release.Name }}-mongo-secrets
         - secretRef:
             name: {{ .Release.Name }}-backend-secret
-        image: {{ .Values.enbuildGenAI.image.repository }}:{{ default .Chart.AppVersion (default .Values.global.AppVersion .Values.enbuildGenAI.image.tag) }}
-        imagePullPolicy: {{ .Values.enbuildGenAI.image.pullPolicy }}
+        image: {{ .Values.global.image.registry }}/{{ .Values.enbuildGenAI.image.repository }}:{{ default .Chart.AppVersion (default .Values.global.AppVersion .Values.enbuildGenAI.image.tag) }}
+        imagePullPolicy: {{ .Values.global.image.pullPolicy }}
         name: enbuild-genai
         ports:
         - containerPort: 8086

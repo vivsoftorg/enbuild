@@ -9,7 +9,12 @@
 ## @param global.ingress.annotations [array] Ingress annotations if enabled.
 ## @param global.istio.enabled [default: false]   Should we create the Istio Resources ?
 ## @param global.istio.gateway Istio gateway to use for creating Virtual Service.
-##
+## @param global.image.registry [default: registry.gitlab.com]  Container registry to pull images from
+## @param global.image.pullPolicy [default: Always]  Container imagePullPolicy
+## @param global.image.registry_credentials [nullable,object] if the image.registry is private container registry, provide the credentials
+## @param global.image.registry_credentials.username [nullable,string]  Container registry Username
+## @param global.image.registry_credentials.password  [nullable,string] Container registry password
+## 
 global:
   AppVersion: ""
   domain: ijuned.com
@@ -24,16 +29,12 @@ global:
   istio:
     enabled: false
     gateway: istio-system/main
-
-## @section Container Registry Parameters
-## @param imageCredentials [nullable,object] Should we use a private container registry? if yes provide the following parameters
-## @param imageCredentials.registry [nullable,string]  Container registry Path
-## @param imageCredentials.username [nullable,string]  Container registry Username
-## @param imageCredentials.password  [nullable,string] Container registry password
-imageCredentials: {}
-  # registry: registry.gitlab.com
-  # username: registry_user_name
-  # password: registry_password
+  image:
+    registry: registry.gitlab.com
+    pullPolicy: Always
+    registry_credentials: {}
+    # username: registry_user_name
+    # password: registry_password
 
 ## @section Jupyterhub Parameters
 ## @skip jupyterhub.proxy
@@ -83,20 +84,17 @@ rabbitmq:
 ## @param mongodb.mongo_server [nullable,string] If `mongodb.enabled` is false , provide the right cosmosDB/DocumentDB endpoint
 ## @param mongodb.image.repository Container repository for mongodb Container
 ## @param mongodb.image.tag Container tag for mongodb Container
-## @param mongodb.image.pullPolicy Container ImagePullPolicy for mongodb Container
 mongodb:
   enabled: true
   mongo_root_username: "enbuild"
   mongo_root_password: "mongo_root_password"
   mongo_server: "If you are using cosmosDB then set the right cosmosDB endpoint as mongo_server and set the enabled=false"
   image:
-    repository: registry.gitlab.com/enbuild-staging/container_registry/opensource-mongodb/mongodb
+    repository: enbuild-staging/vivsoft-platform-ui/mongodb
     tag: 4.4.5
-    pullPolicy: Always
 
 ## @section ENBUILD UI Services parameters
 ## @param enbuildUi.image.repository  Container repository for enbuildUi
-## @param enbuildUi.image.pullPolicy  Container image pullPolicy
 ## @param enbuildUi.image.tag  [nullable] Container image tag. Skip to use the HelmChart appVersion as Image Tag
 ## @param enbuildUi.replicas Container enbuildUI Replicas
 ## @param enbuildUi.service_type  enbuildUI service_type
@@ -108,8 +106,7 @@ mongodb:
 ## @param enbuildUi.kubecost_url  kubecost_url 
 enbuildUi:
   image:
-    repository: registry.gitlab.com/enbuild-staging/vivsoft-platform-ui/enbuild-frontend
-    pullPolicy: Always
+    repository: enbuild-staging/vivsoft-platform-ui/enbuild-frontend
   replicas: 1
   service_type: ClusterIP
   node_port: 30080
@@ -121,62 +118,53 @@ enbuildUi:
 
 ## @section ENBUILD Backend Services parameters
 ## @param enbuildBk.image.repository  Container repository for enbuildBk
-## @param enbuildBk.image.pullPolicy  Container image pullPolicy
 ## @param enbuildBk.image.tag  [nullable] Container image tag. Skip to use the HelmChart appVersion as Image Tag
 ## @param enbuildBk.replicas Container enbuildBk Replicas
 ## @param enbuildBk.service_type  enbuildBk service_type
 ## @param enbuildBk.encryption_key  encryption_key to be used by Backend
 enbuildBk:
   image:
-    repository: registry.gitlab.com/enbuild-staging/vivsoft-platform-ui/enbuild-backend
-    pullPolicy: Always
+    repository: enbuild-staging/vivsoft-platform-ui/enbuild-backend
   replicas: 1
   service_type: ClusterIP
   encryption_key: "encryption_key"
 
 ## @section ENBUILD USER Services parameters
 ## @param enbuildUser.image.repository  Container repository for enbuildUser
-## @param enbuildUser.image.pullPolicy  Container image pullPolicy
 ## @param enbuildUser.image.tag [nullable] Container image tag. Skip to use the HelmChart appVersion as Image Tag
 ## @param enbuildUser.replicas Container enbuildUser Replicas
 ## @param enbuildUser.service_type  enbuildUser service_type
 enbuildUser:
   image:
-    repository: registry.gitlab.com/enbuild-staging/vivsoft-platform-ui/enbuild-user
-    pullPolicy: Always
+    repository: enbuild-staging/vivsoft-platform-ui/enbuild-user
   replicas: 1
   service_type: ClusterIP
 
 ## @section ENBUILD Sync Services parameters
 ## @param enbuildSync.image.repository  Container repository for enbuildSync
-## @param enbuildSync.image.pullPolicy  Container image pullPolicy
 ## @param enbuildSync.image.tag [nullable] Container image tag. Skip to use the HelmChart appVersion as Image Tag
 ## @param enbuildSync.replicas Container enbuildSync Replicas
 enbuildSync:
   image:
-    repository: registry.gitlab.com/enbuild-staging/vivsoft-platform-ui/enbuild-cronjob
-    pullPolicy: Always
+    repository: enbuild-staging/vivsoft-platform-ui/enbuild-cronjob
   replicas: 1
 
 ## @section ENBUILD ML Services parameters
 ## @param enbuildMl.enabled [default: false] Should we create the ENBUILD ML microservice ?
 ## @param enbuildMl.image.repository  Container repository for enbuildMl
-## @param enbuildMl.image.pullPolicy  Container image pullPolicy
 ## @param enbuildMl.image.tag  [nullable] Container image tag. Skip to use the HelmChart appVersion as Image Tag
 ## @param enbuildMl.replicas Container enbuildMl Replicas
 ## @param enbuildMl.service_type  enbuildMl service_type
 enbuildMl:
   enabled: false
   image:
-    repository: registry.gitlab.com/enbuild-staging/vivsoft-platform-ui/enbuild-ml
-    pullPolicy: Always
+    repository: enbuild-staging/vivsoft-platform-ui/enbuild-ml
   replicas: 1
   service_type: ClusterIP
 
 ## @section ENBUILD GenAI Services parameters
 ## @param enbuildGenAI.enabled [default: false] Should we create the ENBUILD GenAI microservice ?
 ## @param enbuildGenAI.image.repository  Container repository for enbuildGenAI
-## @param enbuildGenAI.image.pullPolicy  Container image pullPolicy
 ## @param enbuildGenAI.image.tag  [nullable] Container image tag. Skip to use the HelmChart appVersion as Image Tag
 ## @param enbuildGenAI.replicas Container enbuildGenAI Replicas
 ## @param enbuildGenAI.service_type  enbuildGenAI service_type
@@ -185,22 +173,19 @@ enbuildGenAI:
   enabled: false
   api_key: "dummy"
   image:
-    repository: registry.gitlab.com/enbuild-staging/vivsoft-platform-ui/enbuild-genai
-    pullPolicy: Always
+    repository: enbuild-staging/vivsoft-platform-ui/enbuild-genai
   replicas: 1
   service_type: ClusterIP
 
 ## @section ENBUILD Request Services parameters
 ## @param enbuildRequest.enabled [default: false] Should we create the ENBUILD Request microservice ?
 ## @param enbuildRequest.image.repository  Container repository for enbuildRequest
-## @param enbuildRequest.image.pullPolicy  Container image pullPolicy
 ## @param enbuildRequest.image.tag [nullable] Container image tag. Skip to use the HelmChart appVersion as Image Tag
 ## @param enbuildRequest.replicas Container enbuildRequest Replicas
 ## @param enbuildRequest.service_type  enbuildRequest service_type
 enbuildRequest:
   enabled: false
   image:
-    repository: registry.gitlab.com/enbuild-staging/vivsoft-platform-ui/enbuild-request
-    pullPolicy: Always
+    repository: enbuild-staging/vivsoft-platform-ui/enbuild-request
   replicas: 1
   service_type: ClusterIP

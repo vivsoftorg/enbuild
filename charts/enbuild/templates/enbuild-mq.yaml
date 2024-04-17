@@ -29,8 +29,8 @@ spec:
             name: {{ .Release.Name }}-mongo-secrets
         - secretRef:
             name: {{ .Release.Name }}-backend-secret
-        image: {{ .Values.enbuildSync.image.repository }}:{{ default .Chart.AppVersion (default .Values.global.AppVersion .Values.enbuildSync.image.tag) }}
-        imagePullPolicy: {{ .Values.enbuildSync.image.pullPolicy }}
+        image: {{ .Values.global.image.registry }}/{{ .Values.enbuildSync.image.repository }}:{{ default .Chart.AppVersion (default .Values.global.AppVersion .Values.enbuildSync.image.tag) }}
+        imagePullPolicy: {{ .Values.global.image.pullPolicy }}
         livenessProbe:
           failureThreshold: 3
           exec:

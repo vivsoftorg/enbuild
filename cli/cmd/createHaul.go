@@ -3,6 +3,7 @@ package cmd
 import (
 	"bufio"
 	"fmt"
+	"log"
 	"os"
 	"strings"
 
@@ -49,7 +50,7 @@ func createHaul(cmd *cobra.Command, args []string) error {
 	if err != nil {
 		return fmt.Errorf("failed to read 'bb-version' flag: %w", err)
 	}
-	fmt.Printf("Creating Haul Manifest file with BigBang version %s\n", bbVersion)
+	log.Printf("Creating Haul Manifest file with BigBang version %s\n", bbVersion)
 
 	targetDirectory := "target"
 	if err := os.MkdirAll(targetDirectory, 0755); err != nil {
@@ -58,13 +59,19 @@ func createHaul(cmd *cobra.Command, args []string) error {
 
 	bbImageListFile := fmt.Sprintf("%s/bigbang_images_list_%s.txt", targetDirectory, bbVersion)
 	bbHaulFile := fmt.Sprintf("%s/hauler_bb_images_%s.yaml", targetDirectory, bbVersion)
-	if err := downloadAndSaveFile(fmt.Sprintf("https://umbrella-bigbang-releases.s3-us-gov-west-1.amazonaws.com/umbrella/%s/images.txt", bbVersion), bbImageListFile); err != nil {
-		return err
+
+	_, err = os.Stat(bbImageListFile)
+	if os.IsNotExist(err) {
+		if err := downloadAndSaveFile(fmt.Sprintf("https://umbrella-bigbang-releases.s3-us-gov-west-1.amazonaws.com/umbrella/%s/images.txt", bbVersion), bbImageListFile); err != nil {
+			return err
+		}
+	} else if err != nil {
+		return fmt.Errorf("failed to stat file %s: %w", bbImageListFile, err)
 	}
+	log.Printf("File %s already exists. Skipping download.\n", bbImageListFile)
 
 	return createHaulYaml(bbImageListFile, bbVersion, bbHaulFile)
 }
-
 
 func createHaulYaml(inputFilePath string, bbVersion string, outpurFilePath string) error {
 	file, err := os.Open(inputFilePath)
@@ -104,9 +111,32 @@ func createHaulYaml(inputFilePath string, bbVersion string, outpurFilePath strin
 	if err = os.WriteFile(outpurFilePath, yamlData, 0644); err != nil {
 		return fmt.Errorf("failed to write the YAML file: %w", err)
 	}
-
 	fmt.Printf("Haul file created successfully: %s\n", outpurFilePath)
-	fmt.Printf("Now You can run `hauler login registry1.dso.mil`\n")
-	fmt.Printf("And then run `hauler store sync -f %s`\n", outpurFilePath)
+	fmt.Printf("You can now run \n")
+	fmt.Printf("hauler login registry1.dso.mil -u <registry1_username> -p <registry1_password>\n")
+	fmt.Printf("hauler store sync -f %s`\n", outpurFilePath)
 	return nil
 }
+
+// func runHaulerCommands(haulFilePath string) error {
+// 	log.Printf("Now You can run `hauler login registry1.dso.mil`\n")
+// 	log.Printf("And then run `hauler store sync -f %s`\n", haulFilePath)
+
+// 	// Run hauler login command
+// 	loginCmd := exec.Command("hauler", "login", "registry1.dso.mil")
+// 	loginCmd.Stdout = os.Stdout
+// 	loginCmd.Stderr = os.Stderr
+// 	if err := loginCmd.Run(); err != nil {
+// 		return fmt.Errorf("failed to run hauler login command: %w", err)
+// 	}
+
+// 	// Run hauler store sync command
+// 	syncCmd := exec.Command("hauler", "store", "sync", "-f", haulFilePath)
+// 	syncCmd.Stdout = os.Stdout
+// 	syncCmd.Stderr = os.Stderr
+// 	if err := syncCmd.Run(); err != nil {
+// 		return fmt.Errorf("failed to run hauler store sync command: %w", err)
+// 	}
+
+// 	return nil
+// }

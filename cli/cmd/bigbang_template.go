@@ -141,6 +141,10 @@ func splitBBValues(bbValuesFile string, valuesDirectory string, secretsDirectory
 		return fmt.Errorf("failed to write secret file for repo: %w", err)
 	}
 
+	if err := createBBSecretFiles(secretsDirectory, "repository-credentials"); err != nil {
+		return fmt.Errorf("failed to write secret file for repository-credentials: %w", err)
+	}
+
 	return nil
 }
 
@@ -154,7 +158,6 @@ func contains(slice []string, str string) bool {
 	return false
 }
 
-// writeValuesYAMLToFile marshals the given interface{} into YAML and writes it to the specified file.
 func writeValuesYAMLToFile(dir string, filename string, content interface{}) error {
 	filePath := fmt.Sprintf("%s/%s.yaml", dir, filename)
 	yamlData, err := yaml.Marshal(content)
@@ -167,8 +170,24 @@ func writeValuesYAMLToFile(dir string, filename string, content interface{}) err
 		return fmt.Errorf("failed to write YAML file: %w", err)
 	}
 
-	log.Printf("Created the BB Values File %s", filePath)
+	// // Save the marshaled content to a temporary file.
+	// tmpFilePath := filePath + ".tmp"
+	// if err = os.WriteFile(tmpFilePath, yamlData, 0644); err != nil {
+	// 	return fmt.Errorf("failed to write temporary YAML file: %w", err)
+	// }
 
+	// // Use yq to process the temporary file and output to the final file path.
+	// cmd := exec.Command("yq", "e", ".", "-i", tmpFilePath)
+	// if err = cmd.Run(); err != nil {
+	// 	return fmt.Errorf("failed to run yq: %w", err)
+	// }
+
+	// // Rename the temporary file to the final file name.
+	// if err = os.Rename(tmpFilePath, filePath); err != nil {
+	// 	return fmt.Errorf("failed to rename temporary YAML file to final path: %w", err)
+	// }
+
+	log.Printf("Created the BB Values File %s", filePath)
 	return nil
 }
 
@@ -185,7 +204,7 @@ func createBBSecretFiles(secretsDirectory string, key string) error {
 		}
 		secretFile := secretsDirectory + "/repository-credentials.enc.yaml"
 		ioutil.WriteFile(secretFile, output, 0644)
-		log.Printf("Secret file created: %s", secretFile)
+		log.Printf("Created the BB Secret file: %s", secretFile)
 		return nil
 	default:
 		secretInputFile := tmpDir + "/" + key + "-secret.yaml"
@@ -200,7 +219,7 @@ func createBBSecretFiles(secretsDirectory string, key string) error {
 	}
 	secretFile := secretsDirectory + "/" + component + ".enc.yaml"
 	ioutil.WriteFile(secretFile, output, 0644)
-	log.Printf("Secret file created: %s", secretFile)
+	log.Printf("Created the BB Secret file: %s", secretFile)
 
 	if err := os.Remove(secretInputFile); err != nil {
 		return fmt.Errorf("failed to remove temporary secret file %s: %w", secretInputFile, err)

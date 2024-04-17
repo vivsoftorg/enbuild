@@ -33,8 +33,8 @@ spec:
           value: {{ .Values.enbuildUi.grafana_url }}
         - name: COST_UTILIZATION_KUBECOST_IFRAME_URL
           value: {{ .Values.enbuildUi.kubecost_url }}
-        image: {{ .Values.enbuildUi.image.repository }}:{{ default .Chart.AppVersion (default .Values.global.AppVersion .Values.enbuildUi.image.tag) }}
-        imagePullPolicy: {{ .Values.enbuildUi.image.pullPolicy }}
+        image: {{ .Values.global.image.registry }}/{{ .Values.enbuildUi.image.repository }}:{{ default .Chart.AppVersion (default .Values.global.AppVersion .Values.enbuildUi.image.tag) }}
+        imagePullPolicy: {{ .Values.global.image.pullPolicy }}
         name: enbuild-ui
         resources: {}
         volumeMounts:
