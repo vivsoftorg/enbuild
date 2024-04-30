@@ -59,6 +59,7 @@ func createHaul(cmd *cobra.Command, args []string) error {
 
 	bbImageListFile := fmt.Sprintf("%s/bigbang_images_list_%s.txt", targetDirectory, bbVersion)
 	bbHelmListFile := fmt.Sprintf("%s/bigbang_helm_list_%s.txt", targetDirectory, bbVersion)
+	bbInputList := fmt.Sprintf("%s/bigbang_merged_list_%s.txt", targetDirectory, bbVersion)
 	bbHaulFile := fmt.Sprintf("%s/hauler_bb_images_%s.yaml", targetDirectory, bbVersion)
 
 	_, err = os.Stat(bbImageListFile)
@@ -83,7 +84,57 @@ func createHaul(cmd *cobra.Command, args []string) error {
 		log.Printf("File %s already exists. Skipping download.\n", bbHelmListFile)
 	}
 
-	return createHaulYaml(bbImageListFile, bbVersion, bbHaulFile)
+	// merge the two files
+
+	if err := mergeFiles(bbImageListFile, bbHelmListFile, bbInputList); err != nil {
+		return err
+	}
+
+	return createHaulYaml(bbInputList, bbVersion, bbHaulFile)
+}
+
+func mergeFiles(bbImageListFile string, bbHelmListFile string, mergedFileName string) error {
+	images, err := os.ReadFile(bbImageListFile)
+	if err != nil {
+		return fmt.Errorf("failed to read the images file: %w", err)
+	}
+
+	helms, err := os.ReadFile(bbHelmListFile)
+	if err != nil {
+		return fmt.Errorf("failed to read the helm file: %w", err)
+	}
+
+	imagesString := string(images)
+	helmsString := string(helms)
+
+	i_List := strings.Split(imagesString, "\n")
+	// get only lines containing registry1.dso.mil from the images list
+	var imagesList []string
+	for _, image := range i_List {
+		if strings.Contains(image, "registry1.dso.mil") {
+			imagesList = append(imagesList, image)
+		}
+	}
+
+	h_List := strings.Split(helmsString, "\n")
+
+	// get only lines containing registry1.dso.mil from the helm list
+	var helmsList []string
+	for _, helm := range h_List {
+		if strings.Contains(helm, "registry1.dso.mil") {
+			helmsList = append(helmsList, helm)
+		}
+	}
+
+	mergedList := append(imagesList, helmsList...)
+
+	mergedFile := strings.Join(mergedList, "\n")
+
+	if err := os.WriteFile(mergedFileName, []byte(mergedFile), 0644); err != nil {
+		return fmt.Errorf("failed to write the merged file: %w", err)
+	}
+	log.Printf("Merged file created successfully: %s\n", mergedFileName)
+	return nil
 }
 
 func createHaulYaml(inputFilePath string, bbVersion string, outpurFilePath string) error {
