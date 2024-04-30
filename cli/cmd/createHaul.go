@@ -58,6 +58,7 @@ func createHaul(cmd *cobra.Command, args []string) error {
 	}
 
 	bbImageListFile := fmt.Sprintf("%s/bigbang_images_list_%s.txt", targetDirectory, bbVersion)
+	bbHelmListFile := fmt.Sprintf("%s/bigbang_helm_list_%s.txt", targetDirectory, bbVersion)
 	bbHaulFile := fmt.Sprintf("%s/hauler_bb_images_%s.yaml", targetDirectory, bbVersion)
 
 	_, err = os.Stat(bbImageListFile)
@@ -67,8 +68,20 @@ func createHaul(cmd *cobra.Command, args []string) error {
 		}
 	} else if err != nil {
 		return fmt.Errorf("failed to stat file %s: %w", bbImageListFile, err)
+	} else {
+		log.Printf("File %s already exists. Skipping download.\n", bbImageListFile)
 	}
-	log.Printf("File %s already exists. Skipping download.\n", bbImageListFile)
+
+	_, err = os.Stat(bbHelmListFile) // this file is there only after BB version 2.25.0
+	if os.IsNotExist(err) {
+		if err := downloadAndSaveFile(fmt.Sprintf("https://umbrella-bigbang-releases.s3-us-gov-west-1.amazonaws.com/umbrella/%s/oci_package_list.txt", bbVersion), bbHelmListFile); err != nil {
+			return err
+		}
+	} else if err != nil {
+		return fmt.Errorf("failed to stat file %s: %w", bbHelmListFile, err)
+	} else {
+		log.Printf("File %s already exists. Skipping download.\n", bbHelmListFile)
+	}
 
 	return createHaulYaml(bbImageListFile, bbVersion, bbHaulFile)
 }
@@ -115,6 +128,7 @@ func createHaulYaml(inputFilePath string, bbVersion string, outpurFilePath strin
 	fmt.Printf("You can now run \n")
 	fmt.Printf("hauler login registry1.dso.mil -u <registry1_username> -p <registry1_password>\n")
 	fmt.Printf("hauler store sync -f %s`\n", outpurFilePath)
+	fmt.Printf("hauler store save --filename bb%s-haul.tar.zst\n", bbVersion)
 	return nil
 }
 
