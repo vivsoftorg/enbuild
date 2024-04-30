@@ -86,14 +86,14 @@ func createHaul(cmd *cobra.Command, args []string) error {
 
 	// merge the two files
 
-	if err := mergeFiles(bbImageListFile, bbHelmListFile, bbInputList); err != nil {
+	if err := mergeFiles(bbImageListFile, bbHelmListFile, bbInputList, bbVersion); err != nil {
 		return err
 	}
 
 	return createHaulYaml(bbInputList, bbVersion, bbHaulFile)
 }
 
-func mergeFiles(bbImageListFile string, bbHelmListFile string, mergedFileName string) error {
+func mergeFiles(bbImageListFile string, bbHelmListFile string, mergedFileName string, bbVersion string) error {
 	images, err := os.ReadFile(bbImageListFile)
 	if err != nil {
 		return fmt.Errorf("failed to read the images file: %w", err)
@@ -117,6 +117,9 @@ func mergeFiles(bbImageListFile string, bbHelmListFile string, mergedFileName st
 	}
 
 	h_List := strings.Split(helmsString, "\n")
+	// add a new entry to the helm list with the image name registry1.dso.mil/bigbang/bigbang:bbVersion
+	bbchart := fmt.Sprintf("registry1.dso.mil/bigbang/bigbang:%s", bbVersion)
+	h_List = append(h_List, bbchart)
 
 	// get only lines containing registry1.dso.mil from the helm list
 	var helmsList []string
