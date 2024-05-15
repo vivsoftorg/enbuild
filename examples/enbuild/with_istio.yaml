@@ -1,8 +1,10 @@
-imageCredentials:
-  registry: registry.gitlab.com
-  username: registry_user_name
-  password: registry_password
 global:
+  image:
+    registry: registry.gitlab.com
+    pullPolicy: IfNotPresent
+    registry_credentials: {}
+      # username: registry_user_name
+      # password: registry_password
   domain: ijuned.com         # Set the proper doamin.
   istio:
     enabled: true

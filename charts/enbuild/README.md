@@ -1,6 +1,6 @@
 # [ENBUILD HELM CHART](https://github.com/vivsoftorg/enbuild_helm_chart.git)
 
-This helm chart installs the ENBUILD application.
+This helm chart installs the [ENBUILD application](https://gitlab.com/enbuild-staging/vivsoft-platform-ui).
 
 # Installing the Chart
 
