@@ -170,23 +170,6 @@ func writeValuesYAMLToFile(dir string, filename string, content interface{}) err
 		return fmt.Errorf("failed to write YAML file: %w", err)
 	}
 
-	// // Save the marshaled content to a temporary file.
-	// tmpFilePath := filePath + ".tmp"
-	// if err = os.WriteFile(tmpFilePath, yamlData, 0644); err != nil {
-	// 	return fmt.Errorf("failed to write temporary YAML file: %w", err)
-	// }
-
-	// // Use yq to process the temporary file and output to the final file path.
-	// cmd := exec.Command("yq", "e", ".", "-i", tmpFilePath)
-	// if err = cmd.Run(); err != nil {
-	// 	return fmt.Errorf("failed to run yq: %w", err)
-	// }
-
-	// // Rename the temporary file to the final file name.
-	// if err = os.Rename(tmpFilePath, filePath); err != nil {
-	// 	return fmt.Errorf("failed to rename temporary YAML file to final path: %w", err)
-	// }
-
 	log.Printf("Created the BB Values File %s", filePath)
 	return nil
 }
