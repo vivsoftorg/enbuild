@@ -159,19 +159,40 @@ func contains(slice []string, str string) bool {
 }
 
 func writeValuesYAMLToFile(dir string, filename string, content interface{}) error {
-	filePath := fmt.Sprintf("%s/%s.yaml", dir, filename)
-	yamlData, err := yaml.Marshal(content)
-	if err != nil {
-		return fmt.Errorf("failed to marshal content: %w", err)
-	}
+    contentMap, ok := content.(map[string]interface{})
+    if !ok {
+        return fmt.Errorf("content is not of type map[string]interface{}")
+    }
 
-	err = os.WriteFile(filePath, yamlData, 0644)
-	if err != nil {
-		return fmt.Errorf("failed to write YAML file: %w", err)
-	}
+    // Recursively search for the key "sourceType" and change "git" to "helmrepo"
+    // updateSourceType(contentMap)
 
-	log.Printf("Created the BB Values File %s", filePath)
-	return nil
+    filePath := fmt.Sprintf("%s/%s.yaml", dir, filename)
+    yamlData, err := yaml.Marshal(contentMap)
+    if err != nil {
+        return fmt.Errorf("failed to marshal content: %w", err)
+    }
+
+    err = os.WriteFile(filePath, yamlData, 0644)
+    if err != nil {
+        return fmt.Errorf("failed to write YAML file: %w", err)
+    }
+
+    log.Printf("Created the BB Values File %s", filePath)
+    return nil
+}
+
+// updateSourceType recursively searches for the key "sourceType" and updates its value.
+func updateSourceType(data map[string]interface{}) {
+    for key, val := range data {
+        if key == "sourceType" {
+            if sourceVal, ok := val.(string); ok && sourceVal == "git" {
+                data[key] = "helmrepo"
+            }
+        } else if subMap, ok := val.(map[string]interface{}); ok {
+            updateSourceType(subMap) // Recurse into nested maps
+        }
+    }
 }
 
 // writeSecretsYAMLToFile writes the secrets content to the specified file as kubernetes secrets yaml file
