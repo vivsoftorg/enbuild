@@ -159,27 +159,27 @@ func contains(slice []string, str string) bool {
 }
 
 func writeValuesYAMLToFile(dir string, filename string, content interface{}) error {
-    contentMap, ok := content.(map[string]interface{})
-    if !ok {
-        return fmt.Errorf("content is not of type map[string]interface{}")
-    }
+	contentMap, ok := content.(map[string]interface{})
+	if !ok {
+		return fmt.Errorf("content is not of type map[string]interface{}")
+	}
 
-    // Recursively search for the key "sourceType" and change "git" to "helmrepo"
-    // updateSourceType(contentMap)
+	// Recursively search for the key "sourceType" and change "git" to "helmrepo"
+	// updateSourceType(contentMap)
 
-    filePath := fmt.Sprintf("%s/%s.yaml", dir, filename)
-    yamlData, err := yaml.Marshal(contentMap)
-    if err != nil {
-        return fmt.Errorf("failed to marshal content: %w", err)
-    }
+	filePath := fmt.Sprintf("%s/%s.yaml", dir, filename)
+	yamlData, err := yaml.Marshal(contentMap)
+	if err != nil {
+		return fmt.Errorf("failed to marshal content: %w", err)
+	}
 
-    err = os.WriteFile(filePath, yamlData, 0644)
-    if err != nil {
-        return fmt.Errorf("failed to write YAML file: %w", err)
-    }
+	err = os.WriteFile(filePath, yamlData, 0644)
+	if err != nil {
+		return fmt.Errorf("failed to write YAML file: %w", err)
+	}
 
-    log.Printf("Created the BB Values File %s", filePath)
-    return nil
+	log.Printf("Created the BB Values File %s", filePath)
+	return nil
 }
 
 // updateSourceType recursively searches for the key "sourceType" and updates its value.
@@ -189,19 +189,19 @@ func updateSourceType(data map[string]interface{}) {
 			if sourceVal, ok := val.(string); ok && sourceVal == "git" {
 				data[key] = "helmrepo"
 			}
-		} else if key == "helmRepositories" {
-			repositories, ok := val.([]interface{})
-			if ok {
-				repository := map[string]interface{}{
-					"name": "registry1",
-					"repository": "oci://registry1.dso.mil/bigbang",
-					"type": "oci",
-					"username": "demo",
-					"password": "demo",
-				}
-				repositories = append(repositories, repository)
-				data[key] = repositories
-			}
+			// } else if key == "helmRepositories" {
+			// 	repositories, ok := val.([]interface{})
+			// 	if ok {
+			// 		repository := map[string]interface{}{
+			// 			"name": "registry1",
+			// 			"repository": "oci://registry1.dso.mil/bigbang",
+			// 			"type": "oci",
+			// 			"username": "demo",
+			// 			"password": "demo",
+			// 		}
+			// 		repositories = append(repositories, repository)
+			// 		data[key] = repositories
+			// 	}
 		} else if subMap, ok := val.(map[string]interface{}); ok {
 			updateSourceType(subMap) // Recurse into nested maps
 		}
