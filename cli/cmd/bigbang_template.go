@@ -184,15 +184,28 @@ func writeValuesYAMLToFile(dir string, filename string, content interface{}) err
 
 // updateSourceType recursively searches for the key "sourceType" and updates its value.
 func updateSourceType(data map[string]interface{}) {
-    for key, val := range data {
-        if key == "sourceType" {
-            if sourceVal, ok := val.(string); ok && sourceVal == "git" {
-                data[key] = "helmrepo"
-            }
-        } else if subMap, ok := val.(map[string]interface{}); ok {
-            updateSourceType(subMap) // Recurse into nested maps
-        }
-    }
+	for key, val := range data {
+		if key == "sourceType" {
+			if sourceVal, ok := val.(string); ok && sourceVal == "git" {
+				data[key] = "helmrepo"
+			}
+		} else if key == "helmRepositories" {
+			repositories, ok := val.([]interface{})
+			if ok {
+				repository := map[string]interface{}{
+					"name": "registry1",
+					"repository": "oci://registry1.dso.mil/bigbang",
+					"type": "oci",
+					"username": "demo",
+					"password": "demo",
+				}
+				repositories = append(repositories, repository)
+				data[key] = repositories
+			}
+		} else if subMap, ok := val.(map[string]interface{}); ok {
+			updateSourceType(subMap) // Recurse into nested maps
+		}
+	}
 }
 
 // writeSecretsYAMLToFile writes the secrets content to the specified file as kubernetes secrets yaml file
