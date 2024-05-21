@@ -37,7 +37,7 @@ Choose the VCS of your catalog, either **Gitlab** or **Github**. In this example
 
 2. If the repository is private, enter the `Username` in the  **Username** field and the `Token` in the **Password** field.
 
-4. Click on **Connect** check the connection of the repository.
+3. Click on **Connect** check the connection of the repository.
 
 There are two ways of adding a new catalog item to ENBUILD:
 - [Adding a New Catalog Item Manually](#adding-a-new-catalog-item-manually)
