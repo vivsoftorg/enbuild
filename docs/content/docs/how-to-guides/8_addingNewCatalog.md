@@ -22,6 +22,23 @@ Before you begin, ensure that you have the following prerequisites in place:
 - You have created the Catalog templates repository for the catalog item (either in Gitlab/Github) 
 - If the catalog template repository is private, you have aquired the token with readonly access to the repository.
 
+# Adding a new repository
+
+Navigate to the **Repositories** tab of the **Admin** panel and click on **Connect New Respository**. You will be presented with the following form:
+
+<picture><img src="/images/how-to-guides/createCatalog.png" alt="Add New Catalog"></img></picture>
+
+## Choose your VCS:
+Choose the VCS of your catalog, either **Gitlab** or **Github**. In this example, we will use Gitlab.
+
+## Set up Repository Credentials:
+
+1. Enter the repository URL in the **Repository URL** field.
+
+2. If the repository is private, enter the `Username` in the  **Username** field and the `Token` in the **Password** field.
+
+4. Click on **Connect** check the connection of the repository.
+
 There are two ways of adding a new catalog item to ENBUILD:
 - [Adding a New Catalog Item Manually](#adding-a-new-catalog-item-manually)
 - [Adding a New Catalog Item using exported JSON](#adding-a-new-catalog-item-using-exported-json)
@@ -38,7 +55,7 @@ Choose the VCS of your catalog, either **Gitlab** or **Github**. In this example
 ## Set up Catalog Details:
 1. Enter a **Name** for your catalog. This name is displayed to the user while they are browsing the ENBUILD.
 2. Choose a **Type** for your catalog items. The type defines the type of the catalog. 
-3. Provide template  **Repository** for your catalog items. This is the template repository that you have created in previous step.
+3. Choose the template  **Repository** for your catalog items. This is the template repository that you have created in previous step.
 4. If the template repository is private, Check the `IsPrivate` button and provide the Readonly Access Token in the **Token** field.
 5. Provide the **Project ID** of the template repository. 
 6. Enter a **Readme File Path** this is the path of the README file that you want to disaply when user clicks on your catalog item.
