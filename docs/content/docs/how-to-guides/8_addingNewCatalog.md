@@ -55,7 +55,7 @@ Choose the VCS of your catalog, either **Gitlab** or **Github**. In this example
 ## Set up Catalog Details:
 1. Enter a **Name** for your catalog. This name is displayed to the user while they are browsing the ENBUILD.
 2. Choose a **Type** for your catalog items. The type defines the type of the catalog. 
-3. Choose the template  **Repository** for your catalog items. This is the template repository that you have created in previous step.
+3. Choose the template  **Repository** for your catalog items from the dropdown menu. This is the template repository that you have created in previous step (or) click on the **Add new** button to add a new repository.
 4. If the template repository is private, Check the `IsPrivate` button and provide the Readonly Access Token in the **Token** field.
 5. Provide the **Project ID** of the template repository. 
 6. Enter a **Readme File Path** this is the path of the README file that you want to disaply when user clicks on your catalog item.
