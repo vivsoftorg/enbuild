@@ -20,7 +20,7 @@ the additional details required.
 # Search for the ENBUILD Helm chart in the enbuild Helm chart repository.
 ❯ helm search repo  vivsoft/enbuild
 NAME           	CHART VERSION	APP VERSION	DESCRIPTION
-vivsoft/enbuild	0.0.10        	1.0.10      	A Helm chart for ENBUILD
+vivsoft/enbuild	0.0.11        	1.0.10      	A Helm chart for ENBUILD
 
 # Simplified example on how to install a Helm chart from a Helm chart repository
 # named vivsoft in a namespace named enbuild. See the Helm chart's documentation for additional details
@@ -28,7 +28,7 @@ vivsoft/enbuild	0.0.10        	1.0.10      	A Helm chart for ENBUILD
 ❯ helm upgrade --install  enbuild vivsoft/enbuild --namespace enbuild --create-namespace 
 
 # To install a specific version of the Helm chart.
-❯ helm upgrade --install  enbuild vivsoft/enbuild --namespace enbuild --create-namespace  --version 0.0.10
+❯ helm upgrade --install  enbuild vivsoft/enbuild --namespace enbuild --create-namespace  --version 0.0.11
 ```
 
 # Uninstalling the Chart
