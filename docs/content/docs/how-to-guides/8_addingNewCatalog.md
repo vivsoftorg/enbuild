@@ -26,7 +26,7 @@ Before you begin, ensure that you have the following prerequisites in place:
 
 Navigate to the **Repositories** tab of the **Admin** panel and click on **Connect New Respository**. You will be presented with the following form:
 
-<picture><img src="/images/how-to-guides/createCatalog.png" alt="Add New Catalog"></img></picture>
+<picture><img src="/docs/assets/connect_repository.png" alt="Add New Repository"></img></picture>
 
 ## Choose your VCS:
 Choose the VCS of your catalog, either **Gitlab** or **Github**. In this example, we will use Gitlab.
@@ -47,7 +47,7 @@ There are two ways of adding a new catalog item to ENBUILD:
 Login to ENBUILD as admin user.
 Navigate to **Manage Catalogs** tab and click on **Create Catalog**. You will be presented with the following form:
 
-<picture><img src="/images/how-to-guides/createCatalog.png" alt="Add New Catalog"></img></picture>
+<picture><img src="/docs/assets/createCatalog.png" alt="Add New Catalog"></img></picture>
 
 ## Choose your VCS:
 Choose the VCS of your catalog, either **Gitlab** or **Github**. In this example, we will use Gitlab.
@@ -67,11 +67,11 @@ Choose the VCS of your catalog, either **Gitlab** or **Github**. In this example
 
 ## Set up Component Details
 
-<picture><img src="/images/how-to-guides/createComponent.png" alt="Add New Component"></img></picture>
+<picture><img src="/docs/assets/createComponent.png" alt="Add New Component"></img></picture>
 
 1. Enter a **Name** for your component.
 2. Select a **Tool Type** for your component item. This is used to group components in a single group.
-3. Provide component **Repository** for your component items. Ommit if the component and catalog are in same repository.
+3. Choose the component **Repository** for your component items from the repository dropdown (or) click on the **Add new** button to add a new repository. Ommit if the component and catalog are in same repository.
 4. Provide the **Project ID** of the template repository. Ommit if the component and catalog are in same repository.
 5. Choose the Branch as **Ref** for your component template to be used. (only required in Gitlab) Ommit if the component and catalog are in same repository.
 6. Enter a **Variable File Path** this is the input variable file which ENBUILD will display for the components , and user will use to change the beheviour of the deployment.
