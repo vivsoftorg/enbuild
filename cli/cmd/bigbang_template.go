@@ -243,3 +243,31 @@ func createBBSecretFiles(secretsDirectory string, key string) error {
 	}
 	return nil
 }
+
+func createHighLevelComponentFiles(bbValuesFile string, valuesDirectory string, secretsDirectory string) error {
+	dropKeys := ".helmRepositories,.wrapper,.packages,"
+	// Concatenate DROP_KEYS with repository keys
+	for _, key := range repositoryKeys {
+		dropKeys += fmt.Sprintf(".%s,", key)
+	}
+	dropKeys += "addons"
+
+	fmt.Println("Splitting BigBang Helm Values file")
+
+	cmdStr := fmt.Sprintf("yq 'del(%s) | ... comments=\"\"| keys | .[]' %s", dropKeys, bbValuesFile)
+	// Run the command
+	keys, err := exec.Command("bash", "-c", cmdStr).Output()
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "Command execution failed: %v\n", err)
+		os.Exit(1)
+	}
+
+	// Split the output into lines to get individual keys
+	keyList := strings.Split(strings.TrimSpace(string(keys)), "\n")
+
+	for _, key := range keyList {
+		fmt.Println("------------------------------------------------------------")
+		fmt.Printf("Processing component %s\n", key)
+	}
+	return nil
+}
