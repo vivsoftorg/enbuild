@@ -159,8 +159,16 @@ func contains(slice []string, str string) bool {
 }
 
 func writeValuesYAMLToFile(dir string, filename string, content interface{}) error {
+	contentMap, ok := content.(map[string]interface{})
+	if !ok {
+		return fmt.Errorf("content is not of type map[string]interface{}")
+	}
+
+	// Recursively search for the key "sourceType" and change "git" to "helmrepo"
+	// updateSourceType(contentMap)
+
 	filePath := fmt.Sprintf("%s/%s.yaml", dir, filename)
-	yamlData, err := yaml.Marshal(content)
+	yamlData, err := yaml.Marshal(contentMap)
 	if err != nil {
 		return fmt.Errorf("failed to marshal content: %w", err)
 	}
@@ -170,25 +178,34 @@ func writeValuesYAMLToFile(dir string, filename string, content interface{}) err
 		return fmt.Errorf("failed to write YAML file: %w", err)
 	}
 
-	// // Save the marshaled content to a temporary file.
-	// tmpFilePath := filePath + ".tmp"
-	// if err = os.WriteFile(tmpFilePath, yamlData, 0644); err != nil {
-	// 	return fmt.Errorf("failed to write temporary YAML file: %w", err)
-	// }
-
-	// // Use yq to process the temporary file and output to the final file path.
-	// cmd := exec.Command("yq", "e", ".", "-i", tmpFilePath)
-	// if err = cmd.Run(); err != nil {
-	// 	return fmt.Errorf("failed to run yq: %w", err)
-	// }
-
-	// // Rename the temporary file to the final file name.
-	// if err = os.Rename(tmpFilePath, filePath); err != nil {
-	// 	return fmt.Errorf("failed to rename temporary YAML file to final path: %w", err)
-	// }
-
 	log.Printf("Created the BB Values File %s", filePath)
 	return nil
+}
+
+// updateSourceType recursively searches for the key "sourceType" and updates its value.
+func updateSourceType(data map[string]interface{}) {
+	for key, val := range data {
+		if key == "sourceType" {
+			if sourceVal, ok := val.(string); ok && sourceVal == "git" {
+				data[key] = "helmrepo"
+			}
+			// } else if key == "helmRepositories" {
+			// 	repositories, ok := val.([]interface{})
+			// 	if ok {
+			// 		repository := map[string]interface{}{
+			// 			"name": "registry1",
+			// 			"repository": "oci://registry1.dso.mil/bigbang",
+			// 			"type": "oci",
+			// 			"username": "demo",
+			// 			"password": "demo",
+			// 		}
+			// 		repositories = append(repositories, repository)
+			// 		data[key] = repositories
+			// 	}
+		} else if subMap, ok := val.(map[string]interface{}); ok {
+			updateSourceType(subMap) // Recurse into nested maps
+		}
+	}
 }
 
 // writeSecretsYAMLToFile writes the secrets content to the specified file as kubernetes secrets yaml file
@@ -223,6 +240,34 @@ func createBBSecretFiles(secretsDirectory string, key string) error {
 
 	if err := os.Remove(secretInputFile); err != nil {
 		return fmt.Errorf("failed to remove temporary secret file %s: %w", secretInputFile, err)
+	}
+	return nil
+}
+
+func createHighLevelComponentFiles(bbValuesFile string, valuesDirectory string, secretsDirectory string) error {
+	dropKeys := ".helmRepositories,.wrapper,.packages,"
+	// Concatenate DROP_KEYS with repository keys
+	for _, key := range repositoryKeys {
+		dropKeys += fmt.Sprintf(".%s,", key)
+	}
+	dropKeys += "addons"
+
+	fmt.Println("Splitting BigBang Helm Values file")
+
+	cmdStr := fmt.Sprintf("yq 'del(%s) | ... comments=\"\"| keys | .[]' %s", dropKeys, bbValuesFile)
+	// Run the command
+	keys, err := exec.Command("bash", "-c", cmdStr).Output()
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "Command execution failed: %v\n", err)
+		os.Exit(1)
+	}
+
+	// Split the output into lines to get individual keys
+	keyList := strings.Split(strings.TrimSpace(string(keys)), "\n")
+
+	for _, key := range keyList {
+		fmt.Println("------------------------------------------------------------")
+		fmt.Printf("Processing component %s\n", key)
 	}
 	return nil
 }
