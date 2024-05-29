@@ -109,7 +109,7 @@ func splitBBValues(bbValuesFile string, valuesDirectory string, secretsDirectory
 		} else if contains(keys, key) {
 			repositoryValues[key] = value
 		} else {
-			if err := writeValuesYAMLToFile(valuesDirectory, strings.ToLower(key), value); err != nil {
+			if err := writeValuesYAMLToFileUsingYQ(valuesDirectory, strings.ToLower(key), key, bbValuesFile); err != nil {
 				return fmt.Errorf("failed to write values file for %s: %w", key, err)
 			}
 
@@ -126,7 +126,7 @@ func splitBBValues(bbValuesFile string, valuesDirectory string, secretsDirectory
 			},
 		}
 
-		if err := writeValuesYAMLToFile(valuesDirectory, strings.ToLower(key), addonsContent); err != nil {
+		if err := writeValuesYAMLToFile(valuesDirectory, key, addonsContent); err != nil {
 			return fmt.Errorf("failed to write values file for %s: %w", key, err)
 		}
 		if err := createBBSecretFiles(secretsDirectory, strings.ToLower(key)); err != nil {
@@ -176,9 +176,26 @@ func writeValuesYAMLToFile(dir string, filename string, content interface{}) err
 		return fmt.Errorf("failed to marshal content: %w", err)
 	}
 
+	//use yq to format the yamlData
+	cmd := exec.Command("yq", "eval", ".", "-")
+	cmd.Stdin = strings.NewReader(string(yamlData))
+	yamlData, err = cmd.Output()
+
 	err = os.WriteFile(filePath, yamlData, 0644)
 	if err != nil {
 		return fmt.Errorf("failed to write YAML file: %w", err)
+	}
+
+	log.Printf("Created the BB Values File %s", filePath)
+	return nil
+}
+
+func writeValuesYAMLToFileUsingYQ(dir string, filename string, key string, bbValuesFile string) error {
+	filePath := fmt.Sprintf("%s/%s.yaml", dir, filename)
+	c := fmt.Sprintf("yq \".%s\" %s > %s", key, bbValuesFile, filePath)
+	cmd := exec.Command("sh", "-c", c)
+	if err := cmd.Run(); err != nil {
+		log.Fatalf("Failed to run yq command: %v", err)
 	}
 
 	log.Printf("Created the BB Values File %s", filePath)
