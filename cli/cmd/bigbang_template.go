@@ -18,6 +18,7 @@ const (
 	secretsDirectoryName = "bb_secrets"
 	repositoryKeys       = "domain offline helmRepositories registryCredentials openshift git sso flux networkPolicies imagePullPolicy packages wrapper"
 	secretsContent       = `domain: ""`
+	sourceType           = "helmrepo" // Default sourceType is "git" in BigBang , but we want helmrepo
 )
 
 var createTemplateCmd = &cobra.Command{
@@ -164,8 +165,10 @@ func writeValuesYAMLToFile(dir string, filename string, content interface{}) err
 		return fmt.Errorf("content is not of type map[string]interface{}")
 	}
 
-	// Recursively search for the key "sourceType" and change "git" to "helmrepo"
-	// updateSourceType(contentMap)
+	if sourceType == "helmrepo" {
+		// Recursively search for the key "sourceType" and change "git" to "helmrepo"
+		updateSourceType(contentMap)
+	}
 
 	filePath := fmt.Sprintf("%s/%s.yaml", dir, filename)
 	yamlData, err := yaml.Marshal(contentMap)
