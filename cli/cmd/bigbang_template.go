@@ -110,9 +110,17 @@ func splitBBValues(bbValuesFile string, valuesDirectory string, secretsDirectory
 			repositoryValues[key] = value
 		} else {
 			// if err := writeValuesYAMLToFile(valuesDirectory, strings.ToLower(key), content); err != nil {
-			if err := writeValuesYAMLToFileUsingYQ(valuesDirectory, strings.ToLower(key), key, bbValuesFile); err != nil {
-				return fmt.Errorf("failed to write values file for %s: %w", key, err)
+			filePath := fmt.Sprintf("%s/%s.yaml", valuesDirectory, strings.ToLower(key))
+			c := fmt.Sprintf(
+				"yq 'with(.%s.sourceType; . = \"helmrepo\" | . style=\"double\") | .%s | {\"%s\" : . }' %s > %s",
+				key, key, key, bbValuesFile, filePath,
+			)
+			cmd := exec.Command("sh", "-c", c)
+			if err := cmd.Run(); err != nil {
+				log.Fatalf("Failed to run yq command: %v", err)
 			}
+
+			log.Printf("Created the BB Values File %s", filePath)
 
 			if err := createBBSecretFiles(secretsDirectory, strings.ToLower(key)); err != nil {
 				return fmt.Errorf("failed to write secret file for %s: %w", key, err)
@@ -120,18 +128,36 @@ func splitBBValues(bbValuesFile string, valuesDirectory string, secretsDirectory
 		}
 	}
 
-	for key, value := range addonsValues {
-		addonsContent := map[string]interface{}{
-			"addons": map[string]interface{}{
-				key: value,
-			},
+	// for key, value := range addonsValues {
+	// 	addonsContent := map[string]interface{}{
+	// 		"addons": map[string]interface{}{
+	// 			key: value,
+	// 		},
+	// 	}
+
+	// 	if err := writeValuesYAMLToFile(valuesDirectory, key, addonsContent); err != nil {
+	// 		return fmt.Errorf("failed to write values file for %s: %w", key, err)
+	// 	}
+	// 	if err := createBBSecretFiles(secretsDirectory, strings.ToLower(key)); err != nil {
+	// 		return fmt.Errorf("failed to write secret file for %s: %w", key, err)
+	// 	}
+	// }
+
+	for addon_key := range addonsValues {
+		filePath := fmt.Sprintf("%s/%s.yaml", valuesDirectory, strings.ToLower(addon_key))
+		c := fmt.Sprintf(
+			"yq 'with(.addons.%s.sourceType; . = \"helmrepo\" | . style=\"double\") | .addons.%s | {\"addons\": {\"%s\" : . }}' %s > %s",
+			addon_key, addon_key, addon_key, bbValuesFile, filePath,
+		)
+		cmd := exec.Command("sh", "-c", c)
+		if err := cmd.Run(); err != nil {
+			log.Fatalf("Failed to run yq command: %v", err)
 		}
 
-		if err := writeValuesYAMLToFile(valuesDirectory, key, addonsContent); err != nil {
-			return fmt.Errorf("failed to write values file for %s: %w", key, err)
-		}
-		if err := createBBSecretFiles(secretsDirectory, strings.ToLower(key)); err != nil {
-			return fmt.Errorf("failed to write secret file for %s: %w", key, err)
+		log.Printf("Created the BB Values File %s", filePath)
+
+		if err := createBBSecretFiles(secretsDirectory, strings.ToLower(addon_key)); err != nil {
+			return fmt.Errorf("failed to write secret file for %s: %w", addon_key, err)
 		}
 	}
 
@@ -185,21 +211,6 @@ func writeValuesYAMLToFile(dir string, filename string, content interface{}) err
 	err = os.WriteFile(filePath, yamlData, 0644)
 	if err != nil {
 		return fmt.Errorf("failed to write YAML file: %w", err)
-	}
-
-	log.Printf("Created the BB Values File %s", filePath)
-	return nil
-}
-
-func writeValuesYAMLToFileUsingYQ(dir string, filename string, key string, bbValuesFile string) error {
-	filePath := fmt.Sprintf("%s/%s.yaml", dir, filename)
-	c := fmt.Sprintf(
-		"yq 'with(.%s.sourceType; . = \"helmrepo\" | . style=\"double\") | .%s | {\"%s\" : . }' %s",
-		key, key, key, bbValuesFile,
-	)
-	cmd := exec.Command("sh", "-c", c)
-	if err := cmd.Run(); err != nil {
-		log.Fatalf("Failed to run yq command: %v", err)
 	}
 
 	log.Printf("Created the BB Values File %s", filePath)
