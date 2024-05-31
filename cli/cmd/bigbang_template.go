@@ -109,8 +109,8 @@ func splitBBValues(bbValuesFile string, valuesDirectory string, secretsDirectory
 		} else if contains(keys, key) {
 			repositoryValues[key] = value
 		} else {
-			if err := writeValuesYAMLToFile(valuesDirectory, strings.ToLower(key), value); err != nil {
-			// if err := writeValuesYAMLToFileUsingYQ(valuesDirectory, strings.ToLower(key), key, bbValuesFile); err != nil {
+			// if err := writeValuesYAMLToFile(valuesDirectory, strings.ToLower(key), content); err != nil {
+			if err := writeValuesYAMLToFileUsingYQ(valuesDirectory, strings.ToLower(key), key, bbValuesFile); err != nil {
 				return fmt.Errorf("failed to write values file for %s: %w", key, err)
 			}
 
@@ -193,7 +193,10 @@ func writeValuesYAMLToFile(dir string, filename string, content interface{}) err
 
 func writeValuesYAMLToFileUsingYQ(dir string, filename string, key string, bbValuesFile string) error {
 	filePath := fmt.Sprintf("%s/%s.yaml", dir, filename)
-	c := fmt.Sprintf("yq \".%s\" %s > %s", key, bbValuesFile, filePath)
+	c := fmt.Sprintf(
+		"yq 'with(.%s.sourceType; . = \"helmrepo\" | . style=\"double\") | .%s | {\"%s\" : . }' %s",
+		key, key, key, bbValuesFile,
+	)
 	cmd := exec.Command("sh", "-c", c)
 	if err := cmd.Run(); err != nil {
 		log.Fatalf("Failed to run yq command: %v", err)
