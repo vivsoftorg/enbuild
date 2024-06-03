@@ -16,7 +16,7 @@ const (
 	targetDirectory      = "target"
 	valuesDirectoryName  = "bb_values"
 	secretsDirectoryName = "bb_secrets"
-	repositoryKeys       = "domain offline helmRepositories registryCredentials openshift git sso flux networkPolicies imagePullPolicy packages wrapper"
+	repositoryKeys       = "domain offline helmRepositories registryCredentials openshift git sso flux networkPolicies imagePullPolicy wrapper packages"
 	secretsContent       = `domain: ""`
 	sourceType           = "helmrepo" // Default sourceType is "git" in BigBang , but we want helmrepo
 )
@@ -85,7 +85,7 @@ func ensureBBValues(bbValuesFile, bbVersion string) error {
 }
 
 func splitBBValues(bbValuesFile string, valuesDirectory string, secretsDirectory string) error {
-	keys := strings.Split(repositoryKeys, " ")
+	repo_keys := strings.Split(repositoryKeys, " ")
 
 	content, err := os.ReadFile(bbValuesFile)
 	if err != nil {
@@ -106,7 +106,7 @@ func splitBBValues(bbValuesFile string, valuesDirectory string, secretsDirectory
 				return fmt.Errorf("type assertion failed for addons value, expected map[string]interface{}, got %T", value)
 			}
 			addonsValues = addonValues
-		} else if contains(keys, key) {
+		} else if contains(repo_keys, key) {
 			repositoryValues[key] = value
 		} else {
 			// if err := writeValuesYAMLToFile(valuesDirectory, strings.ToLower(key), content); err != nil {
@@ -161,9 +161,19 @@ func splitBBValues(bbValuesFile string, valuesDirectory string, secretsDirectory
 		}
 	}
 
-	if err := writeValuesYAMLToFile(valuesDirectory, "repo", repositoryValues); err != nil {
-		return fmt.Errorf("failed to write repository.yaml file: %w", err)
+	// if err := writeValuesYAMLToFile(valuesDirectory, "repo", repositoryValues); err != nil {
+	// 	return fmt.Errorf("failed to write repository.yaml file: %w", err)
+	// }
+
+	keys := strings.Join(repo_keys, `","`)
+	filePath := fmt.Sprintf("%s/%s.yaml", valuesDirectory, "repo")
+	c := fmt.Sprintf(`yq '. |= pick(["%s"])' %s > %s`, keys, bbValuesFile, filePath)
+	cmd := exec.Command("sh", "-c", c)
+	if err := cmd.Run(); err != nil {
+		log.Fatalf("Failed to run yq command: %v", err)
 	}
+
+	log.Printf("Created the BB Values File %s", filePath)
 
 	if err := createBBSecretFiles(secretsDirectory, "repo"); err != nil {
 		return fmt.Errorf("failed to write secret file for repo: %w", err)
