@@ -11,3 +11,4 @@ dist/
 cli/binaries/*
 cli/go.work.sum
 cli/go.work
+cli/juned.go
