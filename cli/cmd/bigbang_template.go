@@ -17,7 +17,7 @@ const (
 	valuesDirectoryName  = "bb_values"
 	secretsDirectoryName = "bb_secrets"
 	repositoryKeys       = "domain offline helmRepositories registryCredentials openshift git sso flux networkPolicies imagePullPolicy wrapper packages"
-	sourceType           = "helmrepo" // Default sourceType is "git" in BigBang , but we want helmrepo
+	sourceType           = "helmRepo" // Default sourceType is "git" in BigBang , but we want helmrepo
 )
 
 var createTemplateCmd = &cobra.Command{
@@ -172,12 +172,12 @@ func splitBBValues(bbValuesFile string, valuesDirectory string, secretsDirectory
 		log.Fatalf("Failed to run yq command: %v", err)
 	}
 
-	// update the .helmRepositories key with default values
-	c = fmt.Sprintf("yq eval '.helmRepositories += [{\"name\": \"registry1\", \"repository\": \"oci://registry1.dso.mil/bigbang\", \"existingSecret\": \"private-registry\", \"type\": \"oci\"}]' -i %s", filePath)
-	cmd = exec.Command("sh", "-c", c)
-	if err := cmd.Run(); err != nil {
-		log.Fatalf("Failed to run yq command: %v", err)
-	}
+	// // update the .helmRepositories key with default values
+	// c = fmt.Sprintf("yq eval '.helmRepositories += [{\"name\": \"registry1\", \"repository\": \"oci://registry1.dso.mil/bigbang\", \"existingSecret\": \"private-registry\", \"type\": \"oci\"}]' -i %s", filePath)
+	// cmd = exec.Command("sh", "-c", c)
+	// if err := cmd.Run(); err != nil {
+	// 	log.Fatalf("Failed to run yq command: %v", err)
+	// }
 
 	log.Printf("Created the BB Values File %s", filePath)
 
