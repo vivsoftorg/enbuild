@@ -17,7 +17,6 @@ const (
 	valuesDirectoryName  = "bb_values"
 	secretsDirectoryName = "bb_secrets"
 	repositoryKeys       = "domain offline helmRepositories registryCredentials openshift git sso flux networkPolicies imagePullPolicy wrapper packages"
-	secretsContent       = `domain: ""`
 	sourceType           = "helmrepo" // Default sourceType is "git" in BigBang , but we want helmrepo
 )
 
@@ -112,8 +111,8 @@ func splitBBValues(bbValuesFile string, valuesDirectory string, secretsDirectory
 			// if err := writeValuesYAMLToFile(valuesDirectory, strings.ToLower(key), content); err != nil {
 			filePath := fmt.Sprintf("%s/%s.yaml", valuesDirectory, strings.ToLower(key))
 			c := fmt.Sprintf(
-				"yq 'with(.%s.sourceType; . = \"helmrepo\" | . style=\"double\") | .%s | {\"%s\" : . }' %s > %s",
-				key, key, key, bbValuesFile, filePath,
+				"yq 'with(.%s.sourceType; . = \"%s\" | . style=\"double\") | .%s | {\"%s\" : . }' %s > %s",
+				key, sourceType, key, key, bbValuesFile, filePath,
 			)
 			cmd := exec.Command("sh", "-c", c)
 			if err := cmd.Run(); err != nil {
@@ -146,8 +145,8 @@ func splitBBValues(bbValuesFile string, valuesDirectory string, secretsDirectory
 	for addon_key := range addonsValues {
 		filePath := fmt.Sprintf("%s/%s.yaml", valuesDirectory, strings.ToLower(addon_key))
 		c := fmt.Sprintf(
-			"yq 'with(.addons.%s.sourceType; . = \"helmrepo\" | . style=\"double\") | .addons.%s | {\"addons\": {\"%s\" : . }}' %s > %s",
-			addon_key, addon_key, addon_key, bbValuesFile, filePath,
+			"yq 'with(.addons.%s.sourceType; . = \"%s\" | . style=\"double\") | .addons.%s | {\"addons\": {\"%s\" : . }}' %s > %s",
+			addon_key, sourceType, addon_key, addon_key, bbValuesFile, filePath,
 		)
 		cmd := exec.Command("sh", "-c", c)
 		if err := cmd.Run(); err != nil {
@@ -208,11 +207,8 @@ func writeValuesYAMLToFile(dir string, filename string, content interface{}) err
 	if !ok {
 		return fmt.Errorf("content is not of type map[string]interface{}")
 	}
-
-	if sourceType == "helmrepo" {
-		// Recursively search for the key "sourceType" and change "git" to "helmrepo"
-		updateSourceType(contentMap)
-	}
+	
+	updateSourceType(contentMap)
 
 	filePath := fmt.Sprintf("%s/%s.yaml", dir, filename)
 	yamlData, err := yaml.Marshal(contentMap)
@@ -239,7 +235,7 @@ func updateSourceType(data map[string]interface{}) {
 	for key, val := range data {
 		if key == "sourceType" {
 			if sourceVal, ok := val.(string); ok && sourceVal == "git" {
-				data[key] = "helmrepo"
+				data[key] = sourceType
 			}
 			// } else if key == "helmRepositories" {
 			// 	repositories, ok := val.([]interface{})
