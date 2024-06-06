@@ -108,7 +108,12 @@ func splitBBValues(bbValuesFile string, valuesDirectory string, secretsDirectory
 		} else if contains(repo_keys, key) {
 			repositoryValues[key] = value
 		} else {
-			// if err := writeValuesYAMLToFile(valuesDirectory, strings.ToLower(key), content); err != nil {
+			// valueContent := map[string]interface{}{
+			// 	key: value,
+			// }
+			// if err := writeValuesYAMLToFile(valuesDirectory, strings.ToLower(key+"_nocomments"), valueContent); err != nil {
+			// 	return fmt.Errorf("failed to write values file for %s: %w", key, err)
+			// }
 			filePath := fmt.Sprintf("%s/%s.yaml", valuesDirectory, strings.ToLower(key))
 			c := fmt.Sprintf(
 				"yq 'with(.%s.sourceType; . = \"%s\" | . style=\"double\") | .%s | {\"%s\" : . }' %s > %s",
@@ -127,22 +132,17 @@ func splitBBValues(bbValuesFile string, valuesDirectory string, secretsDirectory
 		}
 	}
 
-	// for key, value := range addonsValues {
-	// 	addonsContent := map[string]interface{}{
-	// 		"addons": map[string]interface{}{
-	// 			key: value,
-	// 		},
-	// 	}
-
-	// 	if err := writeValuesYAMLToFile(valuesDirectory, key, addonsContent); err != nil {
-	// 		return fmt.Errorf("failed to write values file for %s: %w", key, err)
-	// 	}
-	// 	if err := createBBSecretFiles(secretsDirectory, strings.ToLower(key)); err != nil {
-	// 		return fmt.Errorf("failed to write secret file for %s: %w", key, err)
-	// 	}
-	// }
-
+	// for addon_key, value := range addonsValues {
 	for addon_key := range addonsValues {
+		// addonsContent := map[string]interface{}{
+		// 	"addons": map[string]interface{}{
+		// 		addon_key: value,
+		// 	},
+		// }
+		// if err := writeValuesYAMLToFile(valuesDirectory, strings.ToLower(addon_key+"_nocomments"), addonsContent); err != nil {
+		// 	return fmt.Errorf("failed to write values file for %s: %w", addon_key, err)
+		// }
+
 		filePath := fmt.Sprintf("%s/%s.yaml", valuesDirectory, strings.ToLower(addon_key))
 		c := fmt.Sprintf(
 			"yq 'with(.addons.%s.sourceType; . = \"%s\" | . style=\"double\") | .addons.%s | {\"addons\": {\"%s\" : . }}' %s > %s",
@@ -160,7 +160,9 @@ func splitBBValues(bbValuesFile string, valuesDirectory string, secretsDirectory
 		}
 	}
 
-	// if err := writeValuesYAMLToFile(valuesDirectory, "repo", repositoryValues); err != nil {
+	// Create the repository.yaml file
+
+	// if err := writeValuesYAMLToFile(valuesDirectory, "repo_nocomments", repositoryValues); err != nil {
 	// 	return fmt.Errorf("failed to write repository.yaml file: %w", err)
 	// }
 
@@ -289,5 +291,3 @@ func createBBSecretFiles(secretsDirectory string, key string) error {
 	}
 	return nil
 }
-
-
