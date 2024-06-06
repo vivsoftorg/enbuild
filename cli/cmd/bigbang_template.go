@@ -207,7 +207,7 @@ func writeValuesYAMLToFile(dir string, filename string, content interface{}) err
 	if !ok {
 		return fmt.Errorf("content is not of type map[string]interface{}")
 	}
-	
+
 	updateSourceType(contentMap)
 
 	filePath := fmt.Sprintf("%s/%s.yaml", dir, filename)
@@ -234,9 +234,7 @@ func writeValuesYAMLToFile(dir string, filename string, content interface{}) err
 func updateSourceType(data map[string]interface{}) {
 	for key, val := range data {
 		if key == "sourceType" {
-			if sourceVal, ok := val.(string); ok && sourceVal == "git" {
-				data[key] = sourceType
-			}
+			data[key] = sourceType
 			// } else if key == "helmRepositories" {
 			// 	repositories, ok := val.([]interface{})
 			// 	if ok {
@@ -292,30 +290,4 @@ func createBBSecretFiles(secretsDirectory string, key string) error {
 	return nil
 }
 
-func createHighLevelComponentFiles(bbValuesFile string, valuesDirectory string, secretsDirectory string) error {
-	dropKeys := ".helmRepositories,.wrapper,.packages,"
-	// Concatenate DROP_KEYS with repository keys
-	for _, key := range repositoryKeys {
-		dropKeys += fmt.Sprintf(".%s,", key)
-	}
-	dropKeys += "addons"
 
-	fmt.Println("Splitting BigBang Helm Values file")
-
-	cmdStr := fmt.Sprintf("yq 'del(%s) | ... comments=\"\"| keys | .[]' %s", dropKeys, bbValuesFile)
-	// Run the command
-	keys, err := exec.Command("bash", "-c", cmdStr).Output()
-	if err != nil {
-		fmt.Fprintf(os.Stderr, "Command execution failed: %v\n", err)
-		os.Exit(1)
-	}
-
-	// Split the output into lines to get individual keys
-	keyList := strings.Split(strings.TrimSpace(string(keys)), "\n")
-
-	for _, key := range keyList {
-		fmt.Println("------------------------------------------------------------")
-		fmt.Printf("Processing component %s\n", key)
-	}
-	return nil
-}
