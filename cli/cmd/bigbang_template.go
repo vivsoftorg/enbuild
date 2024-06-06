@@ -6,6 +6,7 @@ import (
 	"log"
 	"os"
 	"os/exec"
+	"sort"
 	"strings"
 
 	"github.com/spf13/cobra"
@@ -85,6 +86,9 @@ func ensureBBValues(bbValuesFile, bbVersion string) error {
 
 func splitBBValues(bbValuesFile string, valuesDirectory string, secretsDirectory string) error {
 	repo_keys := strings.Split(repositoryKeys, " ")
+	values_kustomizationFile := fmt.Sprintf("%s/kustomization.yaml", valuesDirectory)
+	secrets_kustomizationFile := fmt.Sprintf("%s/kustomization.yaml", secretsDirectory)
+	var kustomization_keys []string
 
 	content, err := os.ReadFile(bbValuesFile)
 	if err != nil {
@@ -129,6 +133,8 @@ func splitBBValues(bbValuesFile string, valuesDirectory string, secretsDirectory
 			if err := createBBSecretFiles(secretsDirectory, strings.ToLower(key)); err != nil {
 				return fmt.Errorf("failed to write secret file for %s: %w", key, err)
 			}
+
+			kustomization_keys = append(kustomization_keys, key)
 		}
 	}
 
@@ -158,12 +164,13 @@ func splitBBValues(bbValuesFile string, valuesDirectory string, secretsDirectory
 		if err := createBBSecretFiles(secretsDirectory, strings.ToLower(addon_key)); err != nil {
 			return fmt.Errorf("failed to write secret file for %s: %w", addon_key, err)
 		}
+		kustomization_keys = append(kustomization_keys, addon_key)
 	}
-
-	// Create the repository.yaml file
+	// -------------------------------------------------------------------------------------------------------------------------------------------------
+	// Create the repo.yaml file
 
 	// if err := writeValuesYAMLToFile(valuesDirectory, "repo_nocomments", repositoryValues); err != nil {
-	// 	return fmt.Errorf("failed to write repository.yaml file: %w", err)
+	// 	return fmt.Errorf("failed to write repo.yaml file: %w", err)
 	// }
 
 	keys := strings.Join(repo_keys, `","`)
@@ -187,10 +194,84 @@ func splitBBValues(bbValuesFile string, valuesDirectory string, secretsDirectory
 		return fmt.Errorf("failed to write secret file for repo: %w", err)
 	}
 
+	kustomization_keys = append(kustomization_keys, "repo")
+	// -------------------------------------------------------------------------------------------------------------------------------------------------
 	if err := createBBSecretFiles(secretsDirectory, "repository-credentials"); err != nil {
 		return fmt.Errorf("failed to write secret file for repository-credentials: %w", err)
 	}
+	// -------------------------------------------------------------------------------------------------------------------------------------------------
+	// log.Printf("Creating values kustomization file %s\n", values_kustomizationFile)
+	file, err := os.Create(values_kustomizationFile)
+	if err != nil {
+		return fmt.Errorf("Error creating kustomization file for values at %s: %w", values_kustomizationFile, err)
+	}
+	defer file.Close() // Ensure the file is closed after writing
 
+	// Write the fixed part of the YAML content
+	header := `---
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+namespace: bigbang
+generatorOptions:
+  disableNameSuffixHash: true
+  labels:
+    app.kubernetes.io/part-of: bigbang
+configMapGenerator:
+- name: bb-helm-values
+  files:
+`
+
+	// Write the header to the file
+	_, err = file.WriteString(header)
+	if err != nil {
+		return fmt.Errorf("failed to write kustomization file for values at %s: %w", values_kustomizationFile, err)
+	}
+
+	// Write each sorted item to the file
+	sort.Strings(kustomization_keys)
+	for _, item := range kustomization_keys {
+		line := fmt.Sprintf("    - %s.yaml\n", strings.ToLower(item))
+		_, err = file.WriteString(line)
+		if err != nil {
+			return fmt.Errorf("failed to write kustomization file for values at %s: %w", values_kustomizationFile, err)
+		}
+	}
+
+	log.Printf("Created values kustomization file %s successfully.\n", values_kustomizationFile)
+	// -------------------------------------------------------------------------------------------------------------------------------------------------
+	// fmt.Printf("Creating secrets kustomization file %s\n", secrets_kustomizationFile)
+	file, err = os.Create(secrets_kustomizationFile)
+	if err != nil {
+		return fmt.Errorf("Error creating kustomization file for secrets at %s: %w", secrets_kustomizationFile, err)
+	}
+	defer file.Close() // Ensure the file is closed after writing
+
+	// Write the fixed part of the YAML content
+	secrets_header := `---
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+namespace: bigbang
+resources:
+`
+
+	// Write the header to the file
+	_, err = file.WriteString(secrets_header)
+	if err != nil {
+		return fmt.Errorf("failed to write kustomization file for secrets at %s: %w", secrets_kustomizationFile, err)
+	}
+
+	// Write each sorted item to the file
+	sort.Strings(kustomization_keys)
+	for _, item := range kustomization_keys {
+		line := fmt.Sprintf("  - %s.enc.yaml\n", strings.ToLower(item))
+		_, err = file.WriteString(line)
+		if err != nil {
+			return fmt.Errorf("failed to write kustomization file for secrets at %s: %w", secrets_kustomizationFile, err)
+		}
+	}
+
+	log.Printf("Created secrets kustomization file %s successfully.\n", secrets_kustomizationFile)
+	// -------------------------------------------------------------------------------------------------------------------------------------------------
 	return nil
 }
 
