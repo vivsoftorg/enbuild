@@ -6,6 +6,7 @@ import (
 	"log"
 	"os"
 	"os/exec"
+	"sort"
 	"strings"
 
 	"github.com/spf13/cobra"
@@ -17,7 +18,7 @@ const (
 	valuesDirectoryName  = "bb_values"
 	secretsDirectoryName = "bb_secrets"
 	repositoryKeys       = "domain offline helmRepositories registryCredentials openshift git sso flux networkPolicies imagePullPolicy wrapper packages"
-	sourceType           = "helmrepo" // Default sourceType is "git" in BigBang , but we want helmrepo
+	sourceType           = "helmRepo" // Default sourceType is "git" in BigBang , but we want helmrepo
 )
 
 var createTemplateCmd = &cobra.Command{
@@ -85,6 +86,9 @@ func ensureBBValues(bbValuesFile, bbVersion string) error {
 
 func splitBBValues(bbValuesFile string, valuesDirectory string, secretsDirectory string) error {
 	repo_keys := strings.Split(repositoryKeys, " ")
+	values_kustomizationFile := fmt.Sprintf("%s/kustomization.yaml", valuesDirectory)
+	secrets_kustomizationFile := fmt.Sprintf("%s/kustomization.yaml", secretsDirectory)
+	var kustomization_keys []string
 
 	content, err := os.ReadFile(bbValuesFile)
 	if err != nil {
@@ -108,7 +112,12 @@ func splitBBValues(bbValuesFile string, valuesDirectory string, secretsDirectory
 		} else if contains(repo_keys, key) {
 			repositoryValues[key] = value
 		} else {
-			// if err := writeValuesYAMLToFile(valuesDirectory, strings.ToLower(key), content); err != nil {
+			// valueContent := map[string]interface{}{
+			// 	key: value,
+			// }
+			// if err := writeValuesYAMLToFile(valuesDirectory, strings.ToLower(key+"_nocomments"), valueContent); err != nil {
+			// 	return fmt.Errorf("failed to write values file for %s: %w", key, err)
+			// }
 			filePath := fmt.Sprintf("%s/%s.yaml", valuesDirectory, strings.ToLower(key))
 			c := fmt.Sprintf(
 				"yq 'with(.%s.sourceType; . = \"%s\" | . style=\"double\") | .%s | {\"%s\" : . }' %s > %s",
@@ -124,25 +133,22 @@ func splitBBValues(bbValuesFile string, valuesDirectory string, secretsDirectory
 			if err := createBBSecretFiles(secretsDirectory, strings.ToLower(key)); err != nil {
 				return fmt.Errorf("failed to write secret file for %s: %w", key, err)
 			}
+
+			kustomization_keys = append(kustomization_keys, key)
 		}
 	}
 
-	// for key, value := range addonsValues {
-	// 	addonsContent := map[string]interface{}{
-	// 		"addons": map[string]interface{}{
-	// 			key: value,
-	// 		},
-	// 	}
-
-	// 	if err := writeValuesYAMLToFile(valuesDirectory, key, addonsContent); err != nil {
-	// 		return fmt.Errorf("failed to write values file for %s: %w", key, err)
-	// 	}
-	// 	if err := createBBSecretFiles(secretsDirectory, strings.ToLower(key)); err != nil {
-	// 		return fmt.Errorf("failed to write secret file for %s: %w", key, err)
-	// 	}
-	// }
-
+	// for addon_key, value := range addonsValues {
 	for addon_key := range addonsValues {
+		// addonsContent := map[string]interface{}{
+		// 	"addons": map[string]interface{}{
+		// 		addon_key: value,
+		// 	},
+		// }
+		// if err := writeValuesYAMLToFile(valuesDirectory, strings.ToLower(addon_key+"_nocomments"), addonsContent); err != nil {
+		// 	return fmt.Errorf("failed to write values file for %s: %w", addon_key, err)
+		// }
+
 		filePath := fmt.Sprintf("%s/%s.yaml", valuesDirectory, strings.ToLower(addon_key))
 		c := fmt.Sprintf(
 			"yq 'with(.addons.%s.sourceType; . = \"%s\" | . style=\"double\") | .addons.%s | {\"addons\": {\"%s\" : . }}' %s > %s",
@@ -158,10 +164,13 @@ func splitBBValues(bbValuesFile string, valuesDirectory string, secretsDirectory
 		if err := createBBSecretFiles(secretsDirectory, strings.ToLower(addon_key)); err != nil {
 			return fmt.Errorf("failed to write secret file for %s: %w", addon_key, err)
 		}
+		kustomization_keys = append(kustomization_keys, addon_key)
 	}
+	// -------------------------------------------------------------------------------------------------------------------------------------------------
+	// Create the repo.yaml file
 
-	// if err := writeValuesYAMLToFile(valuesDirectory, "repo", repositoryValues); err != nil {
-	// 	return fmt.Errorf("failed to write repository.yaml file: %w", err)
+	// if err := writeValuesYAMLToFile(valuesDirectory, "repo_nocomments", repositoryValues); err != nil {
+	// 	return fmt.Errorf("failed to write repo.yaml file: %w", err)
 	// }
 
 	keys := strings.Join(repo_keys, `","`)
@@ -172,12 +181,12 @@ func splitBBValues(bbValuesFile string, valuesDirectory string, secretsDirectory
 		log.Fatalf("Failed to run yq command: %v", err)
 	}
 
-	// update the .helmRepositories key with default values
-	c = fmt.Sprintf("yq eval '.helmRepositories += [{\"name\": \"registry1\", \"repository\": \"oci://registry1.dso.mil/bigbang\", \"existingSecret\": \"private-registry\", \"type\": \"oci\"}]' -i %s", filePath)
-	cmd = exec.Command("sh", "-c", c)
-	if err := cmd.Run(); err != nil {
-		log.Fatalf("Failed to run yq command: %v", err)
-	}
+	// // update the .helmRepositories key with default values
+	// c = fmt.Sprintf("yq eval '.helmRepositories += [{\"name\": \"registry1\", \"repository\": \"oci://registry1.dso.mil/bigbang\", \"existingSecret\": \"private-registry\", \"type\": \"oci\"}]' -i %s", filePath)
+	// cmd = exec.Command("sh", "-c", c)
+	// if err := cmd.Run(); err != nil {
+	// 	log.Fatalf("Failed to run yq command: %v", err)
+	// }
 
 	log.Printf("Created the BB Values File %s", filePath)
 
@@ -185,10 +194,84 @@ func splitBBValues(bbValuesFile string, valuesDirectory string, secretsDirectory
 		return fmt.Errorf("failed to write secret file for repo: %w", err)
 	}
 
+	kustomization_keys = append(kustomization_keys, "repo")
+	// -------------------------------------------------------------------------------------------------------------------------------------------------
 	if err := createBBSecretFiles(secretsDirectory, "repository-credentials"); err != nil {
 		return fmt.Errorf("failed to write secret file for repository-credentials: %w", err)
 	}
+	// -------------------------------------------------------------------------------------------------------------------------------------------------
+	// log.Printf("Creating values kustomization file %s\n", values_kustomizationFile)
+	file, err := os.Create(values_kustomizationFile)
+	if err != nil {
+		return fmt.Errorf("Error creating kustomization file for values at %s: %w", values_kustomizationFile, err)
+	}
+	defer file.Close() // Ensure the file is closed after writing
 
+	// Write the fixed part of the YAML content
+	header := `---
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+namespace: bigbang
+generatorOptions:
+  disableNameSuffixHash: true
+  labels:
+    app.kubernetes.io/part-of: bigbang
+configMapGenerator:
+- name: bb-helm-values
+  files:
+`
+
+	// Write the header to the file
+	_, err = file.WriteString(header)
+	if err != nil {
+		return fmt.Errorf("failed to write kustomization file for values at %s: %w", values_kustomizationFile, err)
+	}
+
+	// Write each sorted item to the file
+	sort.Strings(kustomization_keys)
+	for _, item := range kustomization_keys {
+		line := fmt.Sprintf("    - %s.yaml\n", strings.ToLower(item))
+		_, err = file.WriteString(line)
+		if err != nil {
+			return fmt.Errorf("failed to write kustomization file for values at %s: %w", values_kustomizationFile, err)
+		}
+	}
+
+	log.Printf("Created values kustomization file %s successfully.\n", values_kustomizationFile)
+	// -------------------------------------------------------------------------------------------------------------------------------------------------
+	// fmt.Printf("Creating secrets kustomization file %s\n", secrets_kustomizationFile)
+	file, err = os.Create(secrets_kustomizationFile)
+	if err != nil {
+		return fmt.Errorf("Error creating kustomization file for secrets at %s: %w", secrets_kustomizationFile, err)
+	}
+	defer file.Close() // Ensure the file is closed after writing
+
+	// Write the fixed part of the YAML content
+	secrets_header := `---
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+namespace: bigbang
+resources:
+`
+
+	// Write the header to the file
+	_, err = file.WriteString(secrets_header)
+	if err != nil {
+		return fmt.Errorf("failed to write kustomization file for secrets at %s: %w", secrets_kustomizationFile, err)
+	}
+
+	// Write each sorted item to the file
+	sort.Strings(kustomization_keys)
+	for _, item := range kustomization_keys {
+		line := fmt.Sprintf("  - %s.enc.yaml\n", strings.ToLower(item))
+		_, err = file.WriteString(line)
+		if err != nil {
+			return fmt.Errorf("failed to write kustomization file for secrets at %s: %w", secrets_kustomizationFile, err)
+		}
+	}
+
+	log.Printf("Created secrets kustomization file %s successfully.\n", secrets_kustomizationFile)
+	// -------------------------------------------------------------------------------------------------------------------------------------------------
 	return nil
 }
 
@@ -207,7 +290,7 @@ func writeValuesYAMLToFile(dir string, filename string, content interface{}) err
 	if !ok {
 		return fmt.Errorf("content is not of type map[string]interface{}")
 	}
-	
+
 	updateSourceType(contentMap)
 
 	filePath := fmt.Sprintf("%s/%s.yaml", dir, filename)
@@ -234,9 +317,7 @@ func writeValuesYAMLToFile(dir string, filename string, content interface{}) err
 func updateSourceType(data map[string]interface{}) {
 	for key, val := range data {
 		if key == "sourceType" {
-			if sourceVal, ok := val.(string); ok && sourceVal == "git" {
-				data[key] = sourceType
-			}
+			data[key] = sourceType
 			// } else if key == "helmRepositories" {
 			// 	repositories, ok := val.([]interface{})
 			// 	if ok {
@@ -288,34 +369,6 @@ func createBBSecretFiles(secretsDirectory string, key string) error {
 
 	if err := os.Remove(secretInputFile); err != nil {
 		return fmt.Errorf("failed to remove temporary secret file %s: %w", secretInputFile, err)
-	}
-	return nil
-}
-
-func createHighLevelComponentFiles(bbValuesFile string, valuesDirectory string, secretsDirectory string) error {
-	dropKeys := ".helmRepositories,.wrapper,.packages,"
-	// Concatenate DROP_KEYS with repository keys
-	for _, key := range repositoryKeys {
-		dropKeys += fmt.Sprintf(".%s,", key)
-	}
-	dropKeys += "addons"
-
-	fmt.Println("Splitting BigBang Helm Values file")
-
-	cmdStr := fmt.Sprintf("yq 'del(%s) | ... comments=\"\"| keys | .[]' %s", dropKeys, bbValuesFile)
-	// Run the command
-	keys, err := exec.Command("bash", "-c", cmdStr).Output()
-	if err != nil {
-		fmt.Fprintf(os.Stderr, "Command execution failed: %v\n", err)
-		os.Exit(1)
-	}
-
-	// Split the output into lines to get individual keys
-	keyList := strings.Split(strings.TrimSpace(string(keys)), "\n")
-
-	for _, key := range keyList {
-		fmt.Println("------------------------------------------------------------")
-		fmt.Printf("Processing component %s\n", key)
 	}
 	return nil
 }
