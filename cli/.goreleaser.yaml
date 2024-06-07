@@ -28,7 +28,7 @@ builds:
     hooks:
       pre:
         - mkdir -p binaries
-        - wget -P cmd/enbuild/binaries/ https://github.com/mikefarah/yq/releases/download/{{ .Env.yq_version }}/yq-{{ .Os }}-{{ .Arch }}{{ if eq .Os "windows" }}.exe{{ end }}
+        # - wget -P cmd/enbuild/binaries/ https://github.com/mikefarah/yq/releases/download/{{ .Env.yq_version }}/yq-{{ .Os }}-{{ .Arch }}{{ if eq .Os "windows" }}.exe{{ end }}
       post:
         - rm -rf binaries
     env:
