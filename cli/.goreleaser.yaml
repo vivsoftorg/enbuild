@@ -10,7 +10,7 @@ release:
   prerelease: auto
 
 env:
-  - cosign_version=v2.2.3+carbide.1
+  - yq_version=v4.44.1
   - GO111MODULE=on
   - vpkg="0.0.1"
 
@@ -28,7 +28,7 @@ builds:
     hooks:
       pre:
         - mkdir -p binaries
-        # - wget -P cmd/enbuild/binaries/ https://github.com/rancher-government-carbide/cosign/releases/download/{{ .Env.cosign_version }}/cosign-{{ .Os }}-{{ .Arch }}{{ if eq .Os "windows" }}.exe{{ end }}
+        - wget -P cmd/enbuild/binaries/ https://github.com/mikefarah/yq/releases/download/{{ .Env.yq_version }}/yq-{{ .Os }}-{{ .Arch }}{{ if eq .Os "windows" }}.exe{{ end }}
       post:
         - rm -rf binaries
     env:
