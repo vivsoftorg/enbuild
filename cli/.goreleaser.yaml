@@ -27,9 +27,10 @@ builds:
     #   - -s -w -X {{ .Env.vpkg }}.gitVersion={{ .Version }} -X {{ .Env.vpkg }}.gitCommit={{ .ShortCommit }} -X {{ .Env.vpkg }}.gitTreeState={{if .IsGitDirty}}dirty{{else}}clean{{end}} -X {{ .Env.vpkg }}.buildDate={{ .Date }}
     hooks:
       pre:
-        - mkdir -p binaries
-        # - wget -P cmd/enbuild/binaries/ https://github.com/mikefarah/yq/releases/download/{{ .Env.yq_version }}/yq-{{ .Os }}-{{ .Arch }}{{ if eq .Os "windows" }}.exe{{ end }}
+        - mkdir -p bin/
+        # - wget -P bin/ https://github.com/mikefarah/yq/releases/download/{{ .Env.yq_version }}/yq_{{ .Os }}_{{ .Arch }}{{ if eq .Os "windows" }}.exe{{ end }}
       post:
+        # - echo "yq downloaded"
         - rm -rf binaries
     env:
       - CGO_ENABLED=0
