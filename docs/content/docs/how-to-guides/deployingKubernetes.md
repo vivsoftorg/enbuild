@@ -117,7 +117,7 @@ It is a fully conformant Kubernetes distribution that focuses on security and co
   - **Default value:** `false`
 
 - **registry1_mirror_proxy_address** (`string`)
-  - **Description:** **registry1_mirror_proxy_address**  variable is used to declare the proxy address for the registry1 mirror.
+  - **Description:**  This address should have a proper container registry up and running and listening
   - **Example:** `"http://44.210.192.97:5000"`
 
 - After providing all the input values, provide the name for your deployment proceed to Infrastructure section,
