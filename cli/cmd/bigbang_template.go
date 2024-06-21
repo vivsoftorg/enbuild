@@ -17,7 +17,7 @@ const (
 	targetDirectory      = "target"
 	valuesDirectoryName  = "bb_values"
 	secretsDirectoryName = "bb_secrets"
-	repositoryKeys       = "domain offline helmRepositories registryCredentials openshift git sso flux networkPolicies imagePullPolicy wrapper packages"
+	repositoryKeys       = "domain offline helmRepositories registryCredentials openshift git sso flux networkPolicies imagePullPolicy"
 	sourceType           = "helmRepo" // Default sourceType is "git" in BigBang , but we want helmrepo
 )
 

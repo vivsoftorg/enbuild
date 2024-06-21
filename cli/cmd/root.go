@@ -8,7 +8,7 @@ import (
 )
 
 // Version of the application, should be set during build time.
-var version = "v0.0.5" // Replace with current version number as needed.
+var version = "v0.0.6" // Replace with current version number as needed.
 
 // rootCmd represents the base command when called without any subcommands
 var rootCmd = &cobra.Command{
