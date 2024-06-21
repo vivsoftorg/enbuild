@@ -33,6 +33,7 @@ ENBUILD supports GitHub, GitLab VCS as of now.
 These are the Version Control System where ENBUILD creates repositories when you deploy catalog item
 
 ### GITHUB
+Navigate to Admin Settings and select GITHUB under, Set and configure your VCS account. Once selected click the configure button at the top right of the GITHUB box you have selected. 
 
 - ***Github Account*** -- The Github account where the deployment repositories will be created.
 - ***Github Token*** -- The Token to be used to create deployment repositories

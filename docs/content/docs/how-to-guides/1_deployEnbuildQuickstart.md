@@ -19,6 +19,8 @@ seo:
 Follow these step-by-step instructions to deploy ENBUILD locally for testing.
 
 ## Prerequisites
+Before you begin, ensure that you have the following prerequisites in place:
+- [Docker](https://docs.docker.com/engine/install/) installed on your system
 
 ### Existing Kubernetes Cluster
 
@@ -75,7 +77,7 @@ Make sure you update the values input to reference the values you created in Ste
 Execute the command below.
 
 ```bash
-helm upgrade --install --namespace enbuild enbuild vivsoft/enbuild --create-namespace -f target/quick_install.yaml
+helm upgrade --install --namespace enbuild enbuild vivsoft/enbuild --create-namespace -f >path of file</quick_install.yaml
 
 Release "enbuild" does not exist. Installing it now.
 NAME: enbuild
