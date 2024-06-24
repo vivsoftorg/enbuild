@@ -1,11 +1,10 @@
 global:
-  AppVersion: 1.0.13
   image:
     registry: registry1.dso.mil
     pullPolicy: IfNotPresent
-    registry_credentials: 
-      username: REGISTRY1_USER_NAME
-      password: REGISTRY1_PASSWORD
+    registry_credentials:
+      username: Juned_Memon
+      password: JZHFXd0uGbG4xYGYeSVWqimufXHMwX
 mongodb:
   enabled: true
   mongo_root_username: "enbuild"
@@ -18,8 +17,8 @@ rabbitmq:
     registry: registry1.dso.mil
     repository: ironbank/bitnami/rabbitmq
     tag: 3.11.1
-    pullSecrets: 
-      - name: enbuild-image-pull-secret
+    pullSecrets:
+      - enbuild-image-pull-secret
 enbuildUi:
   image:
     repository: ironbank/vivsoft/enbuild/frontend

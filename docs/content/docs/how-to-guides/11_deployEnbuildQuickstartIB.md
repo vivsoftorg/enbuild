@@ -72,45 +72,6 @@ For local deployment however we require minimum deployment values.
 
 Refer to the [example helm input file to be used to pull images from IronBank](https://github.com/vivsoftorg/enbuild/blob/main/examples/enbuild/quick_install_ib.yaml) for guidance. Make sure to replace the REGISTRY1_USER_NAME and REGISTRY1_PASSWORD , with your registry1 credentials.
 
-```
-global:
-  AppVersion: 1.0.13
-  image:
-    registry: registry1.dso.mil
-    pullPolicy: IfNotPresent
-    registry_credentials: 
-      username: REGISTRY1_USER_NAME
-      password: REGISTRY1_PASSWORD
-mongodb:
-  enabled: true
-  mongo_root_username: "enbuild"
-  mongo_root_password: "SuperSecret"
-  image:
-    repository: ironbank/opensource/mongodb/mongodb
-    tag: 4.4.5
-rabbitmq:
-  image:
-    registry: registry1.dso.mil
-    repository: ironbank/bitnami/rabbitmq
-    tag: 3.11.1
-    pullSecrets: 
-      - name: enbuild-image-pull-secret
-enbuildUi:
-  image:
-    repository: ironbank/vivsoft/enbuild/frontend
-enbuildBk:
-  image:
-    repository: ironbank/vivsoft/enbuild/backend
-enbuildUser:
-  image:
-    repository: ironbank/vivsoft/enbuild/enbuild-user
-enbuildSync:
-  image:
-    repository: ironbank/vivsoft/enbuild/enbuild-mq
-```
-
-
-
 ### Deploy ENBUILD HELM Chart
 
 Make sure you update the values input to reference the values you created in Step 2.
