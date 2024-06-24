@@ -3,8 +3,8 @@ global:
     registry: registry1.dso.mil
     pullPolicy: IfNotPresent
     registry_credentials:
-      username: Juned_Memon
-      password: JZHFXd0uGbG4xYGYeSVWqimufXHMwX
+      username: REGISTRY1_USER_NAME
+      password: REGISTRY1_PASSWORD
 mongodb:
   enabled: true
   mongo_root_username: "enbuild"
