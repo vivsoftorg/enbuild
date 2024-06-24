@@ -1,0 +1,29 @@
+global:
+  AppVersion: 1.0.13
+  image:
+    registry: registry1.dso.mil
+    pullPolicy: IfNotPresent
+    registry_credentials: 
+      username: REGISTRY1_USER_NAME
+      password: REGISTRY1_PASSWORD
+mongodb:
+  enabled: true
+  mongo_root_username: "enbuild"
+  mongo_root_password: "SuperSecret"
+  image:
+    repository: ironbank/opensource/mongodb/mongodb
+    tag: 4.4.5
+enbuildUi:
+  image:
+    repository: ironbank/vivsoft/enbuild/frontend
+enbuildBk:
+  image:
+    repository: ironbank/vivsoft/enbuild/backend
+enbuildUser:
+  image:
+    repository: ironbank/vivsoft/enbuild/enbuild-user
+enbuildSync:
+  image:
+    repository: ironbank/vivsoft/enbuild/enbuild-mq
+
+#registry1.dso.mil/ironbank/bitnami/rabbitmq:3.11.1
