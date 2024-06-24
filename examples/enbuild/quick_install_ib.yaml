@@ -13,6 +13,13 @@ mongodb:
   image:
     repository: ironbank/opensource/mongodb/mongodb
     tag: 4.4.5
+rabbitmq:
+  image:
+    registry: registry1.dso.mil
+    repository: ironbank/bitnami/rabbitmq
+    tag: 3.11.1
+    pullSecrets: 
+      - name: enbuild-image-pull-secret
 enbuildUi:
   image:
     repository: ironbank/vivsoft/enbuild/frontend
@@ -25,5 +32,3 @@ enbuildUser:
 enbuildSync:
   image:
     repository: ironbank/vivsoft/enbuild/enbuild-mq
-
-#registry1.dso.mil/ironbank/bitnami/rabbitmq:3.11.1

@@ -64,7 +64,7 @@ spec:
           runAsGroup: 1001
           runAsNonRoot: true
           runAsUser: 1001
-{{- if .Values.imageCredentials }}
+{{- if .Values.global.image.registry_credentials }}
       imagePullSecrets:
       - name: {{ .Release.Name }}-image-pull-secret
 {{- end }}
