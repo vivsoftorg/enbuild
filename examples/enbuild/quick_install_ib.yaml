@@ -1,7 +1,7 @@
 global:
   image:
     registry: registry1.dso.mil
-    pullPolicy: IfNotPresent
+    pullPolicy: Always
     registry_credentials:
       username: REGISTRY1_USER_NAME
       password: REGISTRY1_PASSWORD
@@ -16,7 +16,7 @@ rabbitmq:
   image:
     registry: registry1.dso.mil
     repository: ironbank/bitnami/rabbitmq
-    tag: 3.11.1
+    tag: 3.12.14
     pullSecrets:
       - enbuild-image-pull-secret
 enbuildUi:
