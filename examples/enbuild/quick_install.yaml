@@ -1,7 +1,3 @@
 global:
   image:
-    registry: registry.gitlab.com
     pullPolicy: IfNotPresent
-    registry_credentials: {}
-      # username: registry_user_name
-      # password: registry_password

@@ -34,6 +34,8 @@ These are the Version Control System where ENBUILD creates repositories when you
 
 ### GITHUB
 
+By default , github is not enabled, so first you need to enable github, by clicking in it (only if you are planning to use Github as your VCS), and then set the following settings
+
 - ***Github Account*** -- The Github account where the deployment repositories will be created.
 - ***Github Token*** -- The Token to be used to create deployment repositories
 - ***Github Host*** -- The Github Host URL (e.g. https://github.com/)
@@ -52,6 +54,7 @@ These are the Version Control System where ENBUILD creates repositories when you
 
 <picture><img src="/images/deployEnbuildQuickstart/setup_github_repositroy.png" alt="Screenshot of ENBUILD Github VCS Configuration Screen"></img></picture>
 
+:exclamation: **Note:** You need to restart the enbuild-enbuild-mq-\* pod after changing the VCS (GITHUB and GITLAB) setting.
 
 ## Catalog level Permissions
 
