@@ -70,7 +70,12 @@ For local deployment however we require minimum deployment values.
 
 :exclamation: **Note:** For more information about the complete set of ENBUILD Helm values click [here](/docs/getting-started/helm-values/)!
 
-Refer to the [example helm input file to be used to pull images from IronBank](https://github.com/vivsoftorg/enbuild/blob/main/examples/enbuild/quick_install_ib.yaml) for guidance. Make sure to replace the REGISTRY1_USER_NAME and REGISTRY1_PASSWORD , with your registry1 credentials.
+Refer to the [example helm input file to be used to pull images from IronBank](https://github.com/vivsoftorg/enbuild/blob/main/examples/enbuild/quick_install_ib.yaml) for guidance. 
+
+Make sure to replace the 
+REGISTRY1_USER_NAME and REGISTRY1_PASSWORD , with your registry1 credentials.
+AppVersion with the ENBUILD application version you want to install. ( Make sure the images with the selected tags are present in IronBank)
+ 
 
 ### Deploy ENBUILD HELM Chart
 
