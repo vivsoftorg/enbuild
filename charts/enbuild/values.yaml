@@ -45,6 +45,7 @@ jupyterhub:
     service:
       type: ClusterIP
   hub:
+    baseUrl: /jupyter
     config:
       JupyterHub:
         authenticator_class: dummy
