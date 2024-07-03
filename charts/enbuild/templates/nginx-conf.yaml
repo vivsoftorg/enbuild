@@ -25,6 +25,10 @@ data:
       location /enbuild-ml/ {
         proxy_pass http://{{ .Release.Name }}-enbuild-ml/;
       }
+      
+      location /jupyter/ {
+        proxy_pass http://proxy-public/;
+    }
 {{- end }}
 
 {{- if .Values.enbuildRequest.enabled }}

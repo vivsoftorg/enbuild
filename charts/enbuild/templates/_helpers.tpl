@@ -69,7 +69,7 @@ Create the name of the service account to use
 
 {{- define "jupyterhubUrl" }}
 {{- if .Values.jupyterhub.cull.enabled }}
-{{- printf "https://jupyter.%s/" .Values.global.domain -}}
+{{- printf "http://jupyter/"}}
 {{- else }}
 {{- .Values.global.jupyterhubUrl -}}
 {{- end }}
