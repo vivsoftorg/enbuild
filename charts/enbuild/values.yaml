@@ -39,6 +39,7 @@ global:
 ## @section Jupyterhub Parameters
 ## @skip jupyterhub.proxy
 ## @skip jupyterhub.hub
+## @skip jupyterhub.singleuser
 ## @param jupyterhub.cull.enabled  [default: false] Deploy Jupyterhub 
 jupyterhub:
   proxy:
@@ -54,6 +55,22 @@ jupyterhub:
         auto_login: false
   cull:
     enabled: false
+  singleuser:
+    image:
+      pullPolicy: Always
+    profileList:
+      - display_name: "CDAO Reliable AI Instance"
+        description: "Includes base Reliable AI Security Toolkit Python Tools - Counterfit, Foolbox and Armory"
+        default: true
+      - display_name: "CDAO Reliable AI Datascience Instance"
+        description: "Includes base Reliable AI Explainability Toolkit Python Tools - XAITK - Saliency, lime, Shap, Explainer Dashboard"
+        kubespawner_override:
+          image: jupyter/scipy-notebook:latest
+      - display_name: "Spark environment"
+        description: "The Jupyter Stacks spark image!"
+        # kubespawner_override:
+        #   image: jupyter/all-spark-notebook:2343e33dec46
+
 
 ## @section ENBUILD RabbitMQ parameters
 ## @param rabbitmq.enabled  [default: true] Set to false to use existing RabbitMQ
