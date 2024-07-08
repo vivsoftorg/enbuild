@@ -6,7 +6,7 @@ draft: false
 menu:
   docs:
     parent: "docs/how-to-guides/"
-    identifier: "deployEnbuildQuickstart"
+    identifier: "EnbuildAMI"
 weight: 203
 toc: true
 seo:
