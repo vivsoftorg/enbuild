@@ -25,6 +25,7 @@ data:
       location /enbuild-ml/ {
         proxy_pass http://{{ .Release.Name }}-enbuild-ml/;
       }
+      {{- if .Values.jupyterhub.cull.enabled }}
       location /jupyter/ {
           proxy_pass http://proxy-public/jupyter/;
           proxy_set_header X-Real-IP $remote_addr;
@@ -37,6 +38,7 @@ data:
           sub_filter 'src="/hub/' 'src="/jupyter/hub/';
           sub_filter_once off;
       }
+      {{- end }}
 {{- end }}
 
 {{- if .Values.enbuildRequest.enabled }}
