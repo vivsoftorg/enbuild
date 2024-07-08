@@ -16,9 +16,13 @@ seo:
   noindex: false # false (default) or true
 ---
 
-# Creating an AWS EC2 Instance Using the ENBUILD AMI
+# Creating an AWS EC2 Instance Using the ENBUILD AMI or Marketplace Item
 
 This guide will walk you through the steps to create an Amazon EC2 instance using the AMI named ENBUILD.
+
+The ENBUILD AMI has ENBUILD pre-installed in it, along with the gitlab.
+
+The Gitlab also has Catalog repositories of BigBang and EKS pre-populated with it.
 
 ## Prerequisites
 
@@ -98,6 +102,18 @@ This guide will walk you through the steps to create an Amazon EC2 instance usin
 2. Click the **Connect** button and follow the instructions to connect to your instance using SSH (for Linux instances) or RDP (for Windows instances).
 
 Congratulations! You have successfully launched an EC2 instance using the ENBUILD AMI.
+
+## Accessing Services of ENBUILD
+
+The services can be accessed after launching the instance using the AMI at the following URLs with the given public IP (`NODE_PUBLIC_IP`) of the node:
+
+- **Enbuild**: [http://NODE_PUBLIC_IP:30080/](http://$NODE_PUBLIC_IP:30080/)
+- **Gitlab**: [http://NODE_PUBLIC_IP:32080/](http://$NODE_PUBLIC_IP:32080/)
+- **Hauler**: [http://NODE_PUBLIC_IP:30500/v2/_catalog](http://$NODE_PUBLIC_IP:30500/v2/_catalog)
+
+Default credentials for Gitlab are `root/supersecretpassword`, and the token for the root user is `glpat-RuJrDn4yUuPRJySjJdZh`.
+
+
 
 ## Additional Resources
 
