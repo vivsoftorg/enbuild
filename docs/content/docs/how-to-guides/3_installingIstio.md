@@ -18,7 +18,7 @@ seo:
 
 # Prerequisites
 Before you begin, ensure that you have the following prerequisites in place:
-- Access to Platform1 registry
+- Access to Platform1 registry. Create account at registry1.dso.mil.
 - Kubernetes cluster is up and running and you have access to it via `kubectl` command.
 - Helm 3 installed on your system.
 

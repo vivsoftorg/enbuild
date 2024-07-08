@@ -33,6 +33,7 @@ ENBUILD supports GitHub, GitLab VCS as of now.
 These are the Version Control System where ENBUILD creates repositories when you deploy catalog item
 
 ### GITHUB
+Navigate to Admin Settings and select GITHUB under, Set and configure your VCS account. Once selected click the configure button at the top right of the GITHUB box you have selected. 
 
 By default , github is not enabled, so first you need to enable github, by clicking in it (only if you are planning to use Github as your VCS), and then set the following settings
 
