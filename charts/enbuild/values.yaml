@@ -36,7 +36,6 @@ global:
     # username: registry_user_name
     # password: registry_password
 
-## @section Jupyterhub Parameters
 ## @skip jupyterhub.proxy
 ## @skip jupyterhub.hub
 ## @skip jupyterhub.singleuser

@@ -42,9 +42,6 @@ The following key value pairs are used to configure ENBUILD.
 | `global.image.registry_credentials.username` | Container registry Username                                                                                                                                                                      | `""`                  |
 | `global.image.registry_credentials.password` | Container registry password                                                                                                                                                                      | `""`                  |
 
-### Jupyterhub Parameters
-
-
 ### ENBUILD RabbitMQ parameters
 
 | Name                         | Description                                                          | Value         |

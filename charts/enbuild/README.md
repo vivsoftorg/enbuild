@@ -61,9 +61,6 @@ To uninstall/delete the `enbuild` deployment:
 | `global.image.registry_credentials.username` | Container registry Username                                                                                                                                                                      | `""`                  |
 | `global.image.registry_credentials.password` | Container registry password                                                                                                                                                                      | `""`                  |
 
-### Jupyterhub Parameters
-
-
 ### ENBUILD RabbitMQ parameters
 
 | Name                         | Description                                                          | Value         |
