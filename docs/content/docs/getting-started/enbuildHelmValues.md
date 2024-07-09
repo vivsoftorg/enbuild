@@ -44,9 +44,6 @@ The following key value pairs are used to configure ENBUILD.
 
 ### Jupyterhub Parameters
 
-| Name                      | Description        | Value   |
-| ------------------------- | ------------------ | ------- |
-| `jupyterhub.cull.enabled` | Deploy Jupyterhub  | `false` |
 
 ### ENBUILD RabbitMQ parameters
 
@@ -115,13 +112,14 @@ The following key value pairs are used to configure ENBUILD.
 
 ### ENBUILD ML Services parameters
 
-| Name                         | Description                                                            | Value                                            |
-| ---------------------------- | ---------------------------------------------------------------------- | ------------------------------------------------ |
-| `enbuildMl.enabled`          | Should we create the ENBUILD ML microservice ?                         | `false`                                          |
-| `enbuildMl.image.repository` | Container repository for enbuildMl                                     | `enbuild-staging/vivsoft-platform-ui/enbuild-ml` |
-| `enbuildMl.image.tag`        | Container image tag. Skip to use the HelmChart appVersion as Image Tag | `undefined`                                      |
-| `enbuildMl.replicas`         | Container enbuildMl Replicas                                           | `1`                                              |
-| `enbuildMl.service_type`     | enbuildMl service_type                                                 | `ClusterIP`                                      |
+| Name                           | Description                                                            | Value                                            |
+| ------------------------------ | ---------------------------------------------------------------------- | ------------------------------------------------ |
+| `enbuildMl.enabled`            | Should we create the ENBUILD ML microservice ?                         | `false`                                          |
+| `enbuildMl.image.repository`   | Container repository for enbuildMl                                     | `enbuild-staging/vivsoft-platform-ui/enbuild-ml` |
+| `enbuildMl.image.tag`          | Container image tag. Skip to use the HelmChart appVersion as Image Tag | `undefined`                                      |
+| `enbuildMl.replicas`           | Container enbuildMl Replicas                                           | `1`                                              |
+| `enbuildMl.service_type`       | enbuildMl service_type                                                 | `ClusterIP`                                      |
+| `enbuildMl.jupyterhub.enabled` | Should we create the Jupyterhub for ENBUILD ML ?                       | `false`                                          |
 
 ### ENBUILD GenAI Services parameters
 

@@ -40,7 +40,7 @@ global:
 ## @skip jupyterhub.proxy
 ## @skip jupyterhub.hub
 ## @skip jupyterhub.singleuser
-## @param jupyterhub.cull.enabled  [default: false] Deploy Jupyterhub 
+## @skip jupyterhub.cull
 jupyterhub:
   proxy:
     service:
@@ -54,7 +54,7 @@ jupyterhub:
       Authenticator:
         auto_login: false
   cull:
-    enabled: false
+    enabled: true
   singleuser:
     image:
       pullPolicy: Always
@@ -173,8 +173,11 @@ enbuildSync:
 ## @param enbuildMl.image.tag  [nullable] Container image tag. Skip to use the HelmChart appVersion as Image Tag
 ## @param enbuildMl.replicas Container enbuildMl Replicas
 ## @param enbuildMl.service_type  enbuildMl service_type
+## @param enbuildMl.jupyterhub.enabled  [default: false] Should we create the Jupyterhub for ENBUILD ML ?
 enbuildMl:
   enabled: false
+  jupyterhub:
+    enabled: false
   image:
     repository: enbuild-staging/vivsoft-platform-ui/enbuild-ml
   replicas: 1
