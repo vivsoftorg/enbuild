@@ -120,11 +120,11 @@ To uninstall/delete the `enbuild` deployment:
 
 ### ENBUILD Sync Services parameters
 
-| Name                           | Description                                                            | Value                                                 |
-| ------------------------------ | ---------------------------------------------------------------------- | ----------------------------------------------------- |
-| `enbuildSync.image.repository` | Container repository for enbuildSync                                   | `enbuild-staging/vivsoft-platform-ui/enbuild-cronjob` |
-| `enbuildSync.image.tag`        | Container image tag. Skip to use the HelmChart appVersion as Image Tag | `undefined`                                           |
-| `enbuildSync.replicas`         | Container enbuildSync Replicas                                         | `1`                                                   |
+| Name                           | Description                                                            | Value                                                     |
+| ------------------------------ | ---------------------------------------------------------------------- | --------------------------------------------------------- |
+| `enbuildSync.image.repository` | Container repository for enbuildSync                                   | `enbuild-staging/vivsoft-platform-ui/enbuild-mq-consumer` |
+| `enbuildSync.image.tag`        | Container image tag. Skip to use the HelmChart appVersion as Image Tag | `undefined`                                               |
+| `enbuildSync.replicas`         | Container enbuildSync Replicas                                         | `1`                                                       |
 
 ### ENBUILD ML Services parameters
 

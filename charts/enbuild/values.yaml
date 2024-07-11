@@ -163,7 +163,7 @@ enbuildUser:
 ## @param enbuildSync.replicas Container enbuildSync Replicas
 enbuildSync:
   image:
-    repository: enbuild-staging/vivsoft-platform-ui/enbuild-cronjob
+    repository: enbuild-staging/vivsoft-platform-ui/enbuild-mq-consumer
   replicas: 1
 
 ## @section ENBUILD ML Services parameters
