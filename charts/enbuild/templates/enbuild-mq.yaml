@@ -41,16 +41,16 @@ spec:
           periodSeconds: 60
           successThreshold: 1
           timeoutSeconds: 10
-        readinessProbe:
-          failureThreshold: 3
-          initialDelaySeconds: 3
-          periodSeconds: 60
-          successThreshold: 1
-          timeoutSeconds: 10
-          exec:
-            command:
-            - node
-            - src/queue/testConnection.js
+        # readinessProbe:
+        #   failureThreshold: 3
+        #   initialDelaySeconds: 3
+        #   periodSeconds: 60
+        #   successThreshold: 1
+        #   timeoutSeconds: 10
+        #   exec:
+        #     command:
+        #     - node
+        #     - src/queue/testConnection.js
         name: enbuild-mq
         args:
           - run
