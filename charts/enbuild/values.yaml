@@ -157,11 +157,11 @@ enbuildUser:
   replicas: 1
   service_type: ClusterIP
 
-## @section ENBUILD Sync Services parameters
-## @param enbuildSync.image.repository  Container repository for enbuildSync
-## @param enbuildSync.image.tag [nullable] Container image tag. Skip to use the HelmChart appVersion as Image Tag
-## @param enbuildSync.replicas Container enbuildSync Replicas
-enbuildSync:
+## @section ENBUILD MQ Consumer Services parameters
+## @param enbuildConsumer.image.repository  Container repository for enbuildConsumer
+## @param enbuildConsumer.image.tag [nullable] Container image tag. Skip to use the HelmChart appVersion as Image Tag
+## @param enbuildConsumer.replicas Container enbuildConsumer Replicas
+enbuildConsumer:
   image:
     repository: enbuild-staging/vivsoft-platform-ui/enbuild-mq-consumer
   replicas: 1

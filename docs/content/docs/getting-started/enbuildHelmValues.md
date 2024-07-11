@@ -99,13 +99,13 @@ The following key value pairs are used to configure ENBUILD.
 | `enbuildUser.replicas`         | Container enbuildUser Replicas                                         | `1`                                                |
 | `enbuildUser.service_type`     | enbuildUser service_type                                               | `ClusterIP`                                        |
 
-### ENBUILD Sync Services parameters
+### ENBUILD MQ Consumer Services parameters
 
-| Name                           | Description                                                            | Value                                                     |
-| ------------------------------ | ---------------------------------------------------------------------- | --------------------------------------------------------- |
-| `enbuildSync.image.repository` | Container repository for enbuildSync                                   | `enbuild-staging/vivsoft-platform-ui/enbuild-mq-consumer` |
-| `enbuildSync.image.tag`        | Container image tag. Skip to use the HelmChart appVersion as Image Tag | `undefined`                                               |
-| `enbuildSync.replicas`         | Container enbuildSync Replicas                                         | `1`                                                       |
+| Name                               | Description                                                            | Value                                                     |
+| ---------------------------------- | ---------------------------------------------------------------------- | --------------------------------------------------------- |
+| `enbuildConsumer.image.repository` | Container repository for enbuildConsumer                               | `enbuild-staging/vivsoft-platform-ui/enbuild-mq-consumer` |
+| `enbuildConsumer.image.tag`        | Container image tag. Skip to use the HelmChart appVersion as Image Tag | `undefined`                                               |
+| `enbuildConsumer.replicas`         | Container enbuildConsumer Replicas                                     | `1`                                                       |
 
 ### ENBUILD ML Services parameters
 
