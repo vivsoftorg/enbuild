@@ -212,12 +212,8 @@ open-webui:
   ollama:
     enabled: true
     image:
-      tag: 3.1
+      tag: "0.3.1"
     ollama:
-      image:
-        repository: ollama/ollama
-        pullPolicy: IfNotPresent
-        tag: "0.3.1"
       gpu:
         enabled: false
         type: 'nvidia'
