@@ -5,5 +5,8 @@ dependencies:
 - name: jupyterhub
   repository: https://jupyterhub.github.io/helm-chart
   version: 3.3.7
-digest: sha256:2f9ffaab577cac0fea9629679929dfd0d356c3f5987cf8f18591c35467261850
-generated: "2024-07-09T18:25:14.334853+05:30"
+- name: open-webui
+  repository: https://helm.openwebui.com/
+  version: 3.1.1
+digest: sha256:4d77b63229cf5480115f97d4b966d5ce6d959645c05fb0e9fbba94f00a9659ca
+generated: "2024-07-31T10:05:10.474832+05:30"

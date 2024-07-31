@@ -209,3 +209,21 @@ enbuildRequest:
     repository: enbuild-staging/vivsoft-platform-ui/enbuild-request
   replicas: 1
   service_type: ClusterIP
+
+## @param ollama.enabled [default: false] Should we deploy the Ollama  ?
+## @skip ollama.runtimeClassName [default: ""] if using gpu, provide the runtimeClassName as nvidia else set it empty.
+## @skip ollama.ollama.gpu
+## @skip ollama.persistentVolume
+## @skip ollama.ollama.models
+ollama:
+  enabled: false
+  ollama:
+    gpu:
+      enabled: false
+      type: 'nvidia'
+      number: 1
+    models:
+      - llama3.1
+  runtimeClassName: ""
+  persistentVolume:
+    enabled: true
