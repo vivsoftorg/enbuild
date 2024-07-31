@@ -139,14 +139,14 @@ To uninstall/delete the `enbuild` deployment:
 
 ### ENBUILD GenAI Services parameters
 
-| Name                            | Description                                                            | Value                                               |
-| ------------------------------- | ---------------------------------------------------------------------- | --------------------------------------------------- |
-| `enbuildGenAI.enabled`          | Should we create the ENBUILD GenAI microservice ?                      | `false`                                             |
-| `enbuildGenAI.image.repository` | Container repository for enbuildGenAI                                  | `enbuild-staging/vivsoft-platform-ui/enbuild-genai` |
-| `enbuildGenAI.image.tag`        | Container image tag. Skip to use the HelmChart appVersion as Image Tag | `undefined`                                         |
-| `enbuildGenAI.replicas`         | Container enbuildGenAI Replicas                                        | `1`                                                 |
-| `enbuildGenAI.service_type`     | enbuildGenAI service_type                                              | `ClusterIP`                                         |
-| `enbuildGenAI.api_key`          | api_key for OpenAI service.                                            | `dummy`                                             |
+| Name                            | Description                                                                                            | Value                                               |
+| ------------------------------- | ------------------------------------------------------------------------------------------------------ | --------------------------------------------------- |
+| `enbuildGenAI.enabled`          | Should we create the ENBUILD GenAI microservice, which also controls whether or not to install Ollama. | `false`                                             |
+| `enbuildGenAI.image.repository` | Container repository for enbuildGenAI                                                                  | `enbuild-staging/vivsoft-platform-ui/enbuild-genai` |
+| `enbuildGenAI.image.tag`        | Container image tag. Skip to use the HelmChart appVersion as Image Tag                                 | `undefined`                                         |
+| `enbuildGenAI.replicas`         | Container enbuildGenAI Replicas                                                                        | `1`                                                 |
+| `enbuildGenAI.service_type`     | enbuildGenAI service_type                                                                              | `ClusterIP`                                         |
+| `enbuildGenAI.api_key`          | api_key for OpenAI service.                                                                            | `dummy`                                             |
 
 ### ENBUILD Request Services parameters
 
@@ -157,4 +157,3 @@ To uninstall/delete the `enbuild` deployment:
 | `enbuildRequest.image.tag`        | Container image tag. Skip to use the HelmChart appVersion as Image Tag | `undefined`                                           |
 | `enbuildRequest.replicas`         | Container enbuildRequest Replicas                                      | `1`                                                   |
 | `enbuildRequest.service_type`     | enbuildRequest service_type                                            | `ClusterIP`                                           |
-| `ollama.enabled`                  | Should we deploy the Ollama  ?                                         | `false`                                               |

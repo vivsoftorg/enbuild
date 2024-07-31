@@ -183,7 +183,7 @@ enbuildMl:
   service_type: ClusterIP
 
 ## @section ENBUILD GenAI Services parameters
-## @param enbuildGenAI.enabled [default: false] Should we create the ENBUILD GenAI microservice ?
+## @param enbuildGenAI.enabled [default: false] Should we create the ENBUILD GenAI microservice, which also controls whether or not to install Ollama.
 ## @param enbuildGenAI.image.repository  Container repository for enbuildGenAI
 ## @param enbuildGenAI.image.tag  [nullable] Container image tag. Skip to use the HelmChart appVersion as Image Tag
 ## @param enbuildGenAI.replicas Container enbuildGenAI Replicas
@@ -210,13 +210,9 @@ enbuildRequest:
   replicas: 1
   service_type: ClusterIP
 
-## @param ollama.enabled [default: false] Should we deploy the Ollama  ?
-## @skip ollama.runtimeClassName [default: ""] if using gpu, provide the runtimeClassName as nvidia else set it empty.
-## @skip ollama.ollama.gpu
-## @skip ollama.persistentVolume
-## @skip ollama.ollama.models
+## @skip ollama
 ollama:
-  enabled: false
+  enabled: true
   ollama:
     gpu:
       enabled: false
