@@ -20,7 +20,7 @@ dependencies:
   - name: jupyterhub
     version: 3.3.7
     repository: https://jupyterhub.github.io/helm-chart
-    condition: enbuildMl.jupyterhub.enabled
+    condition: enbuildMl.enabled
   - name: open-webui
     version: 3.1.1
     repository: https://helm.openwebui.com/
