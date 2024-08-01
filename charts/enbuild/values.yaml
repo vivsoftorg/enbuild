@@ -167,23 +167,20 @@ enbuildConsumer:
   replicas: 1
 
 ## @section ENBUILD ML Services parameters
-## @param enbuildMl.enabled [default: false] Should we create the ENBUILD ML microservice ?
+## @param enbuildMl.enabled [default: false] Should we create the ENBUILD ML microservice, which also controls whether or not to install jupyterhub
 ## @param enbuildMl.image.repository  Container repository for enbuildMl
 ## @param enbuildMl.image.tag  [nullable] Container image tag. Skip to use the HelmChart appVersion as Image Tag
 ## @param enbuildMl.replicas Container enbuildMl Replicas
 ## @param enbuildMl.service_type  enbuildMl service_type
-## @param enbuildMl.jupyterhub.enabled  [default: false] Should we create the Jupyterhub for ENBUILD ML ?
 enbuildMl:
   enabled: false
-  jupyterhub:
-    enabled: false
   image:
     repository: enbuild-staging/vivsoft-platform-ui/enbuild-ml
   replicas: 1
   service_type: ClusterIP
 
 ## @section ENBUILD GenAI Services parameters
-## @param enbuildGenAI.enabled [default: false] Should we create the ENBUILD GenAI microservice ?
+## @param enbuildGenAI.enabled [default: false] Should we create the ENBUILD GenAI microservice, which also controls whether or not to install Ollama.
 ## @param enbuildGenAI.image.repository  Container repository for enbuildGenAI
 ## @param enbuildGenAI.image.tag  [nullable] Container image tag. Skip to use the HelmChart appVersion as Image Tag
 ## @param enbuildGenAI.replicas Container enbuildGenAI Replicas
@@ -209,3 +206,20 @@ enbuildRequest:
     repository: enbuild-staging/vivsoft-platform-ui/enbuild-request
   replicas: 1
   service_type: ClusterIP
+
+## @skip open-webui
+open-webui:
+  ollama:
+    enabled: true
+    image:
+      tag: "0.3.1"
+    ollama:
+      gpu:
+        enabled: false
+        type: 'nvidia'
+        number: 1
+      models:
+        - llama3.1
+    runtimeClassName: ""
+    persistentVolume:
+      enabled: true

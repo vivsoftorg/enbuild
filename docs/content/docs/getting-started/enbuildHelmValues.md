@@ -109,25 +109,24 @@ The following key value pairs are used to configure ENBUILD.
 
 ### ENBUILD ML Services parameters
 
-| Name                           | Description                                                            | Value                                            |
-| ------------------------------ | ---------------------------------------------------------------------- | ------------------------------------------------ |
-| `enbuildMl.enabled`            | Should we create the ENBUILD ML microservice ?                         | `false`                                          |
-| `enbuildMl.image.repository`   | Container repository for enbuildMl                                     | `enbuild-staging/vivsoft-platform-ui/enbuild-ml` |
-| `enbuildMl.image.tag`          | Container image tag. Skip to use the HelmChart appVersion as Image Tag | `undefined`                                      |
-| `enbuildMl.replicas`           | Container enbuildMl Replicas                                           | `1`                                              |
-| `enbuildMl.service_type`       | enbuildMl service_type                                                 | `ClusterIP`                                      |
-| `enbuildMl.jupyterhub.enabled` | Should we create the Jupyterhub for ENBUILD ML ?                       | `false`                                          |
+| Name                         | Description                                                                                            | Value                                            |
+| ---------------------------- | ------------------------------------------------------------------------------------------------------ | ------------------------------------------------ |
+| `enbuildMl.enabled`          | Should we create the ENBUILD ML microservice, which also controls whether or not to install jupyterhub | `false`                                          |
+| `enbuildMl.image.repository` | Container repository for enbuildMl                                                                     | `enbuild-staging/vivsoft-platform-ui/enbuild-ml` |
+| `enbuildMl.image.tag`        | Container image tag. Skip to use the HelmChart appVersion as Image Tag                                 | `undefined`                                      |
+| `enbuildMl.replicas`         | Container enbuildMl Replicas                                                                           | `1`                                              |
+| `enbuildMl.service_type`     | enbuildMl service_type                                                                                 | `ClusterIP`                                      |
 
 ### ENBUILD GenAI Services parameters
 
-| Name                            | Description                                                            | Value                                               |
-| ------------------------------- | ---------------------------------------------------------------------- | --------------------------------------------------- |
-| `enbuildGenAI.enabled`          | Should we create the ENBUILD GenAI microservice ?                      | `false`                                             |
-| `enbuildGenAI.image.repository` | Container repository for enbuildGenAI                                  | `enbuild-staging/vivsoft-platform-ui/enbuild-genai` |
-| `enbuildGenAI.image.tag`        | Container image tag. Skip to use the HelmChart appVersion as Image Tag | `undefined`                                         |
-| `enbuildGenAI.replicas`         | Container enbuildGenAI Replicas                                        | `1`                                                 |
-| `enbuildGenAI.service_type`     | enbuildGenAI service_type                                              | `ClusterIP`                                         |
-| `enbuildGenAI.api_key`          | api_key for OpenAI service.                                            | `dummy`                                             |
+| Name                            | Description                                                                                            | Value                                               |
+| ------------------------------- | ------------------------------------------------------------------------------------------------------ | --------------------------------------------------- |
+| `enbuildGenAI.enabled`          | Should we create the ENBUILD GenAI microservice, which also controls whether or not to install Ollama. | `false`                                             |
+| `enbuildGenAI.image.repository` | Container repository for enbuildGenAI                                                                  | `enbuild-staging/vivsoft-platform-ui/enbuild-genai` |
+| `enbuildGenAI.image.tag`        | Container image tag. Skip to use the HelmChart appVersion as Image Tag                                 | `undefined`                                         |
+| `enbuildGenAI.replicas`         | Container enbuildGenAI Replicas                                                                        | `1`                                                 |
+| `enbuildGenAI.service_type`     | enbuildGenAI service_type                                                                              | `ClusterIP`                                         |
+| `enbuildGenAI.api_key`          | api_key for OpenAI service.                                                                            | `dummy`                                             |
 
 ### ENBUILD Request Services parameters
 
