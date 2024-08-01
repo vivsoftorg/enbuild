@@ -157,4 +157,4 @@ To uninstall/delete the `enbuild` deployment:
 | `enbuildRequest.replicas`         | Container enbuildRequest Replicas                                      | `1`                                                   |
 | `enbuildRequest.service_type`     | enbuildRequest service_type                                            | `ClusterIP`                                           |
 
-<!-- # ---- -->
+<!-- # ----- -->
