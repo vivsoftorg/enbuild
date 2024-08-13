@@ -41,17 +41,15 @@ data:
       {{- end }}
 {{- end }}
 
-{{- if .Values.enbuildRequest.enabled }}
-
-      location /enbuild-request/ {
-        proxy_pass http://{{ .Release.Name }}-enbuild-request/;
-      }
-{{- end }}
-
 {{- if .Values.enbuildGenAI.enabled }}
 
       location /enbuild-genai/ {
         proxy_pass http://{{ .Release.Name }}-enbuild-genai/;
       }
+
+      location /enbuild-ai/ {
+        proxy_pass http://{{ .Release.Name }}-enbuild-ai/;
+      }
+
 {{- end }}
     }

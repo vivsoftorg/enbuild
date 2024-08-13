@@ -127,13 +127,3 @@ The following key value pairs are used to configure ENBUILD.
 | `enbuildGenAI.replicas`         | Container enbuildGenAI Replicas                                                                        | `1`                                                 |
 | `enbuildGenAI.service_type`     | enbuildGenAI service_type                                                                              | `ClusterIP`                                         |
 | `enbuildGenAI.api_key`          | api_key for OpenAI service.                                                                            | `dummy`                                             |
-
-### ENBUILD Request Services parameters
-
-| Name                              | Description                                                            | Value                                                 |
-| --------------------------------- | ---------------------------------------------------------------------- | ----------------------------------------------------- |
-| `enbuildRequest.enabled`          | Should we create the ENBUILD Request microservice ?                    | `false`                                               |
-| `enbuildRequest.image.repository` | Container repository for enbuildRequest                                | `enbuild-staging/vivsoft-platform-ui/enbuild-request` |
-| `enbuildRequest.image.tag`        | Container image tag. Skip to use the HelmChart appVersion as Image Tag | `undefined`                                           |
-| `enbuildRequest.replicas`         | Container enbuildRequest Replicas                                      | `1`                                                   |
-| `enbuildRequest.service_type`     | enbuildRequest service_type                                            | `ClusterIP`                                           |

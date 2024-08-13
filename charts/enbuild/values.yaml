@@ -194,19 +194,6 @@ enbuildGenAI:
   replicas: 1
   service_type: ClusterIP
 
-## @section ENBUILD Request Services parameters
-## @param enbuildRequest.enabled [default: false] Should we create the ENBUILD Request microservice ?
-## @param enbuildRequest.image.repository  Container repository for enbuildRequest
-## @param enbuildRequest.image.tag [nullable] Container image tag. Skip to use the HelmChart appVersion as Image Tag
-## @param enbuildRequest.replicas Container enbuildRequest Replicas
-## @param enbuildRequest.service_type  enbuildRequest service_type
-enbuildRequest:
-  enabled: false
-  image:
-    repository: enbuild-staging/vivsoft-platform-ui/enbuild-request
-  replicas: 1
-  service_type: ClusterIP
-
 ## @skip open-webui
 open-webui:
   ollama:
