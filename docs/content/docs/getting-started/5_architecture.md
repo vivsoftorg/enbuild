@@ -20,7 +20,7 @@ seo:
 
 ## Architecture Digram
 
-<picture><img src="/images/getting-started/architecture.svg" alt="Screenshot of ENBUILD Login Screen"></img></picture>
+<picture><img src="/images/getting-started/enbuild-architecure.png" alt="Screenshot of ENBUILD Architecture"></img></picture>
 
 ### Frontend Service
 
@@ -37,11 +37,6 @@ The ENBUILD user service manages the end-user's state, such as authentication, a
 ### ML Service
 
 The ENBUILD ML (Machine Learning) service enables data scientists to quickly create feature sets and deploy models. An instance of Jupyter Notebook can also be created and accessed from this service. 
-***(This is a placeholder service for demo purposes for now and will be implemented in the future)***
-
-### Request Service
-
-The ENBUILD Request service is demo service to enable linking multiple catalog items to one another and deploy them together.
 ***(This is a placeholder service for demo purposes for now and will be implemented in the future)***
 
 ### RabbitMQ Consumer Service
