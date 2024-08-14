@@ -31,7 +31,8 @@ This page is only visible if the Build ML flag is enabled in the feature flag.
 This page is only visible if the Build GenAI flag is enabled in the feature flag. 
 
 # Operations
-This page is only visible if the operations flag is enabled in the feature flag. 
+This page is only visible if the operations flag is enabled in the feature flag.
+<picture><img src="/images/getting-started/enbuild_operations.png" alt="Screenshot of ENBUILD Metrics Page"></img></picture>
 
 # Metrics
 These are the quick metrices 
@@ -46,13 +47,6 @@ These are the logs for your cluster where enbuild is deployed.
 ## View Deployment Logs
 Click on a deployment to view its logs. 
 <picture><img src="/images/getting-started/enbuild_view_deployment_logs.png" alt="Screenshot of ENBUILD View Deployment Logs Page"></img></picture>
-
-
-
-## Create a new deployment
-Create a new deployment by clicking on the "New Deployment" button. 
-<picture><img src="/images/getting-started/enbuild_create_new_deployment.png" alt="Screenshot of ENBUILD Create New Deployment Page"></img></picture>
-
 
 
 # Settings
