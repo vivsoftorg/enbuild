@@ -194,6 +194,19 @@ enbuildGenAI:
   replicas: 1
   service_type: ClusterIP
 
+## @section ENBUILD AI Services parameters
+## @param enbuildAI.enabled [default: false] Should we create the ENBUILD AI microservice, which also controls whether or not to install Ollama.
+## @param enbuildAI.image.repository  Container repository for enbuildAI
+## @param enbuildAI.image.tag  [nullable] Container image tag. Skip to use the HelmChart appVersion as Image Tag
+## @param enbuildAI.replicas Container enbuilAI Replicas
+## @param enbuildAI.service_type  enbuildAI service_type
+enbuildAI:
+  enabled: false
+  image:
+    repository: enbuild-staging/vivsoft-platform-ui/enbuild-ai
+  replicas: 1
+  service_type: ClusterIP
+
 ## @skip open-webui
 open-webui:
   ollama:

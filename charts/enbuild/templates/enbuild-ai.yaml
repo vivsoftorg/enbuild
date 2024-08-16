@@ -1,0 +1,82 @@
+{{- if .Values.enbuildAI.enabled -}}
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ .Release.Name }}-enbuild-ai
+  labels:
+    app: ai
+    app.kubernetes.io/component: ai
+  {{- include "enbuild-helm-chart.labels" . | nindent 4 }}
+spec:
+  replicas: {{ .Values.enbuildAI.replicas }}
+  selector:
+    matchLabels:
+      app: ai
+      app.kubernetes.io/component: ai
+    {{- include "enbuild-helm-chart.selectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      labels:
+        app: ai
+        app.kubernetes.io/component: ai
+      {{- include "enbuild-helm-chart.selectorLabels" . | nindent 8 }}
+    spec:
+      containers:
+      - env:
+        - name: OLLAMA_SERVER_URL
+          value: http://open-webui-ollama:11434
+        - name: MODEL_NAME
+          value: llama3.1:latest
+        imagePullPolicy: {{ .Values.global.image.pullPolicy }}
+        image: {{ .Values.global.image.registry }}/{{ .Values.enbuildAI.image.repository }}:{{ default .Chart.AppVersion (default .Values.global.AppVersion .Values.enbuildAI.image.tag) }}
+        name: enbuild-ai
+        ports:
+        - containerPort: 8000
+        resources: {}
+        securityContext:
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop:
+            - ALL
+          privileged: false
+          runAsGroup: 1001
+          runAsNonRoot: true
+          readOnlyRootFilesystem: false
+          runAsUser: 1001
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: 8000
+          initialDelaySeconds: 30
+          timeoutSeconds: 10
+        readinessProbe:
+          httpGet:
+            path: /health
+            port: 8000
+          initialDelaySeconds: 5
+          timeoutSeconds: 3
+{{- if .Values.global.image.registry_credentials }}
+      imagePullSecrets:
+      - name: {{ .Release.Name }}-image-pull-secret
+{{- end }}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ .Release.Name }}-enbuild-ai
+  labels:
+    app: ai
+    app.kubernetes.io/component: ai
+  {{- include "enbuild-helm-chart.labels" . | nindent 4 }}
+spec:
+  type: {{ .Values.enbuildAI.service_type }}
+  selector:
+    app: ai
+    app.kubernetes.io/component: ai
+  {{- include "enbuild-helm-chart.selectorLabels" . | nindent 4 }}
+  ports:
+  - port: 80
+    protocol: TCP
+    targetPort: 8000
+{{- end }}
