@@ -53,5 +53,5 @@ data:
       location /enbuild-ai/ {
         proxy_pass http://{{ .Release.Name }}-enbuild-ai/;
       }
-
 {{- end }}
+    }
