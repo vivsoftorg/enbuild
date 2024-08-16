@@ -46,10 +46,12 @@ data:
       location /enbuild-genai/ {
         proxy_pass http://{{ .Release.Name }}-enbuild-genai/;
       }
+{{- end }}
+
+{{- if .Values.enbuildAI.enabled }}
 
       location /enbuild-ai/ {
         proxy_pass http://{{ .Release.Name }}-enbuild-ai/;
       }
 
 {{- end }}
-    }
