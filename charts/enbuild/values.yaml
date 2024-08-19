@@ -195,3 +195,8 @@ enbuildGenAI:
     repository: enbuild-staging/vivsoft-platform-ui/enbuild-genai
   replicas: 1
   service_type: ClusterIP
+
+## @skip loki-stack
+loki-stack:
+  test_pod:
+    enabled: false
