@@ -200,3 +200,5 @@ enbuildGenAI:
 loki-stack:
   test_pod:
     enabled: false
+  prometheus:
+    enabled: true
