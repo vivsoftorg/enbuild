@@ -207,7 +207,21 @@ loki-stack:
     persistence:
       enabled: true
     adminUser: admin
-    adminPassword: V1v$oftR0ck% 
+    adminPassword: V1v$oftR0ck%
+    datasources:
+      - datasources.yaml:
+        apiVersion: 1
+        datasources:
+        - name: Prometheus
+          type: prometheus
+          url: http://loki-stack-prometheus-server.loki-stack:80
+          access: proxy
+          isDefault: false
+        - name: Loki
+          type: loki
+          url: http://loki-stack.loki-stack:3100
+          access: proxy
+          isDefault: false
     grafana.ini:
       auth:
         disable_login_form: false
