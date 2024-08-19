@@ -14,13 +14,14 @@
 ## @param global.image.registry_credentials [nullable,object] if the image.registry is private container registry, provide the credentials
 ## @param global.image.registry_credentials.username [nullable,string]  Container registry Username
 ## @param global.image.registry_credentials.password  [nullable,string] Container registry password
-## @param global.monitoring.enabled [default: false] Should we install loki-stack for monitoring , if yes set to true , set the lok-stack values in the values.yaml
+## @param global.monitoring.enabled  [default: true] Should we install loki-stack for monitoring , if yes set to true , set the lok-stack values in the values.yaml
+## 
 global:
   AppVersion: ""
   domain: ijuned.com
+  disable_tls_gitlab: false  # Set to true if you are using self-signed certificates
   monitoring:
     enabled: false
-  disable_tls_gitlab: false  # Set to true if you are using self-signed certificates
   ingress:
     enabled: false
     tls: false
@@ -38,10 +39,7 @@ global:
     # username: registry_user_name
     # password: registry_password
 
-## @skip jupyterhub.proxy
-## @skip jupyterhub.hub
-## @skip jupyterhub.singleuser
-## @skip jupyterhub.cull
+## @skip jupyterhub
 jupyterhub:
   proxy:
     service:
@@ -196,38 +194,126 @@ enbuildGenAI:
   replicas: 1
   service_type: ClusterIP
 
+## @section ENBUILD AI Services parameters
+## @param enbuildAI.enabled [default: false] Should we create the ENBUILD AI microservice, which also controls whether or not to install Ollama.
+## @param enbuildAI.image.repository  Container repository for enbuildAI
+## @param enbuildAI.image.tag  [nullable] Container image tag. Skip to use the HelmChart appVersion as Image Tag
+## @param enbuildAI.replicas Container enbuilAI Replicas
+## @param enbuildAI.service_type  enbuildAI service_type
+enbuildAI:
+  enabled: false
+  image:
+    repository: enbuild-staging/vivsoft-platform-ui/enbuild-ai
+  replicas: 1
+  service_type: ClusterIP
+
+## @skip open-webui
+open-webui:
+  ollama:
+    enabled: true
+    image:
+      tag: "0.3.1"
+    ollama:
+      gpu:
+        enabled: false
+        type: 'nvidia'
+        number: 1
+      models:
+        - llama3.1
+    runtimeClassName: ""
+    persistentVolume:
+      enabled: true
+
 ## @skip loki-stack
 loki-stack:
   test_pod:
     enabled: false
+  loki:
+    enabled: true
+  promtail:
+    enabled: true
+  fluent-bit:
+    enabled: false
   prometheus:
     enabled: true
+    isDefault: false
+    url: http://{{ include "prometheus.fullname" .}}:{{ .Values.prometheus.server.service.servicePort }}{{ .Values.prometheus.server.prefixURL }}
+    datasource:
+      jsonData: "{}"
+  filebeat:
+    enabled: false
+  logstash:
+    enabled: false
   grafana:
     enabled: true
-    persistence:
-      enabled: true
-    adminUser: admin
-    adminPassword: V1v$oftR0ck%
     datasources:
       - datasources.yaml:
         apiVersion: 1
         datasources:
         - name: Prometheus
           type: prometheus
-          url: http://loki-stack-prometheus-server.loki-stack:80
+          url: http://{{ .Release.Name }}-prometheus-server:80
           access: proxy
           isDefault: false
         - name: Loki
           type: loki
-          url: http://loki-stack.loki-stack:3100
+          url: http://{{ .Release.Name }}-loki:3100
           access: proxy
           isDefault: false
+    dashboards:
+      - default:
+        Logs_App:
+          gnetId: 13639
+          revision: 1
+          datasource: Loki
+        Kubernetes_Cluster:
+          gnetId: 7249
+          revision: 1
+          datasource: Prometheus
+    dashboardProviders:
+      - dashboardproviders.yaml:
+        apiVersion: 1
+        providers:
+        - name: 'default'
+          orgId: 1
+          folder: ''
+          type: file
+          disableDeletion: false
+          editable: true
+          options:
+            path: /var/lib/grafana/dashboards/default
+    persistence:
+      enabled: true
+    adminPassword: V1v$oftR0ck%
+    adminUser: admin
     grafana.ini:
       auth:
-        disable_login_form: false
+        disable_login_form: true
         auto_login: true
       auth.basic:
         enabled: true
+      auth.generic_oauth:
+        enabled: false
+        name: Keycloak-OAuth
+        allow_sign_up: true
+        auto_login: true
+        client_id:  enbuild
+        client_secret: "zUNDlLkod5skewin0DODY4fuHFt1t4f3"
+        scopes: "openid email profile offline_access roles"
+        email_attribute_path: email
+        login_attribute_path: username
+        name_attribute_path: full_name
+        auth_url: "https://keycloak.vivplatform.io/auth/realms/enbuild-dev/protocol/openid-connect/auth"
+        token_url: "https://keycloak.vivplatform.io/auth/realms/enbuild-dev/protocol/openid-connect/token"
+        api_url: "https://keycloak.vivplatform.io/auth/realms/enbuild-dev/protocol/openid-connect/userinfo"
+        skip_org_role_sync: false
+        allow_assign_grafana_admin: true
+        role_attribute_path : contains(realm_access.roles, "admin") && "GrafanaAdmin" || contains(roles[*], 'devops') && 'Editor' || 'Viewer'
+      auth.anonymous:
+        enabled: false
+        hide_version: true
+        org_name: Main Org.
+        org_role: Viewer
       security:
         allow_embedding: true
       feature_toggles:
