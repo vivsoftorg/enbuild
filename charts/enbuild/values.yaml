@@ -202,3 +202,5 @@ loki-stack:
     enabled: false
   prometheus:
     enabled: true
+  grafana:
+    enabled: true
