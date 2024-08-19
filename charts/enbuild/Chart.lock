@@ -8,5 +8,8 @@ dependencies:
 - name: open-webui
   repository: https://helm.openwebui.com/
   version: 3.1.1
-digest: sha256:97fe87d2a2468fdebd4414434b3088f627afc72b8d30f8e938eb7982a88c15d8
-generated: "2024-07-31T13:29:12.121079+05:30"
+- name: loki-stack
+  repository: https://grafana.github.io/helm-charts
+  version: 2.10.2
+digest: sha256:6d81a0925a837dd16b27ca15ca2cea80ab37f9b33e8c35d5348f19868b20c54c
+generated: "2024-08-16T18:45:58.799957+05:30"

@@ -14,10 +14,12 @@
 ## @param global.image.registry_credentials [nullable,object] if the image.registry is private container registry, provide the credentials
 ## @param global.image.registry_credentials.username [nullable,string]  Container registry Username
 ## @param global.image.registry_credentials.password  [nullable,string] Container registry password
-## 
+## @param global.monitoring.enabled [default: false] Should we install loki-stack for monitoring , if yes set to true , set the lok-stack values in the values.yaml
 global:
   AppVersion: ""
   domain: ijuned.com
+  monitoring:
+    enabled: false
   disable_tls_gitlab: false  # Set to true if you are using self-signed certificates
   ingress:
     enabled: false
@@ -193,33 +195,3 @@ enbuildGenAI:
     repository: enbuild-staging/vivsoft-platform-ui/enbuild-genai
   replicas: 1
   service_type: ClusterIP
-
-## @section ENBUILD AI Services parameters
-## @param enbuildAI.enabled [default: false] Should we create the ENBUILD AI microservice, which also controls whether or not to install Ollama.
-## @param enbuildAI.image.repository  Container repository for enbuildAI
-## @param enbuildAI.image.tag  [nullable] Container image tag. Skip to use the HelmChart appVersion as Image Tag
-## @param enbuildAI.replicas Container enbuilAI Replicas
-## @param enbuildAI.service_type  enbuildAI service_type
-enbuildAI:
-  enabled: false
-  image:
-    repository: enbuild-staging/vivsoft-platform-ui/enbuild-ai
-  replicas: 1
-  service_type: ClusterIP
-
-## @skip open-webui
-open-webui:
-  ollama:
-    enabled: true
-    image:
-      tag: "0.3.1"
-    ollama:
-      gpu:
-        enabled: false
-        type: 'nvidia'
-        number: 1
-      models:
-        - llama3.1
-    runtimeClassName: ""
-    persistentVolume:
-      enabled: true

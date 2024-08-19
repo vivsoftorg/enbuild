@@ -6,6 +6,12 @@ metadata:
 {{- include "enbuild-helm-chart.labels" . | nindent 4 }}
 data:
   default.conf: |-
+    # This is required to proxy Grafana Live WebSocket connections.
+    map $http_upgrade $connection_upgrade {
+      default upgrade;
+      '' close;
+    }
+    
     server {
       listen 8080 default_server;
       server_name _;
@@ -53,5 +59,25 @@ data:
       location /enbuild-ai/ {
         proxy_pass http://{{ .Release.Name }}-enbuild-ai/;
       }
+{{- end }}
+
+{{- if .Values.global.monitoring.enabled }}
+      # Grafana proxy configuration
+      location /grafana/ {
+        proxy_pass http://{{ .Release.Name }}-grafana:3000/;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        
+        # Rewrite directives
+        rewrite ^/grafana/(.*) /$1 break;
+        
+        # Ensure correct redirect paths
+        proxy_redirect / /grafana/;
+
+        # Update Grafana cookie paths
+        proxy_cookie_path / /grafana/;
+     }
 {{- end }}
     }

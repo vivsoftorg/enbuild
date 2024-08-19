@@ -25,3 +25,7 @@ dependencies:
     version: 3.1.1
     repository: https://helm.openwebui.com/
     condition: enbuildAI.enabled
+  - name: loki-stack
+    version: 2.10.2
+    repository: https://grafana.github.io/helm-charts
+    condition: global.monitoring.enabled

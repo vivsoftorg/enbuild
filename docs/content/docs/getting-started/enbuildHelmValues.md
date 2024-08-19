@@ -41,6 +41,7 @@ The following key value pairs are used to configure ENBUILD.
 | `global.image.registry_credentials`          | if the image.registry is private container registry, provide the credentials                                                                                                                     | `{}`                  |
 | `global.image.registry_credentials.username` | Container registry Username                                                                                                                                                                      | `""`                  |
 | `global.image.registry_credentials.password` | Container registry password                                                                                                                                                                      | `""`                  |
+| `global.monitoring.enabled`                  | Should we install loki-stack for monitoring , if yes set to true , set the lok-stack values in the values.yaml                                                                                   | `false`               |
 
 ### ENBUILD RabbitMQ parameters
 
@@ -127,13 +128,3 @@ The following key value pairs are used to configure ENBUILD.
 | `enbuildGenAI.replicas`         | Container enbuildGenAI Replicas                                                                        | `1`                                                 |
 | `enbuildGenAI.service_type`     | enbuildGenAI service_type                                                                              | `ClusterIP`                                         |
 | `enbuildGenAI.api_key`          | api_key for OpenAI service.                                                                            | `dummy`                                             |
-
-### ENBUILD AI Services parameters
-
-| Name                         | Description                                                                                         | Value                                            |
-| ---------------------------- | --------------------------------------------------------------------------------------------------- | ------------------------------------------------ |
-| `enbuildAI.enabled`          | Should we create the ENBUILD AI microservice, which also controls whether or not to install Ollama. | `false`                                          |
-| `enbuildAI.image.repository` | Container repository for enbuildAI                                                                  | `enbuild-staging/vivsoft-platform-ui/enbuild-ai` |
-| `enbuildAI.image.tag`        | Container image tag. Skip to use the HelmChart appVersion as Image Tag                              | `undefined`                                      |
-| `enbuildAI.replicas`         | Container enbuilAI Replicas                                                                         | `1`                                              |
-| `enbuildAI.service_type`     | enbuildAI service_type                                                                              | `ClusterIP`                                      |
