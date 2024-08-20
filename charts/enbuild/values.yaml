@@ -246,6 +246,8 @@ loki-stack:
     enabled: false
   grafana:
     enabled: true
+    testFramework:
+      enabled: false
     persistence:
       enabled: true
     adminPassword: V1v$oftR0ck%
