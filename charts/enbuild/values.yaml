@@ -262,4 +262,4 @@ loki-stack:
       server:
         domain: enbuild.{{ .Values.global.domain }}
         root_url: "%(protocol)s://%(domain)s:%(http_port)s/grafana/"
-        serve_from_sub_path: true
+        serve_from_sub_path: false
