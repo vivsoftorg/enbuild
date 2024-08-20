@@ -232,14 +232,13 @@ loki-stack:
     enabled: true
   promtail:
     enabled: true
+    config:
+      clients:
+        - url: http://{{ .Release.Name }}-loki:3100/loki/api/v1/push
   fluent-bit:
     enabled: false
   prometheus:
     enabled: true
-    isDefault: false
-    url: http://{{ include "prometheus.fullname" .}}:{{ .Values.prometheus.server.service.servicePort }}{{ .Values.prometheus.server.prefixURL }}
-    datasource:
-      jsonData: "{}"
   filebeat:
     enabled: false
   logstash:
@@ -250,7 +249,7 @@ loki-stack:
       enabled: false
     persistence:
       enabled: true
-    adminPassword: V1v$oftR0ck%
+    adminPassword: V1v$oftR0ck5
     adminUser: admin
     grafana.ini:
       auth:
