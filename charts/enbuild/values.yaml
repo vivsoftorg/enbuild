@@ -253,7 +253,12 @@ loki-stack:
     adminPassword: V1v$oftR0ck%
     adminUser: admin
     grafana.ini:
+      auth:
+        disable_login_form: false
+        auto_login: true
       auth.basic:
+        enabled: true
+      auth.anonymous:
         enabled: true
       security:
         allow_embedding: true
