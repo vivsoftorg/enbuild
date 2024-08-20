@@ -6,7 +6,7 @@ metadata:
 {{- include "enbuild-helm-chart.labels" . | nindent 4 }}
 data:
   default.conf: |-
-    # This is required to proxy Grafana Live WebSocket connections.
+
     map $http_upgrade $connection_upgrade {
       default upgrade;
       '' close;
