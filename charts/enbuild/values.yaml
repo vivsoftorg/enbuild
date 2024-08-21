@@ -128,10 +128,10 @@ enbuildUi:
   service_type: ClusterIP
   node_port: 30080
   hostname: enbuild # hostname.domain become FQDN
-  kiali_url: https://kiali.ijuned.com/kiali/
-  grafana_url: https://grafana.ijuned.com/
-  loki_url: https://grafana.ijuned.com/d/liz0yRCZz/logs-app?orgId=1
-  kubecost_url: https://kubecost.ijuned.com/overview.html
+  kiali_url: "/kiali/"
+  grafana_url: "/grafana/d/os6Bh8Omk/kubernetes-cluster?orgId=1&refresh=30s"
+  loki_url: "/grafana/d/liz0yRCZz/logs-app?orgId=1"
+  kubecost_url: "kubecost/overview.html"
 
 ## @section ENBUILD Backend Services parameters
 ## @param enbuildBk.image.repository  Container repository for enbuildBk
@@ -258,7 +258,7 @@ loki-stack:
       auth.basic:
         enabled: true
       auth.anonymous:
-        enabled: true
+        enabled: false
       security:
         allow_embedding: true
       feature_toggles:

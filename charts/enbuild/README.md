@@ -87,18 +87,18 @@ To uninstall/delete the `enbuild` deployment:
 
 ### ENBUILD UI Services parameters
 
-| Name                         | Description                                                                      | Value                                                     |
-| ---------------------------- | -------------------------------------------------------------------------------- | --------------------------------------------------------- |
-| `enbuildUi.image.repository` | Container repository for enbuildUi                                               | `enbuild-staging/vivsoft-platform-ui/enbuild-frontend`    |
-| `enbuildUi.image.tag`        | Container image tag. Skip to use the HelmChart appVersion as Image Tag           | `undefined`                                               |
-| `enbuildUi.replicas`         | Container enbuildUI Replicas                                                     | `1`                                                       |
-| `enbuildUi.service_type`     | enbuildUI service_type                                                           | `ClusterIP`                                               |
-| `enbuildUi.node_port`        | enbuildUI node_port                                                              | `30080`                                                   |
-| `enbuildUi.hostname`         | enbuild service hostname. `enbuildUi.hostname`.`global.domain` becomes your FQDN | `enbuild`                                                 |
-| `enbuildUi.kiali_url`        | kiali_url                                                                        | `https://kiali.ijuned.com/kiali/`                         |
-| `enbuildUi.grafana_url`      | grafana_url                                                                      | `https://grafana.ijuned.com/`                             |
-| `enbuildUi.loki_url`         | loki_url                                                                         | `https://grafana.ijuned.com/d/liz0yRCZz/logs-app?orgId=1` |
-| `enbuildUi.kubecost_url`     | kubecost_url                                                                     | `https://kubecost.ijuned.com/overview.html`               |
+| Name                         | Description                                                                      | Value                                                         |
+| ---------------------------- | -------------------------------------------------------------------------------- | ------------------------------------------------------------- |
+| `enbuildUi.image.repository` | Container repository for enbuildUi                                               | `enbuild-staging/vivsoft-platform-ui/enbuild-frontend`        |
+| `enbuildUi.image.tag`        | Container image tag. Skip to use the HelmChart appVersion as Image Tag           | `undefined`                                                   |
+| `enbuildUi.replicas`         | Container enbuildUI Replicas                                                     | `1`                                                           |
+| `enbuildUi.service_type`     | enbuildUI service_type                                                           | `ClusterIP`                                                   |
+| `enbuildUi.node_port`        | enbuildUI node_port                                                              | `30080`                                                       |
+| `enbuildUi.hostname`         | enbuild service hostname. `enbuildUi.hostname`.`global.domain` becomes your FQDN | `enbuild`                                                     |
+| `enbuildUi.kiali_url`        | kiali_url                                                                        | `/kiali/`                                                     |
+| `enbuildUi.grafana_url`      | grafana_url                                                                      | `/grafana/d/os6Bh8Omk/kubernetes-cluster?orgId=1&refresh=30s` |
+| `enbuildUi.loki_url`         | loki_url                                                                         | `/grafana/d/liz0yRCZz/logs-app?orgId=1`                       |
+| `enbuildUi.kubecost_url`     | kubecost_url                                                                     | `kubecost/overview.html`                                      |
 
 ### ENBUILD Backend Services parameters
 
