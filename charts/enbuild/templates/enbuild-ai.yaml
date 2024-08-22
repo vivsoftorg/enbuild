@@ -45,18 +45,18 @@ spec:
           runAsNonRoot: true
           readOnlyRootFilesystem: false
           runAsUser: 1001
-        livenessProbe:
-          httpGet:
-            path: /health
-            port: 8000
-          initialDelaySeconds: 30
-          timeoutSeconds: 10
-        readinessProbe:
-          httpGet:
-            path: /health
-            port: 8000
-          initialDelaySeconds: 5
-          timeoutSeconds: 3
+        # livenessProbe:
+        #   httpGet:
+        #     path: /health
+        #     port: 8000
+        #   initialDelaySeconds: 30
+        #   timeoutSeconds: 10
+        # readinessProbe:
+        #   httpGet:
+        #     path: /health
+        #     port: 8000
+        #   initialDelaySeconds: 5
+        #   timeoutSeconds: 3
 {{- if .Values.global.image.registry_credentials }}
       imagePullSecrets:
       - name: {{ .Release.Name }}-image-pull-secret
