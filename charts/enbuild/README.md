@@ -146,7 +146,9 @@ To uninstall/delete the `enbuild` deployment:
 | `enbuildGenAI.image.tag`        | Container image tag. Skip to use the HelmChart appVersion as Image Tag                                 | `undefined`                                         |
 | `enbuildGenAI.replicas`         | Container enbuildGenAI Replicas                                                                        | `1`                                                 |
 | `enbuildGenAI.service_type`     | enbuildGenAI service_type                                                                              | `ClusterIP`                                         |
-| `enbuildGenAI.api_key`          | api_key for OpenAI service.                                                                            | `dummy`                                             |
+| `enbuildGenAI.api_key`          | api_key [default: "dummy"] for OpenAI service.                                                         | `dummy`                                             |
+| `enbuildGenAI.model_name`       | model_name for OpenAI service.                                                                         | `"ollama/llama3.1"`                                 |
+| `enbuildGenAI.ollama_endpoint`  | ollama_endpoint for OpenAI service.                                                                    | `"http://open-webui-ollama:11434"`                  |
 
 ### ENBUILD AI Services parameters
 

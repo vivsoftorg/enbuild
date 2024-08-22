@@ -24,10 +24,11 @@ spec:
     spec:
       containers:
       - env:
-        - name: OLLAMA_SERVER_URL
-          value: http://open-webui-ollama:11434
-        - name: MODEL_NAME
-          value: llama3.1:latest
+        - name: MAX_CONTEXT_LENGTH
+          value: "1000"
+        envFrom:
+        - secretRef:
+            name: {{ .Release.Name }}-backend-secret
         imagePullPolicy: {{ .Values.global.image.pullPolicy }}
         image: {{ .Values.global.image.registry }}/{{ .Values.enbuildAI.image.repository }}:{{ default .Chart.AppVersion (default .Values.global.AppVersion .Values.enbuildAI.image.tag) }}
         name: enbuild-ai

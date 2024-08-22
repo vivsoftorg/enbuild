@@ -185,10 +185,14 @@ enbuildMl:
 ## @param enbuildGenAI.image.tag  [nullable] Container image tag. Skip to use the HelmChart appVersion as Image Tag
 ## @param enbuildGenAI.replicas Container enbuildGenAI Replicas
 ## @param enbuildGenAI.service_type  enbuildGenAI service_type
-## @param enbuildGenAI.api_key  api_key for OpenAI service.
+## @param enbuildGenAI.api_key  api_key [default: "dummy"] for OpenAI service.
+## @param enbuildGenAI.model_name [default: "ollama/llama3.1"] model_name for OpenAI service.
+## @param enbuildGenAI.ollama_endpoint [default: "http://open-webui-ollama:11434"] ollama_endpoint for OpenAI service.
 enbuildGenAI:
   enabled: false
   api_key: "dummy"
+  model_name: "ollama/llama3.1"
+  ollama_endpoint: "http://open-webui-ollama:11434"
   image:
     repository: enbuild-staging/vivsoft-platform-ui/enbuild-genai
   replicas: 1
