@@ -118,19 +118,6 @@ The following key value pairs are used to configure ENBUILD.
 | `enbuildMl.replicas`         | Container enbuildMl Replicas                                                                           | `1`                                              |
 | `enbuildMl.service_type`     | enbuildMl service_type                                                                                 | `ClusterIP`                                      |
 
-### ENBUILD GenAI Services parameters
-
-| Name                            | Description                                                                                            | Value                                               |
-| ------------------------------- | ------------------------------------------------------------------------------------------------------ | --------------------------------------------------- |
-| `enbuildGenAI.enabled`          | Should we create the ENBUILD GenAI microservice, which also controls whether or not to install Ollama. | `false`                                             |
-| `enbuildGenAI.image.repository` | Container repository for enbuildGenAI                                                                  | `enbuild-staging/vivsoft-platform-ui/enbuild-genai` |
-| `enbuildGenAI.image.tag`        | Container image tag. Skip to use the HelmChart appVersion as Image Tag                                 | `undefined`                                         |
-| `enbuildGenAI.replicas`         | Container enbuildGenAI Replicas                                                                        | `1`                                                 |
-| `enbuildGenAI.service_type`     | enbuildGenAI service_type                                                                              | `ClusterIP`                                         |
-| `enbuildGenAI.api_key`          | api_key [default: "dummy"] for OpenAI service.                                                         | `dummy`                                             |
-| `enbuildGenAI.model_name`       | model_name for OpenAI service.                                                                         | `"ollama/llama3.1"`                                 |
-| `enbuildGenAI.ollama_endpoint`  | ollama_endpoint for OpenAI service.                                                                    | `"http://open-webui-ollama:11434"`                  |
-
 ### ENBUILD AI Services parameters
 
 | Name                         | Description                                                                                         | Value                                            |
@@ -140,3 +127,7 @@ The following key value pairs are used to configure ENBUILD.
 | `enbuildAI.image.tag`        | Container image tag. Skip to use the HelmChart appVersion as Image Tag                              | `undefined`                                      |
 | `enbuildAI.replicas`         | Container enbuilAI Replicas                                                                         | `1`                                              |
 | `enbuildAI.service_type`     | enbuildAI service_type                                                                              | `ClusterIP`                                      |
+| `enbuildAI.api_key`          | api_key [default: "dummy"] for OpenAI service if you planning to use OpenAI service                 | `dummy`                                          |
+| `enbuildAI.ollama.enabled`   | model_name for OpenAI service.                                                                      | `"ollama/llama3.1"`                              |
+| `enbuildAI.model_name`       | model_name for OpenAI service.                                                                      | `"ollama/llama3.1"`                              |
+| `enbuildAI.ollama_endpoint`  | ollama_endpoint for OpenAI service.                                                                 | `"http://open-webui-ollama:11434"`               |

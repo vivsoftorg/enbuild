@@ -179,33 +179,23 @@ enbuildMl:
   replicas: 1
   service_type: ClusterIP
 
-## @section ENBUILD GenAI Services parameters
-## @param enbuildGenAI.enabled [default: false] Should we create the ENBUILD GenAI microservice, which also controls whether or not to install Ollama.
-## @param enbuildGenAI.image.repository  Container repository for enbuildGenAI
-## @param enbuildGenAI.image.tag  [nullable] Container image tag. Skip to use the HelmChart appVersion as Image Tag
-## @param enbuildGenAI.replicas Container enbuildGenAI Replicas
-## @param enbuildGenAI.service_type  enbuildGenAI service_type
-## @param enbuildGenAI.api_key  api_key [default: "dummy"] for OpenAI service.
-## @param enbuildGenAI.model_name [default: "ollama/llama3.1"] model_name for OpenAI service.
-## @param enbuildGenAI.ollama_endpoint [default: "http://open-webui-ollama:11434"] ollama_endpoint for OpenAI service.
-enbuildGenAI:
-  enabled: false
-  api_key: "dummy"
-  model_name: "ollama/llama3.1"
-  ollama_endpoint: "http://open-webui-ollama:11434"
-  image:
-    repository: enbuild-staging/vivsoft-platform-ui/enbuild-genai
-  replicas: 1
-  service_type: ClusterIP
-
 ## @section ENBUILD AI Services parameters
 ## @param enbuildAI.enabled [default: false] Should we create the ENBUILD AI microservice, which also controls whether or not to install Ollama.
 ## @param enbuildAI.image.repository  Container repository for enbuildAI
 ## @param enbuildAI.image.tag  [nullable] Container image tag. Skip to use the HelmChart appVersion as Image Tag
 ## @param enbuildAI.replicas Container enbuilAI Replicas
 ## @param enbuildAI.service_type  enbuildAI service_type
+## @param enbuildAI.api_key  api_key [default: "dummy"] for OpenAI service if you planning to use OpenAI service
+## @param enbuildAI.ollama.enabled [default: "ollama/llama3.1"] model_name for OpenAI service.
+## @param enbuildAI.model_name [default: "ollama/llama3.1"] model_name for OpenAI service.
+## @param enbuildAI.ollama_endpoint [default: "http://open-webui-ollama:11434"] ollama_endpoint for OpenAI service.
 enbuildAI:
   enabled: false
+  ollama:
+    enabled: false # Set to true to install Ollama
+  model_name: "ollama/llama3.1"
+  api_key: "dummy"
+  ollama_endpoint: "http://open-webui-ollama:11434"
   image:
     repository: enbuild-staging/vivsoft-platform-ui/enbuild-ai
   replicas: 1

@@ -24,7 +24,7 @@ dependencies:
   - name: open-webui
     version: 3.1.6
     repository: https://helm.openwebui.com/
-    condition: enbuildAI.enabled
+    condition: enbuildAI.ollama.enabled
   - name: loki-stack
     version: 2.10.2
     repository: https://grafana.github.io/helm-charts
