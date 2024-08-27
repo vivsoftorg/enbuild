@@ -15,7 +15,7 @@ data:
       REACT_APP_API_REQUEST_DOMAIN_PRODUCTION: "/enbuild-request",
       REACT_APP_API_USER_DOMAIN_PRODUCTION: "/enbuild-user",
       REACT_APP_API_GEN_AI_PRODUCTION: "/enbuild-ai",
-      REACT_APP_API_OLLAMA_DEVELOPMENT: "/enbuild-ai",
+      REACT_APP_API_OLLAMA_PRODUCTION: "/enbuild-ai",
       REACT_APP_SERVICE_MESH_KIALI_IFRAME_URL: "{{ .Values.enbuildUi.kiali_url }}",
       REACT_APP_MONITORING_GRAFANA_IFRAME_URL: "{{ .Values.enbuildUi.grafana_url }}",
       REACT_APP_COST_UTILIZATION_KUBECOST_IFRAME_URL: "{{ .Values.enbuildUi.kubecost_url }}",
