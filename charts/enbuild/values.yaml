@@ -275,7 +275,7 @@ loki-stack:
       auth.basic:
         enabled: true
       auth.anonymous:
-        enabled: false
+        enabled: true
       security:
         allow_embedding: true
       feature_toggles:
