@@ -14,11 +14,14 @@
 ## @param global.image.registry_credentials [nullable,object] if the image.registry is private container registry, provide the credentials
 ## @param global.image.registry_credentials.username [nullable,string]  Container registry Username
 ## @param global.image.registry_credentials.password  [nullable,string] Container registry password
+## @param global.monitoring.enabled  [default: true] Should we install loki-stack for monitoring , if yes set to true , set the lok-stack values in the values.yaml
 ## 
 global:
   AppVersion: ""
   domain: ijuned.com
   disable_tls_gitlab: false  # Set to true if you are using self-signed certificates
+  monitoring:
+    enabled: false
   ingress:
     enabled: false
     tls: false
@@ -36,10 +39,7 @@ global:
     # username: registry_user_name
     # password: registry_password
 
-## @skip jupyterhub.proxy
-## @skip jupyterhub.hub
-## @skip jupyterhub.singleuser
-## @skip jupyterhub.cull
+## @skip jupyterhub
 jupyterhub:
   proxy:
     service:
@@ -128,10 +128,10 @@ enbuildUi:
   service_type: ClusterIP
   node_port: 30080
   hostname: enbuild # hostname.domain become FQDN
-  kiali_url: https://kiali.ijuned.com/kiali/
-  grafana_url: https://grafana.ijuned.com/
-  loki_url: https://grafana.ijuned.com/d/liz0yRCZz/logs-app?orgId=1
-  kubecost_url: https://kubecost.ijuned.com/overview.html
+  kiali_url: "/kiali/"
+  grafana_url: "/grafana/d/os6Bh8Omk/kubernetes-cluster?orgId=1&refresh=30s"
+  loki_url: "/grafana/d/liz0yRCZz/logs-app?orgId=1"
+  kubecost_url: "kubecost/overview.html"
 
 ## @section ENBUILD Backend Services parameters
 ## @param enbuildBk.image.repository  Container repository for enbuildBk
@@ -179,31 +179,25 @@ enbuildMl:
   replicas: 1
   service_type: ClusterIP
 
-## @section ENBUILD GenAI Services parameters
-## @param enbuildGenAI.enabled [default: false] Should we create the ENBUILD GenAI microservice, which also controls whether or not to install Ollama.
-## @param enbuildGenAI.image.repository  Container repository for enbuildGenAI
-## @param enbuildGenAI.image.tag  [nullable] Container image tag. Skip to use the HelmChart appVersion as Image Tag
-## @param enbuildGenAI.replicas Container enbuildGenAI Replicas
-## @param enbuildGenAI.service_type  enbuildGenAI service_type
-## @param enbuildGenAI.api_key  api_key for OpenAI service.
-enbuildGenAI:
+## @section ENBUILD AI Services parameters
+## @param enbuildAI.enabled [default: false] Should we create the ENBUILD AI microservice, which also controls whether or not to install Ollama.
+## @param enbuildAI.image.repository  Container repository for enbuildAI
+## @param enbuildAI.image.tag  [nullable] Container image tag. Skip to use the HelmChart appVersion as Image Tag
+## @param enbuildAI.replicas Container enbuilAI Replicas
+## @param enbuildAI.service_type  enbuildAI service_type
+## @param enbuildAI.api_key  api_key [default: "dummy"] for OpenAI service if you planning to use OpenAI service
+## @param enbuildAI.ollama.enabled [default: "ollama/llama3.1"] model_name for OpenAI service.
+## @param enbuildAI.model_name [default: "ollama/llama3.1"] model_name for OpenAI service.
+## @param enbuildAI.ollama_endpoint [default: "http://open-webui-ollama:11434"] ollama_endpoint for OpenAI service.
+enbuildAI:
   enabled: false
+  ollama:
+    enabled: false # Set to true to install Ollama
+  model_name: "ollama/llama3.1"
   api_key: "dummy"
+  ollama_endpoint: "http://open-webui-ollama:11434"
   image:
-    repository: enbuild-staging/vivsoft-platform-ui/enbuild-genai
-  replicas: 1
-  service_type: ClusterIP
-
-## @section ENBUILD Request Services parameters
-## @param enbuildRequest.enabled [default: false] Should we create the ENBUILD Request microservice ?
-## @param enbuildRequest.image.repository  Container repository for enbuildRequest
-## @param enbuildRequest.image.tag [nullable] Container image tag. Skip to use the HelmChart appVersion as Image Tag
-## @param enbuildRequest.replicas Container enbuildRequest Replicas
-## @param enbuildRequest.service_type  enbuildRequest service_type
-enbuildRequest:
-  enabled: false
-  image:
-    repository: enbuild-staging/vivsoft-platform-ui/enbuild-request
+    repository: enbuild-staging/vivsoft-platform-ui/enbuild-ai
   replicas: 1
   service_type: ClusterIP
 
@@ -223,3 +217,70 @@ open-webui:
     runtimeClassName: ""
     persistentVolume:
       enabled: true
+
+## @skip loki-stack
+## @skip loki-stack.grafana
+loki-stack:
+  test_pod:
+    enabled: false
+  loki:
+    enabled: true
+  promtail:
+    enabled: true
+    config:
+      clients:
+        - url: http://{{ .Release.Name }}-loki:3100/loki/api/v1/push
+  fluent-bit:
+    enabled: false
+  prometheus:
+    enabled: true
+  filebeat:
+    enabled: false
+  logstash:
+    enabled: false
+  grafana:
+    enabled: true
+    testFramework:
+      enabled: false
+    persistence:
+      enabled: true
+    adminPassword: V1v$oftR0ck5
+    adminUser: admin
+    dashboards:
+      default:
+        Logs_App:
+          gnetId: 13639
+          revision: 1
+          datasource: Loki
+        Kubernetes_Cluster:
+          gnetId: 7249
+          revision: 1
+          datasource: Prometheus
+    dashboardProviders:
+      dashboardproviders.yaml:
+        apiVersion: 1
+        providers:
+        - name: 'default'
+          orgId: 1
+          folder: ''
+          type: file
+          disableDeletion: false
+          editable: true
+          options:
+            path: /var/lib/grafana/dashboards/default
+    grafana.ini:
+      auth:
+        disable_login_form: false
+        auto_login: true
+      auth.basic:
+        enabled: true
+      auth.anonymous:
+        enabled: true
+      security:
+        allow_embedding: true
+      feature_toggles:
+        accessTokenExpirationCheck: true
+      server:
+        domain: enbuild.{{ .Values.global.domain }}
+        root_url: "%(protocol)s://%(domain)s:%(http_port)s/grafana/"
+        serve_from_sub_path: false

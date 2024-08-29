@@ -8,7 +8,7 @@ sources: [https://github.com/jupyterhub/zero-to-jupyterhub-k8s]
 icon: https://github.com/vivsoftorg/docs-enbuild/blob/main/assets/cover.png
 kubeVersion: '>=1.25.0-0'
 version: 0.0.18
-appVersion: 1.0.14
+appVersion: 1.0.15
 maintainers:
   - name: Juned Memon
     email: jmemon@vivsoft.io
@@ -22,6 +22,10 @@ dependencies:
     repository: https://jupyterhub.github.io/helm-chart
     condition: enbuildMl.enabled
   - name: open-webui
-    version: 3.1.1
+    version: 3.1.6
     repository: https://helm.openwebui.com/
-    condition: enbuildGenAI.enabled
+    condition: enbuildAI.ollama.enabled
+  - name: loki-stack
+    version: 2.10.2
+    repository: https://grafana.github.io/helm-charts
+    condition: global.monitoring.enabled

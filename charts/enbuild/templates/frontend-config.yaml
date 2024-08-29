@@ -14,10 +14,11 @@ data:
       REACT_APP_API_ML_DOMAIN_PRODUCTION: "/enbuild-ml",
       REACT_APP_API_REQUEST_DOMAIN_PRODUCTION: "/enbuild-request",
       REACT_APP_API_USER_DOMAIN_PRODUCTION: "/enbuild-user",
-      REACT_APP_API_GEN_AI_PRODUCTION: "/enbuild-genai",
+      REACT_APP_API_GEN_AI_PRODUCTION: "/enbuild-ai",
+      REACT_APP_API_OLLAMA_PRODUCTION: "/enbuild-ai",
       REACT_APP_SERVICE_MESH_KIALI_IFRAME_URL: "{{ .Values.enbuildUi.kiali_url }}",
       REACT_APP_MONITORING_GRAFANA_IFRAME_URL: "{{ .Values.enbuildUi.grafana_url }}",
       REACT_APP_COST_UTILIZATION_KUBECOST_IFRAME_URL: "{{ .Values.enbuildUi.kubecost_url }}",
       REACT_APP_LOGS_GRAFANA_IFRAME_URL: "{{ .Values.enbuildUi.loki_url }}",
-      REACT_APP_FEATURE_FLAG: "deleteStack,cloneStack,operations{{- if .Values.enbuildMl.enabled -}},ml{{- end }}{{- if .Values.enbuildGenAI.enabled -}},genai{{- end }}{{- if .Values.enbuildRequest.enabled -}},request{{- end }}",
+      REACT_APP_FEATURE_FLAG: "deleteStack,cloneStack,operations{{- if .Values.enbuildMl.enabled -}},ml{{- end }}{{- if .Values.enbuildAI.enabled -}},genai{{- end }}",
     };

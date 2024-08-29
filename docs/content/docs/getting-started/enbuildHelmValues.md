@@ -41,6 +41,7 @@ The following key value pairs are used to configure ENBUILD.
 | `global.image.registry_credentials`          | if the image.registry is private container registry, provide the credentials                                                                                                                     | `{}`                  |
 | `global.image.registry_credentials.username` | Container registry Username                                                                                                                                                                      | `""`                  |
 | `global.image.registry_credentials.password` | Container registry password                                                                                                                                                                      | `""`                  |
+| `global.monitoring.enabled`                  | Should we install loki-stack for monitoring , if yes set to true , set the lok-stack values in the values.yaml                                                                                   | `true`                |
 
 ### ENBUILD RabbitMQ parameters
 
@@ -67,18 +68,18 @@ The following key value pairs are used to configure ENBUILD.
 
 ### ENBUILD UI Services parameters
 
-| Name                         | Description                                                                      | Value                                                     |
-| ---------------------------- | -------------------------------------------------------------------------------- | --------------------------------------------------------- |
-| `enbuildUi.image.repository` | Container repository for enbuildUi                                               | `enbuild-staging/vivsoft-platform-ui/enbuild-frontend`    |
-| `enbuildUi.image.tag`        | Container image tag. Skip to use the HelmChart appVersion as Image Tag           | `undefined`                                               |
-| `enbuildUi.replicas`         | Container enbuildUI Replicas                                                     | `1`                                                       |
-| `enbuildUi.service_type`     | enbuildUI service_type                                                           | `ClusterIP`                                               |
-| `enbuildUi.node_port`        | enbuildUI node_port                                                              | `30080`                                                   |
-| `enbuildUi.hostname`         | enbuild service hostname. `enbuildUi.hostname`.`global.domain` becomes your FQDN | `enbuild`                                                 |
-| `enbuildUi.kiali_url`        | kiali_url                                                                        | `https://kiali.ijuned.com/kiali/`                         |
-| `enbuildUi.grafana_url`      | grafana_url                                                                      | `https://grafana.ijuned.com/`                             |
-| `enbuildUi.loki_url`         | loki_url                                                                         | `https://grafana.ijuned.com/d/liz0yRCZz/logs-app?orgId=1` |
-| `enbuildUi.kubecost_url`     | kubecost_url                                                                     | `https://kubecost.ijuned.com/overview.html`               |
+| Name                         | Description                                                                      | Value                                                         |
+| ---------------------------- | -------------------------------------------------------------------------------- | ------------------------------------------------------------- |
+| `enbuildUi.image.repository` | Container repository for enbuildUi                                               | `enbuild-staging/vivsoft-platform-ui/enbuild-frontend`        |
+| `enbuildUi.image.tag`        | Container image tag. Skip to use the HelmChart appVersion as Image Tag           | `undefined`                                                   |
+| `enbuildUi.replicas`         | Container enbuildUI Replicas                                                     | `1`                                                           |
+| `enbuildUi.service_type`     | enbuildUI service_type                                                           | `ClusterIP`                                                   |
+| `enbuildUi.node_port`        | enbuildUI node_port                                                              | `30080`                                                       |
+| `enbuildUi.hostname`         | enbuild service hostname. `enbuildUi.hostname`.`global.domain` becomes your FQDN | `enbuild`                                                     |
+| `enbuildUi.kiali_url`        | kiali_url                                                                        | `/kiali/`                                                     |
+| `enbuildUi.grafana_url`      | grafana_url                                                                      | `/grafana/d/os6Bh8Omk/kubernetes-cluster?orgId=1&refresh=30s` |
+| `enbuildUi.loki_url`         | loki_url                                                                         | `/grafana/d/liz0yRCZz/logs-app?orgId=1`                       |
+| `enbuildUi.kubecost_url`     | kubecost_url                                                                     | `kubecost/overview.html`                                      |
 
 ### ENBUILD Backend Services parameters
 
@@ -117,23 +118,16 @@ The following key value pairs are used to configure ENBUILD.
 | `enbuildMl.replicas`         | Container enbuildMl Replicas                                                                           | `1`                                              |
 | `enbuildMl.service_type`     | enbuildMl service_type                                                                                 | `ClusterIP`                                      |
 
-### ENBUILD GenAI Services parameters
+### ENBUILD AI Services parameters
 
-| Name                            | Description                                                                                            | Value                                               |
-| ------------------------------- | ------------------------------------------------------------------------------------------------------ | --------------------------------------------------- |
-| `enbuildGenAI.enabled`          | Should we create the ENBUILD GenAI microservice, which also controls whether or not to install Ollama. | `false`                                             |
-| `enbuildGenAI.image.repository` | Container repository for enbuildGenAI                                                                  | `enbuild-staging/vivsoft-platform-ui/enbuild-genai` |
-| `enbuildGenAI.image.tag`        | Container image tag. Skip to use the HelmChart appVersion as Image Tag                                 | `undefined`                                         |
-| `enbuildGenAI.replicas`         | Container enbuildGenAI Replicas                                                                        | `1`                                                 |
-| `enbuildGenAI.service_type`     | enbuildGenAI service_type                                                                              | `ClusterIP`                                         |
-| `enbuildGenAI.api_key`          | api_key for OpenAI service.                                                                            | `dummy`                                             |
-
-### ENBUILD Request Services parameters
-
-| Name                              | Description                                                            | Value                                                 |
-| --------------------------------- | ---------------------------------------------------------------------- | ----------------------------------------------------- |
-| `enbuildRequest.enabled`          | Should we create the ENBUILD Request microservice ?                    | `false`                                               |
-| `enbuildRequest.image.repository` | Container repository for enbuildRequest                                | `enbuild-staging/vivsoft-platform-ui/enbuild-request` |
-| `enbuildRequest.image.tag`        | Container image tag. Skip to use the HelmChart appVersion as Image Tag | `undefined`                                           |
-| `enbuildRequest.replicas`         | Container enbuildRequest Replicas                                      | `1`                                                   |
-| `enbuildRequest.service_type`     | enbuildRequest service_type                                            | `ClusterIP`                                           |
+| Name                         | Description                                                                                         | Value                                            |
+| ---------------------------- | --------------------------------------------------------------------------------------------------- | ------------------------------------------------ |
+| `enbuildAI.enabled`          | Should we create the ENBUILD AI microservice, which also controls whether or not to install Ollama. | `false`                                          |
+| `enbuildAI.image.repository` | Container repository for enbuildAI                                                                  | `enbuild-staging/vivsoft-platform-ui/enbuild-ai` |
+| `enbuildAI.image.tag`        | Container image tag. Skip to use the HelmChart appVersion as Image Tag                              | `undefined`                                      |
+| `enbuildAI.replicas`         | Container enbuilAI Replicas                                                                         | `1`                                              |
+| `enbuildAI.service_type`     | enbuildAI service_type                                                                              | `ClusterIP`                                      |
+| `enbuildAI.api_key`          | api_key [default: "dummy"] for OpenAI service if you planning to use OpenAI service                 | `dummy`                                          |
+| `enbuildAI.ollama.enabled`   | model_name for OpenAI service.                                                                      | `"ollama/llama3.1"`                              |
+| `enbuildAI.model_name`       | model_name for OpenAI service.                                                                      | `"ollama/llama3.1"`                              |
+| `enbuildAI.ollama_endpoint`  | ollama_endpoint for OpenAI service.                                                                 | `"http://open-webui-ollama:11434"`               |

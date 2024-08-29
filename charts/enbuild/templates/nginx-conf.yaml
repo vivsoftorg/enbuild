@@ -6,11 +6,20 @@ metadata:
 {{- include "enbuild-helm-chart.labels" . | nindent 4 }}
 data:
   default.conf: |-
+
+    map $http_upgrade $connection_upgrade {
+      default upgrade;
+      '' close;
+    }
+    
     server {
       listen 8080 default_server;
       server_name _;
       proxy_pass_header Authorization;
       proxy_set_header Host $host;
+      proxy_set_header X-Real-IP $remote_addr;
+      proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+      proxy_set_header X-Forwarded-Proto $scheme;
 
       location /enbuild-bk/ {
         proxy_pass http://{{ .Release.Name }}-enbuild-backend/;
@@ -28,10 +37,6 @@ data:
       {{- if .Values.jupyterhub.cull.enabled }}
       location /jupyter/ {
           proxy_pass http://proxy-public/jupyter/;
-          proxy_set_header X-Real-IP $remote_addr;
-          proxy_set_header Host $host;
-          proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-          proxy_set_header X-Forwarded-Proto $scheme;
           proxy_redirect /hub/ /jupyter/hub/;
           proxy_cookie_path /hub/ /jupyter/hub/;
           sub_filter 'href="/hub/' 'href="/jupyter/hub/';
@@ -41,17 +46,18 @@ data:
       {{- end }}
 {{- end }}
 
-{{- if .Values.enbuildRequest.enabled }}
+{{- if .Values.enbuildAI.enabled }}
 
-      location /enbuild-request/ {
-        proxy_pass http://{{ .Release.Name }}-enbuild-request/;
+      location /enbuild-ai/ {
+        proxy_pass http://{{ .Release.Name }}-enbuild-ai/;
       }
 {{- end }}
 
-{{- if .Values.enbuildGenAI.enabled }}
+{{- if .Values.global.monitoring.enabled }}
 
-      location /enbuild-genai/ {
-        proxy_pass http://{{ .Release.Name }}-enbuild-genai/;
-      }
+      location /grafana/ {
+        proxy_pass http://{{ .Release.Name }}-grafana/;
+        rewrite ^/grafana/(.*) /$1 break;
+     }
 {{- end }}
     }
