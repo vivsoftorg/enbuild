@@ -268,7 +268,6 @@ loki-stack:
           editable: true
           options:
             path: /var/lib/grafana/dashboards/default
-
     grafana.ini:
       auth:
         disable_login_form: false
