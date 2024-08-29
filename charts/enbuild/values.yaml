@@ -257,17 +257,18 @@ loki-stack:
           revision: 1
           datasource: Prometheus
     dashboardProviders:
-      - dashboardproviders.yaml:
+      dashboardproviders.yaml:
         apiVersion: 1
         providers:
-          - name: 'default'
-            orgId: 1
-            folder: ''
-            type: file
-            disableDeletion: false
-            editable: true
-            options:
-              path: /var/lib/grafana/dashboards/default
+        - name: 'default'
+          orgId: 1
+          folder: ''
+          type: file
+          disableDeletion: false
+          editable: true
+          options:
+            path: /var/lib/grafana/dashboards/default
+
     grafana.ini:
       auth:
         disable_login_form: false
