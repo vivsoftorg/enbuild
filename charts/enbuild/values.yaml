@@ -219,6 +219,7 @@ open-webui:
       enabled: true
 
 ## @skip loki-stack
+## @skip loki-stack.grafana
 loki-stack:
   test_pod:
     enabled: false
@@ -245,6 +246,28 @@ loki-stack:
       enabled: true
     adminPassword: V1v$oftR0ck5
     adminUser: admin
+    dashboards:
+      default:
+        Logs_App:
+          gnetId: 13639
+          revision: 1
+          datasource: Loki
+        Kubernetes_Cluster:
+          gnetId: 7249
+          revision: 1
+          datasource: Prometheus
+    dashboardProviders:
+      - dashboardproviders.yaml:
+        apiVersion: 1
+        providers:
+          - name: 'default'
+            orgId: 1
+            folder: ''
+            type: file
+            disableDeletion: false
+            editable: true
+            options:
+              path: /var/lib/grafana/dashboards/default
     grafana.ini:
       auth:
         disable_login_form: false
