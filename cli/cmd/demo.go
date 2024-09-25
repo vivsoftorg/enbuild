@@ -3,6 +3,7 @@ package cmd
 import (
 	_ "embed"
 	"fmt"
+	"os"
 	"os/exec"
 
 	"github.com/spf13/cobra"
@@ -36,14 +37,12 @@ var upCmd = &cobra.Command{
 		}
 		scriptPath := WriteInFile("create_enbuild_demo.sh", demoScriptsCreate)
 		execCmd := exec.Command("sh", scriptPath, clusterNameArg, debugArg)
-		output, err := execCmd.CombinedOutput()
-		if err != nil {
-			fmt.Printf("Error executing create script: %v\n", err)
-			fmt.Printf("Output: %s\n", string(output))
+		execCmd.Stdout = os.Stdout
+		execCmd.Stderr = os.Stderr
+		if err := execCmd.Run(); err != nil || !execCmd.ProcessState.Success() {
+			fmt.Errorf("error executing the command %s", err)
 			return
 		}
-
-		fmt.Println(string(output))
 		DeleteFile(scriptPath)
 	},
 }
