@@ -2,11 +2,11 @@ package cmd
 
 import (
 	"fmt"
+	log "github.com/sirupsen/logrus"
 	"io"
 	"net/http"
-	"os"	
+	"os"
 	"runtime"
-	log "github.com/sirupsen/logrus"
 )
 
 func downloadAndSaveFile(url, filepath string) error {
@@ -34,7 +34,7 @@ func WriteInFile(fileName string, content []byte) string {
 	if runtime.GOOS == "windows" {
 		fullPath = "C:\\Users\\Default\\AppData\\Local\\Temp\\enbuild\\"
 	}
-	
+
 	if _, err := os.Stat(fullPath); os.IsNotExist(err) {
 		err := os.Mkdir(fullPath, 0777)
 		if err != nil {

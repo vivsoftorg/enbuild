@@ -9,8 +9,8 @@ VALUES_FILE="/tmp/enbuild/values.yaml"
 HELM_DEBUG=""
 
 if [ "$DEBUG" == "true" ]; then
-    set -x
-    HELM_DEBUG="--debug"
+  set -x
+  HELM_DEBUG="--debug"
 fi
 
 POWERSHELL_CMD='powershell.exe'
@@ -42,7 +42,7 @@ install_or_upgrade_helm_charts() {
     helm upgrade --install --create-namespace ${HELM_DEBUG} --timeout=15m -n enbuild -f $VALUES_FILE --wait --atomic enbuild vivsoft/enbuild && break
     set +x
     echo "Install failed. Retrying in 10 seconds."
-    sleep 10
+    0
   done
 
   set +x
@@ -50,17 +50,17 @@ install_or_upgrade_helm_charts() {
 
 setup_network() {
   case "$(uname -s)" in
-    Darwin)
+  Darwin)
+    echo "Setting up network. Please provide your password to run the sudo command"
+    sudo ifconfig lo0 alias 172.42.0.3/32 up || true
+    ;;
+  Linux)
+    if grep -qi microsoft /proc/version; then
       echo "Setting up network. Please provide your password to run the sudo command"
-      sudo ifconfig lo0 alias 172.42.0.3/32 up || true
-      ;;
-    Linux)
-      if grep -qi microsoft /proc/version; then
-        echo "Setting up network. Please provide your password to run the sudo command"
-        sudo ip addr add 172.42.0.3/32 dev lo || true
-        ${POWERSHELL_CMD} -Command "Start-Process powershell -Verb RunAs -ArgumentList \"netsh interface ipv4 add address name='Loopback Pseudo-Interface 1' address=172.42.0.3 mask=255.255.255.255 skipassource=true\""
-      fi
-      ;;
+      sudo ip addr add 172.42.0.3/32 dev lo || true
+      ${POWERSHELL_CMD} -Command "Start-Process powershell -Verb RunAs -ArgumentList \"netsh interface ipv4 add address name='Loopback Pseudo-Interface 1' address=172.42.0.3 mask=255.255.255.255 skipassource=true\""
+    fi
+    ;;
   esac
 }
 
@@ -105,7 +105,7 @@ install_deps() {
     else
       echo "iproute already installed"
     fi
-    
+
     if command -v 'powershell.exe' >/dev/null; then
       POWERSHELL_CMD='powershell.exe'
     elif command -v '/mnt/c/Windows/System32/WindowsPowerShell/v1.0/powershell.exe' >/dev/null; then
@@ -126,49 +126,35 @@ install_deps() {
 
 cd "$(dirname "$(realpath "$0")")"
 
-echo '""""""""""""""""""""""""""""""""""""""""""""'
 echo 'Checking and installing dependencies'
-echo '""""""""""""""""""""""""""""""""""""""""""""'
+
 install_deps
 
-echo ''
-echo '""""""""""""""""""""""""""""""""""""""""""""'
 echo 'Fetching ENBUILD values to setup your cluster'
-echo '""""""""""""""""""""""""""""""""""""""""""""'
-curl -s -L https://raw.githubusercontent.com/vivsoftorg/enbuild/refs/heads/main/examples/enbuild/quick_install.yaml > $VALUES_FILE
+
+curl -s -L https://raw.githubusercontent.com/vivsoftorg/enbuild/refs/heads/main/examples/enbuild/quick_install.yaml >$VALUES_FILE
 echo 'Helm values written into $VALUES_FILE'
 
-
-echo ''
-echo '""""""""""""""""""""""""""""""""""""""""""""'
 echo 'Installing ENBUILD helm repositories'
-echo '""""""""""""""""""""""""""""""""""""""""""""'
+
 helm repo add vivsoft https://vivsoftorg.github.io/enbuild
 helm repo update vivsoft
 
-echo ''
-echo '""""""""""""""""""""""""""""""""""""""""""""'
 echo "Creating $CLUSTER_NAME kube cluster"
-echo '""""""""""""""""""""""""""""""""""""""""""""'
+
 get_or_create_cluster "$CLUSTER_NAME"
 
-echo ''
-echo '""""""""""""""""""""""""""""""""""""""""""""'
 echo 'Installing ENBUILD helm charts'
-echo '""""""""""""""""""""""""""""""""""""""""""""'
+
 install_or_upgrade_helm_charts
 
-echo ''
-echo '""""""""""""""""""""""""""""""""""""""""""""'
 echo 'Configuring network'
-echo '""""""""""""""""""""""""""""""""""""""""""""'
-setup_network
 
-echo ''
-echo '""""""""""""""""""""""""""""""""""""""""""""'
+setup_network
+echo "---------------------------------------------------------"
 echo "ENBUILD demo cluster is now installed !!!!"
 echo "The kubeconfig is correctly set, so you can connect to it directly with kubectl or k9s from your local machine"
-echo "To delete/stop/start your cluster, use k3d cluster xxxx"
+echo "To delete/stop/start your cluster, use k3d cluster $CLUSTER_NAME"
 echo "To access the ENBUILD dashboard, use port-forward with below command"
 echo "kubectl --namespace enbuild port-forward svc/enbuild-enbuild-ui 3000:80"
-echo '""""""""""""""""""""""""""""""""""""""""""""'
+echo "---------------------------------------------------------"

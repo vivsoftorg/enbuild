@@ -43,8 +43,8 @@ delete_k3d_cluster() {
 teardown_network() {
   if [ "$(uname -s)" = 'Darwin' ]; then
     # MacOs
-    set -x
-    sudo ifconfig lo0 -alias 172.42.0.3/32 up || true
+    set -e
+    sudo ifconfig lo0 -alias 172.42.0.3/32 up > /dev/null 2>&1 || true
   elif grep -qi microsoft /proc/version; then
     # Wsl
     set -x
@@ -58,20 +58,10 @@ teardown_network() {
 # shellcheck disable=SC2046
 # shellcheck disable=SC2086
 cd "$(dirname $(realpath $0))"
-
-echo ''
-
-echo ''
-echo '""""""""""""""""""""""""""""""""""""""""""""'
 echo "Removing $CLUSTER_NAME kube cluster"
-echo '""""""""""""""""""""""""""""""""""""""""""""'
 delete_k3d_cluster "$CLUSTER_NAME"
-echo ''
-echo '""""""""""""""""""""""""""""""""""""""""""""'
+
 echo 'Removing network config'
-echo '""""""""""""""""""""""""""""""""""""""""""""'
 teardown_network
-echo ''
-echo '""""""""""""""""""""""""""""""""""""""""""""'
-echo "Enbuild local demo cluster is now deleted !!!"
-echo '""""""""""""""""""""""""""""""""""""""""""""'
+
+echo "Local demo cluster $CLUSTER_NAME deleted."
