@@ -4,7 +4,7 @@ set -eu
 
 CLUSTER_NAME=${1:-enbuild}
 DEBUG=${2:-false}
-VALUES_FILE="/tmp/values.yaml"
+VALUES_FILE="/tmp/enbuild/values.yaml"
 
 HELM_DEBUG=""
 
@@ -51,10 +51,12 @@ install_or_upgrade_helm_charts() {
 setup_network() {
   case "$(uname -s)" in
     Darwin)
+      echo "Setting up network. Please provide your password to run the sudo command"
       sudo ifconfig lo0 alias 172.42.0.3/32 up || true
       ;;
     Linux)
       if grep -qi microsoft /proc/version; then
+        echo "Setting up network. Please provide your password to run the sudo command"
         sudo ip addr add 172.42.0.3/32 dev lo || true
         ${POWERSHELL_CMD} -Command "Start-Process powershell -Verb RunAs -ArgumentList \"netsh interface ipv4 add address name='Loopback Pseudo-Interface 1' address=172.42.0.3 mask=255.255.255.255 skipassource=true\""
       fi
