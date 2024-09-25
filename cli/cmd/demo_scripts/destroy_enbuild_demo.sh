@@ -46,7 +46,6 @@ teardown_network() {
   elif grep -qi microsoft /proc/version; then
     # Wsl
     set -x
-    echo "Removing network config, please provide your password to run the sudo command"
     sudo ip addr del 172.42.0.3/32 dev lo || true
     ${POWERSHELL_CMD} -Command "Start-Process powershell -Verb RunAs -ArgumentList \"netsh interface ipv4 delete address name='Loopback Pseudo-Interface 1' address=172.42.0.3\""
   fi
@@ -59,7 +58,7 @@ cd "$(dirname $(realpath $0))"
 echo "Removing $CLUSTER_NAME kube cluster"
 delete_k3d_cluster "$CLUSTER_NAME"
 
-echo 'Removing network config'
+echo 'Removing network config please provide your password to run the sudo command'
 teardown_network
 
 echo "Local demo cluster $CLUSTER_NAME deleted."
