@@ -269,6 +269,8 @@ loki-stack:
           options:
             path: /var/lib/grafana/dashboards/default
     grafana.ini:
+      preferences:
+        theme: light
       auth:
         disable_login_form: false
         auto_login: true
