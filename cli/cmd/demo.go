@@ -5,13 +5,14 @@ import (
 	"fmt"
 	"os"
 	"os/exec"
-
+	"runtime"
 	"github.com/spf13/cobra"
 )
 
 var (
 	upClusterName string
 	upDebug       bool
+	valueFilePath string
 )
 
 //go:embed demo_scripts/create_enbuild_demo.sh
@@ -35,8 +36,12 @@ var upCmd = &cobra.Command{
 		if upDebug {
 			debugArg = "true"
 		}
+		valueFilePath = "/tmp/enbuild/values.yaml"
+		if runtime.GOOS == "windows" {
+			valueFilePath = "C:\\Users\\Default\\AppData\\Local\\Temp\\enbuild\\values.yaml"
+		}
 		scriptPath := WriteInFile("create_enbuild_demo.sh", demoScriptsCreate)
-		execCmd := exec.Command("sh", scriptPath, clusterNameArg, debugArg)
+		execCmd := exec.Command("sh", scriptPath, clusterNameArg, debugArg, valueFilePath)
 		execCmd.Stdout = os.Stdout
 		execCmd.Stderr = os.Stderr
 		if err := execCmd.Run(); err != nil || !execCmd.ProcessState.Success() {

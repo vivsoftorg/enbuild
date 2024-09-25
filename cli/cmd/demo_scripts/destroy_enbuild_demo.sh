@@ -4,8 +4,6 @@ set -eu
 
 CLUSTER_NAME=${1:-enbuild}
 DEBUG=${2:-false}
-VALUES_FILE="/tmp/enbuild/values.yaml"
-
 HELM_DEBUG=""
 
 if [ "$DEBUG" == "true" ]; then
