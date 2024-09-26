@@ -213,7 +213,7 @@ open-webui:
         type: 'nvidia'
         number: 1
       models:
-        - llama3.1
+        - llama3.2:1b
     runtimeClassName: ""
     persistentVolume:
       enabled: true
