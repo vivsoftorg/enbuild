@@ -132,7 +132,7 @@ install_deps
 
 echo 'Fetching ENBUILD values to setup your cluster'
 
-curl -s -L https://raw.githubusercontent.com/vivsoftorg/enbuild/refs/heads/main/examples/enbuild/quick_install.yaml >$VALUES_FILE
+curl -s -L https://raw.githubusercontent.com/vivsoftorg/enbuild/refs/heads/main/examples/enbuild/quick_install.yaml > $VALUES_FILE
 echo 'Helm values written into $VALUES_FILE'
 
 echo 'Installing ENBUILD helm repositories'

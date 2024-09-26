@@ -3,10 +3,10 @@ package cmd
 import (
 	_ "embed"
 	"fmt"
+	"github.com/spf13/cobra"
 	"os"
 	"os/exec"
 	"runtime"
-	"github.com/spf13/cobra"
 )
 
 var (
