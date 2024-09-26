@@ -7,9 +7,6 @@ import (
 	"os"
 )
 
-// Version of the application, should be set during build time.
-var Version = "v0.0.7" // Replace with current version number as needed.
-
 func GetCurrentVersion() (*semver.Version, error) {
 	version, err := semver.NewVersion(Version)
 	if err != nil {

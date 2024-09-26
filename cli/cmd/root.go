@@ -6,6 +6,9 @@ import (
 	"os"
 )
 
+// Version of the application, should be set during build time.
+var Version = "v0.0.7" // Replace with current version number as needed.
+
 // rootCmd represents the base command when called without any subcommands
 var rootCmd = &cobra.Command{
 	Use:   "enbuild",
