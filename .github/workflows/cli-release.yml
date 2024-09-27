@@ -36,7 +36,7 @@ jobs:
       - name: Calculate new tag
         id: new-tag
         run: |
-          previous_tag=${{ steps.previous-tag.outputs['previous-tag'] }}
+          previous_tag=${{ steps.previous-tag.outputs.previous-tag }}
           version=$(echo $previous_tag | sed 's/^v//')
           major=$(echo $version | cut -d. -f1)
           minor=$(echo $version | cut -d. -f2)
@@ -44,6 +44,12 @@ jobs:
           new_patch=$((patch + 1))
           new_tag="v$major.$minor.$new_patch"
           echo "new_tag=$new_tag" >> $GITHUB_OUTPUT
+
+      # Update root.go file with the new tag
+      - name: Update root.go with new version
+        run: |
+          new_tag=${{ steps.new-tag.outputs.new_tag }}
+          sed -i "s/var Version = \".*\"/var Version = \"$new_tag\"/" cli/cmd/root.go
 
       - name: Set Up Go
         uses: actions/setup-go@v5
