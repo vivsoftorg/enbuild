@@ -12,6 +12,7 @@ Usage:
 Available Commands:
   bigbang     bigbang
   completion  Generate the autocompletion script for the specified shell
+  demo        Try Enbuild on your local machine
   help        Help about any command
 
 Flags:
@@ -21,5 +22,5 @@ Flags:
 Use "enbuild [command] --help" for more information about a command.
 
  rancher-desktop enbuild_helm_chart/cli cli-up ❯ enbuild -v
-v0.0.5
+v0.0.7
 ```
