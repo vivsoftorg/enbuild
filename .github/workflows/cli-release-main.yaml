@@ -27,7 +27,6 @@ jobs:
           version: 1.26.2
           workdir: cli
           distribution: goreleaser
-          version: latest
           args: release --rm-dist --skip-publish --skip-validate
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
