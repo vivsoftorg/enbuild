@@ -20,7 +20,6 @@ var versionCmd = &cobra.Command{
 	Use:   "version",
 	Short: "Print installed version of the Enbuild CLI",
 	Run: func(cmd *cobra.Command, args []string) {
-		// currentVersion := version
 		currentVersion, err := GetCurrentVersion()
 		if err != nil {
 			fmt.Printf("Error Can not get version %s\n", err)
