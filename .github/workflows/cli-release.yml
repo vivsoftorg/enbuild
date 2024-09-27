@@ -4,8 +4,6 @@ on:
   push:
     tags:         # Trigger only on tags
       - 'v*'      # Ensure this matches your versioning scheme (e.g., v0.0.7)
-    branches:
-      - main
     paths:
       - "cli/**"
 
@@ -35,6 +33,7 @@ jobs:
       - name: Run Go Releaser
         uses: goreleaser/goreleaser-action@v5
         with:
+          version: 1.26.2
           workdir: cli
           distribution: goreleaser
           version: latest
@@ -43,7 +42,3 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       #     GORELEASER_CURRENT_TAG: ${{ github.ref_name }}  # Use the current tag from the event context
       #     GORELEASER_PREVIOUS_TAG: ${{ steps.previous_tag.outputs.previous-tag }}
-
-      # - name: Get Previous Tag
-      #   id: previous_tag
-      #   run: echo "::set-output name=previous-tag::$(git describe --tags --abbrev=0 HEAD^)"
