@@ -1,20 +1,55 @@
 name: Release Cli
+
 on:
   push:
+    tags:         # Trigger only on tags
+      - 'v*'      # Ensure this matches your versioning scheme (e.g., v0.0.7)
     branches:
       - main
     paths:
       - "cli/**"
+
 jobs:
   go-release:
     name: Go Release Job
     runs-on: ubuntu-latest
     timeout-minutes: 30
+
     steps:
       - name: Checkout
         uses: actions/checkout@v4
         with:
           fetch-depth: 1
+
+      # Fetch all tags
+      - name: Fetch tags
+        run: git fetch --depth=1 origin +refs/tags/*:refs/tags/*
+
+      # Set previous tag
+      - name: Set previous tag
+        id: previous-tag
+        run: | 
+          previous_tag=$(git describe --tags --abbrev=0 $(git tag -l | grep "^v" | tail -n1))
+          echo "previous-tag=$previous_tag" >> $GITHUB_OUTPUT
+
+      # Calculate and set new tag
+      - name: Calculate new tag
+        id: new-tag
+        run: |
+          previous_tag=${{ steps.previous-tag.outputs.previous-tag }}
+          version=$(echo $previous_tag | sed 's/^v//')
+          major=$(echo $version | cut -d. -f1)
+          minor=$(echo $version | cut -d. -f2)
+          patch=$(echo $version | cut -d. -f3)
+          new_patch=$((patch + 1))
+          new_tag="v$major.$minor.$new_patch"
+          echo "new_tag=$new_tag" >> $GITHUB_OUTPUT
+
+      # Update root.go file with the new tag
+      - name: Update root.go with new version
+        run: |
+          new_tag=${{ steps.new-tag.outputs.new_tag }}
+          sed -i "s/var Version = \".*\"/var Version = \"$new_tag\"/" cli/cmd/root.go
 
       - name: Set Up Go
         uses: actions/setup-go@v5
@@ -30,5 +65,6 @@ jobs:
           args: release --clean -p 1 --skip=validate
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          GORELEASER_CURRENT_TAG: v0.0.7  # Hack to bypass the semver issue
-          GORELEASER_PREVIOUS_TAG: v0.0.6 # Hack to bypass the semver issue
+          GORELEASER_CURRENT_TAG: ${{ steps.new-tag.outputs.new_tag }}  # Use the current tag from the event context
+          GORELEASER_PREVIOUS_TAG: ${{ steps.previous-tag.outputs.previous-tag }}  # Use the previous tag from the event context
+

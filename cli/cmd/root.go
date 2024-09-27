@@ -7,15 +7,29 @@ import (
 )
 
 // Version of the application, should be set during build time.
-var Version = "v0.0.7" // Replace with current version number as needed.
+var Version = "v0.0.0" // Replace with current version number as needed.
 
 // rootCmd represents the base command when called without any subcommands
 var rootCmd = &cobra.Command{
 	Use:   "enbuild",
 	Short: "enbuild cli",
 	Long:  `enbuild is a CLI to help generate the ENBUILD catalog templates`,
-	// Uncomment the following line if your bare application has an action associated with it:
-	// Run: func(cmd *cobra.Command, args []string) { },
+	Run: func(cmd *cobra.Command, args []string) {
+		// Check if the version flag was passed
+		versionFlag, _ := cmd.Flags().GetBool("version")
+		if versionFlag {
+			currentVersion, err := GetCurrentVersion()
+			if err != nil {
+				fmt.Printf("Error Can not get version %s\n", err)
+				os.Exit(1)
+				panic("unreachable") // staticcheck false positive: https://staticcheck.io/docs/checks#SA5011
+			}
+			fmt.Printf("enbuild version %v\n", currentVersion)
+			os.Exit(0) // Exit after printing the version
+		}
+		// If no flag, print default help
+		cmd.Help()
+	},
 }
 
 // Execute adds all child commands to the root command and sets flags appropriately.
@@ -30,4 +44,5 @@ func Execute() {
 
 func init() {
 	cobra.OnInitialize()
+	rootCmd.Flags().BoolP("version", "v", false, "Print the version and exit")
 }

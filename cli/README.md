@@ -1,4 +1,5 @@
 # ENBUILD CLI
+# ---------------
 
 Make sure you install the [yq cli](https://mikefarah.gitbook.io/yq) as `enbuild` cli is using it internally for creating bigbang catalog template values file.
 
@@ -22,5 +23,5 @@ Flags:
 Use "enbuild [command] --help" for more information about a command.
 
  rancher-desktop enbuild_helm_chart/cli cli-up ❯ enbuild -v
-v0.0.7
+v0.0.8
 ```

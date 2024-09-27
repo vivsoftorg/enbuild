@@ -27,38 +27,19 @@ fi
 
 
 
-delete_k3d_cluster() {
+stop_k3d_cluster() {
   clusterName=$1
   clusterExist=$(k3d cluster list -o json | jq '.[] | select(.name=="'"$clusterName"'") | .name')
   if [ -n "$clusterExist" ]
   then
-    k3d cluster delete "$clusterName" || true
+    k3d cluster stop "$clusterName" || true
   fi
-  docker network rm "k3d-${clusterName}" > /dev/null 2>&1 || true
-  k3d registry delete qovery-registry.lan > /dev/null 2>&1 || true
-}
-
-teardown_network() {
-  if [ "$(uname -s)" = 'Darwin' ]; then
-    # MacOs
-    set -e
-    sudo ifconfig lo0 -alias 172.42.0.3/32 up > /dev/null 2>&1 || true
-  elif grep -qi microsoft /proc/version; then
-    # Wsl
-    set -x
-    sudo ip addr del 172.42.0.3/32 dev lo || true
-    ${POWERSHELL_CMD} -Command "Start-Process powershell -Verb RunAs -ArgumentList \"netsh interface ipv4 delete address name='Loopback Pseudo-Interface 1' address=172.42.0.3\""
-  fi
-  set +x
 }
 
 # shellcheck disable=SC2046
 # shellcheck disable=SC2086
 cd "$(dirname $(realpath $0))"
 echo "Removing $CLUSTER_NAME kube cluster"
-delete_k3d_cluster "$CLUSTER_NAME"
+stop_k3d_cluster "$CLUSTER_NAME"
 
-echo 'Removing network config please provide your password to run the sudo command'
-teardown_network
-
-echo "Local demo k3d cluster $CLUSTER_NAME deleted."
+echo "Local demo k3d cluster $CLUSTER_NAME stopped."
