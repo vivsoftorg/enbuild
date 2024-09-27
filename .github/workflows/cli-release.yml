@@ -30,5 +30,5 @@ jobs:
           args: release --clean -p 1 --skip=validate
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          GORELEASER_CURRENT_TAG: v0.0.6  # Hack to bypass the semver issue
-          GORELEASER_PREVIOUS_TAG: v0.0.5 # Hack to bypass the semver issue
+          GORELEASER_CURRENT_TAG: v0.0.7  # Hack to bypass the semver issue
+          GORELEASER_PREVIOUS_TAG: v0.0.6 # Hack to bypass the semver issue
