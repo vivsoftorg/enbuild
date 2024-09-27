@@ -1,5 +1,5 @@
 # ENBUILD CLI
-# -------
+# --------
 
 Make sure you install the [yq cli](https://mikefarah.gitbook.io/yq) as `enbuild` cli is using it internally for creating bigbang catalog template values file.
 
