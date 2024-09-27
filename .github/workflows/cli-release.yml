@@ -1,15 +1,20 @@
 name: Release Cli
+
 on:
   push:
+    tags:         # Trigger only on tags
+      - 'v*'      # Ensure this matches your versioning scheme (e.g., v0.0.7)
     branches:
       - main
     paths:
       - "cli/**"
+
 jobs:
   go-release:
     name: Go Release Job
     runs-on: ubuntu-latest
     timeout-minutes: 30
+
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -30,5 +35,9 @@ jobs:
           args: release --clean -p 1 --skip=validate
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          GORELEASER_CURRENT_TAG: v0.0.7  # Hack to bypass the semver issue
-          GORELEASER_PREVIOUS_TAG: v0.0.6 # Hack to bypass the semver issue
+          GORELEASER_CURRENT_TAG: ${{ github.ref_name }}  # Use the current tag from the event context
+          GORELEASER_PREVIOUS_TAG: ${{ steps.previous_tag.outputs.previous-tag }}
+
+      - name: Get Previous Tag
+        id: previous_tag
+        run: echo "::set-output name=previous-tag::$(git describe --tags --abbrev=0 HEAD^)"
