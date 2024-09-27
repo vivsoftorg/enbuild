@@ -21,6 +21,9 @@ var demoScriptsCreate []byte
 //go:embed demo_scripts/destroy_enbuild_demo.sh
 var demoScriptsDestroy []byte
 
+//go:embed demo_scripts/stop_enbuild_demo.sh
+var demoScriptsDown []byte
+
 var demoCmd = &cobra.Command{
 	Use:   "demo",
 	Short: "Try Enbuild on your local machine",
@@ -28,7 +31,7 @@ var demoCmd = &cobra.Command{
 
 var upCmd = &cobra.Command{
 	Use:   "up",
-	Short: "Create a k3s kubernetes cluster with ENBUILD installed on your local machine",
+	Short: "Create a k3d kubernetes cluster with ENBUILD installed on your local machine",
 	Run: func(cmd *cobra.Command, args []string) {
 		// Handle the 'up' action
 		clusterNameArg := upClusterName
@@ -52,9 +55,26 @@ var upCmd = &cobra.Command{
 	},
 }
 
+var downCmd = &cobra.Command{
+	Use:   "down",
+	Short: "Uninstall ENBUILD on local k3d cluster and stop the k3d cluster your local machine",
+	Run: func(cmd *cobra.Command, args []string) {
+		clusterNameArg := upClusterName
+		scriptPath := WriteInFile("stop_enbuild_demo.sh", demoScriptsDown)
+		execCmd := exec.Command("sh", scriptPath, clusterNameArg)
+		execCmd.Stdout = os.Stdout
+		execCmd.Stderr = os.Stderr
+		if err := execCmd.Run(); err != nil || !execCmd.ProcessState.Success() {
+			fmt.Errorf("error executing the command %s", err)
+			return
+		}
+		DeleteFile(scriptPath)
+	},
+}
+
 var destroyCmd = &cobra.Command{
 	Use:   "destroy",
-	Short: "Remove k3s cluster with ENBUILD installed on your local machine",
+	Short: "Remove k3d cluster with ENBUILD installed on your local machine",
 	Run: func(cmd *cobra.Command, args []string) {
 		scriptPath := WriteInFile("destroy_enbuild_demo.sh", demoScriptsDestroy)
 		execCmd := exec.Command("sh", scriptPath)
@@ -71,11 +91,12 @@ var destroyCmd = &cobra.Command{
 func init() {
 	rootCmd.AddCommand(demoCmd)
 
-	// Define flags for the 'up' subcommand
 	upCmd.Flags().StringVar(&upClusterName, "clusterName", "enbuild", "Name of the cluster")
 	upCmd.Flags().BoolVar(&upDebug, "debug", false, "Enable debug mode")
+	downCmd.Flags().StringVar(&upClusterName, "clusterName", "enbuild", "Name of the cluster")
+	destroyCmd.Flags().StringVar(&upClusterName, "clusterName", "enbuild", "Name of the cluster")
 
-	// Add the 'up' and 'destroy' subcommands to 'demo'
 	demoCmd.AddCommand(upCmd)
+	demoCmd.AddCommand(downCmd)
 	demoCmd.AddCommand(destroyCmd)
 }

@@ -27,6 +27,7 @@ get_or_create_cluster() {
       --port "80:80@loadbalancer" --port "443:443@loadbalancer"
   else
     k3d cluster start "$clusterName"
+    k3d kubeconfig merge "$clusterName" -d
   fi
 }
 
