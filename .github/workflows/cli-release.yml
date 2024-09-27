@@ -32,12 +32,12 @@ jobs:
           workdir: cli
           distribution: goreleaser
           version: latest
-          args: release --clean -p 1 --skip=validate
+          args: release --clean -p 1 --skip=validate --snapshot
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          GORELEASER_CURRENT_TAG: ${{ github.ref_name }}  # Use the current tag from the event context
-          GORELEASER_PREVIOUS_TAG: ${{ steps.previous_tag.outputs.previous-tag }}
+      #     GORELEASER_CURRENT_TAG: ${{ github.ref_name }}  # Use the current tag from the event context
+      #     GORELEASER_PREVIOUS_TAG: ${{ steps.previous_tag.outputs.previous-tag }}
 
-      - name: Get Previous Tag
-        id: previous_tag
-        run: echo "::set-output name=previous-tag::$(git describe --tags --abbrev=0 HEAD^)"
+      # - name: Get Previous Tag
+      #   id: previous_tag
+      #   run: echo "::set-output name=previous-tag::$(git describe --tags --abbrev=0 HEAD^)"
