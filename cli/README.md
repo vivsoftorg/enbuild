@@ -23,5 +23,5 @@ Flags:
 Use "enbuild [command] --help" for more information about a command.
 
  rancher-desktop enbuild_helm_chart/cli cli-up ❯ enbuild -v
-v0.0.8
+v0.0.11
 ```
