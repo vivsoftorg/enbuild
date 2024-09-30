@@ -91,35 +91,80 @@ try_install_missing_deps() {
 }
 
 install_deps() {
-  for dep in jq grep sed curl docker k3d helm; do
-    if ! command -v $dep >/dev/null; then
-      echo "$dep not installed, attempting to install..."
-      try_install_missing_deps
-    else
-      echo "$dep already installed"
-    fi
-  done
+    if which docker >/dev/null; then
+     echo "docker already installed"
+  else
+    echo "docker command is missing. Please use your package manager to install it"
+    echo "https://docs.docker.com/engine/install/"
+    exit 1
+  fi
+
+  docker_running=$( (docker ps -q >/dev/null && echo true ) || echo false )
+  if "$docker_running" == "true"; then
+     echo "docker is running"
+  else
+    echo "Docker is not running. Please start Docker before running this command"
+    exit 1
+  fi
+
+  if which jq >/dev/null; then
+     echo "jq already installed"
+  else
+    try_install_missing_deps
+  fi
+
+  if which grep >/dev/null; then
+     echo "grep already installed"
+  else
+    try_install_missing_deps
+  fi
+
+  if which sed >/dev/null; then
+     echo "sed already installed"
+  else
+    try_install_missing_deps
+  fi
 
   if test -f /proc/version && grep -qi microsoft /proc/version; then
-    if ! command -v ip >/dev/null; then
-      try_install_missing_deps
+    if which ip >/dev/null; then
+       echo "iproute already installed"
     else
-      echo "iproute already installed"
+      try_install_missing_deps
     fi
+  fi
 
-    if command -v 'powershell.exe' >/dev/null; then
+  if which curl >/dev/null; then
+     echo "curl already installed"
+  else
+    try_install_missing_deps
+  fi
+
+  if which k3d >/dev/null; then
+    echo "k3d already installed"
+  else
+    echo "Installing k3d"
+    curl -s https://raw.githubusercontent.com/k3d-io/k3d/main/install.sh | TAG=v5.6.3 bash
+  fi
+
+  if which helm >/dev/null; then
+     echo "helm already installed"
+  else
+    echo "Installing HELM"
+    curl https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3 | bash
+  fi
+
+  # Wsl powershell
+  if test -f /proc/version && grep -qi microsoft /proc/version; then
+    if which 'powershell.exe' >/dev/null; then
+      echo "powershell is installed"
       POWERSHELL_CMD='powershell.exe'
-    elif command -v '/mnt/c/Windows/System32/WindowsPowerShell/v1.0/powershell.exe' >/dev/null; then
+    elif which '/mnt/c/Windows/System32/WindowsPowerShell/v1.0/powershell.exe' >/dev/null; then
+      echo "powershell is installed"
       POWERSHELL_CMD='/mnt/c/Windows/System32/WindowsPowerShell/v1.0/powershell.exe'
     else
       echo "Cannot find powershell.exe, please be sure it is installed"
       exit 1
     fi
-  fi
-
-  if ! docker ps -q >/dev/null; then
-    echo "Docker is not running. Please start Docker before running this command"
-    exit 1
   fi
 
   echo "All dependencies are installed"
@@ -133,6 +178,8 @@ install_deps
 
 echo 'Fetching ENBUILD values to setup your cluster'
 
+
+mkdir -p "$(dirname "$VALUES_FILE")"
 curl -s -L https://raw.githubusercontent.com/vivsoftorg/enbuild/refs/heads/main/examples/enbuild/quick_install.yaml > $VALUES_FILE
 echo 'Helm values written into $VALUES_FILE'
 
