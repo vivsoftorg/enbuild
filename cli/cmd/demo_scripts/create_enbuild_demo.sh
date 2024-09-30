@@ -74,13 +74,13 @@ try_install_missing_deps() {
 
   if command -v apt-get >/dev/null; then
     echo "Installing dependencies with apt"
-    ${SUDO} apt-get update && ${SUDO} apt-get install -y jq grep sed curl iproute2 helm k3d
+    ${SUDO} apt-get update && ${SUDO} apt-get install -y jq grep sed curl iproute2
   elif command -v yum >/dev/null; then
     echo "Installing dependencies with yum"
-    ${SUDO} yum update -y && ${SUDO} yum install -y jq grep sed curl iproute helm k3d
+    ${SUDO} yum update -y && ${SUDO} yum install -y jq grep sed curl iproute
   elif command -v pacman >/dev/null; then
     echo "Installing dependencies with pacman"
-    ${SUDO} pacman -Sy && ${SUDO} pacman --noconfirm -S jq grep curl sed iproute helm k3d
+    ${SUDO} pacman -Sy && ${SUDO} pacman --noconfirm -S jq grep curl sed iproute
   elif command -v brew >/dev/null; then
     echo "Installing dependencies with brew"
     brew update && brew install jq grep curl helm k3d
