@@ -74,18 +74,18 @@ try_install_missing_deps() {
 
   if command -v apt-get >/dev/null; then
     echo "Installing dependencies with apt"
-    ${SUDO} apt-get update && ${SUDO} apt-get install -y jq grep sed curl iproute2
+    ${SUDO} apt-get update && ${SUDO} apt-get install -y jq grep sed curl iproute2 helm k3d
   elif command -v yum >/dev/null; then
     echo "Installing dependencies with yum"
-    ${SUDO} yum update -y && ${SUDO} yum install -y jq grep sed curl iproute
+    ${SUDO} yum update -y && ${SUDO} yum install -y jq grep sed curl iproute helm k3d
   elif command -v pacman >/dev/null; then
     echo "Installing dependencies with pacman"
-    ${SUDO} pacman -Sy && ${SUDO} pacman --noconfirm -S jq grep curl sed iproute
+    ${SUDO} pacman -Sy && ${SUDO} pacman --noconfirm -S jq grep curl sed iproute helm k3d
   elif command -v brew >/dev/null; then
     echo "Installing dependencies with brew"
-    brew update && brew install jq grep curl
+    brew update && brew install jq grep curl helm k3d
   else
-    echo "Cannot detect your package manager. Please install the following commands: jq grep curl sed iproute2"
+    echo "Cannot detect your package manager. Please install the following commands: jq grep curl sed iproute2 helm k3d"
     exit 1
   fi
 }
