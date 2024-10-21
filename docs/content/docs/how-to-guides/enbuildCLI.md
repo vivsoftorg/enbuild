@@ -2,7 +2,7 @@
 title: "Configuring ENBUILD CLI"
 description: "Steps to Configure ENBUILD CLI"
 summary: "Configuring ENBUILD CLI"
-draft: false
+draft: true
 menu:
   docs:
     parent: "docs/how-to-guides/deploying-enbuild-for-local-testing/"
