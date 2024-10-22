@@ -49,7 +49,7 @@ Make sure you install the following dependencies.
 2. Change your directory to `cli` in the enbuild repository
 
     ``` bash
-    cd <path-to-the-above-cloned-enbuild-repository>/cli
+    cd <path-to-the-above-cloned-enbuild-repository>/enbuild/cli
     ```
 
 3. Run the below command to build the `enbuild` cli
@@ -61,7 +61,7 @@ Make sure you install the following dependencies.
 4. Add `enbuild` command to the PATH environment variable
 
     ```bash
-    export PATH=$PATH:<path-to-the-above-cloned-enbuild-repository>/cli
+    export PATH=$PATH:<path-to-the-above-cloned-enbuild-repository>/enbuild/cli
     ```
 
 5. Verify that `enbuild` cli is ready to use by running these commands.
