@@ -22,13 +22,13 @@ After you have successfully [deployed the ENBUILD Helm Chart](../deploying-enbui
 
 ## Set the Admin Password
 
-<picture><img src="/images/deployEnbuildQuickstart/initial-login.png" alt="Screenshot of ENBUILD Login Screen"></img></picture>
+<picture><img src="/images/getting-started/initial-login.png" alt="Screenshot of ENBUILD Login Screen"></img></picture>
 
 You need to set the Admin Password before accessing the ENBUILD.
 
 ## Configure the VCS
-Before deploying the catalog items, you need to configure the Version Control System (VCS). 
-ENBUILD supports GitHub, GitLab VCS as of now. 
+Before deploying the catalog items, you need to configure the Version Control System (VCS).
+ENBUILD supports GitHub, GitLab VCS as of now.
 
 These are the Version Control System where ENBUILD creates repositories when you deploy catalog item
 
@@ -43,7 +43,7 @@ By default , github is not enabled, so first you need to enable github, by click
 - ***Github Host GQL URL*** -- The GraphQL API endpoint for the Github Host (e.g. https://api.github.com/graphql)
 - ***Github Host URL*** -- The REST API endpoint for the Github Host (e.g. https://api.github.com)
 
-<picture><img src="/images/deployEnbuildQuickstart/setup_github_repositroy.png" alt="Screenshot of ENBUILD Github VCS Configuration Screen"></img></picture>
+<picture><img src="/images/getting-started/setup_github_repositroy.png" alt="Screenshot of ENBUILD Github VCS Configuration Screen"></img></picture>
 
 ### GITLAB
 
@@ -52,7 +52,7 @@ By default , github is not enabled, so first you need to enable github, by click
 - ***Gitlab Group*** - The Gitlab Group where the deployment repositories will be created
 - ***Gitlab Namespace ID*** - The Gitlab Namespace ID of the group or user (e.g. 70306609)
 
-<picture><img src="/images/deployEnbuildQuickstart/setup_github_repositroy.png" alt="Screenshot of ENBUILD Github VCS Configuration Screen"></img></picture>
+<picture><img src="/images/getting-started/setup_github_repositroy.png" alt="Screenshot of ENBUILD Github VCS Configuration Screen"></img></picture>
 
 :exclamation: **Note:** You need to restart the enbuild-enbuild-mq-\* pod after changing the VCS (GITHUB and GITLAB) setting.
 
@@ -64,9 +64,9 @@ There are four built-in roles available in ENBUILD:
 3. dataops
 4. devops
 
-You can check the roles by going to Admin --> Roles 
+You can check the roles by going to Admin --> Roles
 
-<picture><img src="/images/deployEnbuildQuickstart/roles.png" alt="Screenshot of ENBUILD Roles"></img></picture>
+<picture><img src="/images/how-to-guides/roles.png" alt="Screenshot of ENBUILD Roles"></img></picture>
 
 And you can provide the permissions to each catalog as per your requirement for each catalog and roles.
 
@@ -74,7 +74,7 @@ And you can provide the permissions to each catalog as per your requirement for 
 
 ## Configure SSO
 
-By default ENBUILD uses Local authentication, but you can choose to use either of 
+By default ENBUILD uses Local authentication, but you can choose to use either of
 - ***KEYCLOAK***
 - ***OKTA***
 
@@ -89,7 +89,7 @@ If you plan to use KEYCLOAK as SSO for authentication, you will need to configur
 
 :exclamation: **Note:** To provide these details, you need to existing keyclaok or you need to install and configure keycloak.
 
-<picture><img src="/images/deployEnbuildQuickstart/setup_keycloak.png" alt="Screenshot of ENBUILD KEYCLOAK Configuration Screen"></img></picture>
+<picture><img src="/images/getting-started/setup_keycloak.png" alt="Screenshot of ENBUILD KEYCLOAK Configuration Screen"></img></picture>
 
 
 ### Configure OKTA
@@ -104,7 +104,7 @@ If you plan to use OKTA as SSO for authentication, you will need to configure th
 
 :exclamation: **Note:** To provide these details, you need to configure okta and obtain the details.
 
-<picture><img src="/images/deployEnbuildQuickstart/setup_okta.png" alt="Screenshot of ENBUILD OKTA Configuration Screen"></img></picture>
+<picture><img src="/images/getting-started/setup_okta.png" alt="Screenshot of ENBUILD OKTA Configuration Screen"></img></picture>
 
 
 

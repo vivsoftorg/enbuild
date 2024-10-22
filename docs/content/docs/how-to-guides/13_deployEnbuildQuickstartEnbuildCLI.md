@@ -28,10 +28,7 @@ Make sure you install the following dependencies.
     - Install docker by following these [steps](https://docs.docker.com/engine/install/).
     - Make sure that docker engine is running before going using the Enbuild CLI.
 
-2. [Golang](https://go.dev/)
-    - Install Go programming language by following these [steps](https://go.dev/doc/install).
-
-3. [yq cli](https://mikefarah.gitbook.io/yq)
+2. [yq cli](https://mikefarah.gitbook.io/yq)
     - Install yq cli following these [steps](https://github.com/mikefarah/yq/#install).
     - Enbuild cli is using it internally for creating bigbang catalog template values file.
 
@@ -40,36 +37,22 @@ Make sure you install the following dependencies.
 
 ### Configuration
 
-1. Clone the [Enbuild repository](https://github.com/vivsoftorg/enbuild.git)
+1. Download the ENBUILD CLI binary compatible with your operating system from this [link](https://github.com/vivsoftorg/enbuild/releases/tag/v0.0.11)
 
-    ``` bash
-    git clone https://github.com/vivsoftorg/enbuild.git
-    ```
+2. Extract the downloaded folder
 
-2. Change your directory to `cli` in the enbuild repository
-
-    ``` bash
-    cd <path-to-the-above-cloned-enbuild-repository>/enbuild/cli
-    ```
-
-3. Run the below command to build the `enbuild` cli
+3. Add the `enbuild` command to the PATH environment variable
 
     ```bash
-    go build
+    export PATH=$PATH:<path-to-the-above-extracted-enbuild-directory>
     ```
 
-4. Add `enbuild` command to the PATH environment variable
-
-    ```bash
-    export PATH=$PATH:<path-to-the-above-cloned-enbuild-repository>/enbuild/cli
-    ```
-
-5. Verify that `enbuild` cli is ready to use by running these commands.
+3. Verify that `enbuild` cli is ready to use by running these commands
 
     ```bash
     enbuild -v
     ```
-6. For more information on enbuild cli commands, please run
+4. For more information on enbuild cli commands, please run
 
     ```bash
     enbuild -h
@@ -136,11 +119,11 @@ Forwarding from [::1]:3000 -> 8080
 
 Navigate your web browser to **http://127.0.0.1:3000**. and set the admin password.
 
-<picture><img src="/images/deployEnbuildQuickstart/initial-login.png" alt="Screenshot of ENBUILD Login Screen"></img></picture>
+<picture><img src="/images/getting-started/initial-login.png" alt="Screenshot of ENBUILD Login Screen"></img></picture>
 
 After you set the initial admin password, you should see the ENBUILD home page with BigBang Catalog.
 
-<picture><img src="/images/deployEnbuildQuickstart/enbuild_home_page_first_login.png" alt="Screenshot of ENBUILD Home Screen"></img></picture>
+<picture><img src="/images/getting-started/enbuild_home_page_first_login.png" alt="Screenshot of ENBUILD Home Screen"></img></picture>
 
 
 :zap: ***[Proceed to Configureing ENBUILD](../configuring-enbuild/)***

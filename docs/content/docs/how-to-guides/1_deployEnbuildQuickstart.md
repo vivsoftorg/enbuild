@@ -141,11 +141,11 @@ Forwarding from [::1]:3000 -> 8080
 
 Navigate your web browser to **http://127.0.0.1:3000**. and set the admin password.
 
-<picture><img src="/images/deployEnbuildQuickstart/initial-login.png" alt="Screenshot of ENBUILD Login Screen"></img></picture>
+<picture><img src="/images/getting-started/initial-login.png" alt="Screenshot of ENBUILD Login Screen"></img></picture>
 
 After you set the initial admin password, you should see the ENBUILD home page with BigBang Catalog.
 
-<picture><img src="/images/deployEnbuildQuickstart/enbuild_home_page_first_login.png" alt="Screenshot of ENBUILD Home Screen"></img></picture>
+<picture><img src="/images/getting-started/enbuild_home_page_first_login.png" alt="Screenshot of ENBUILD Home Screen"></img></picture>
 
 
 :zap: ***[Proceed to Configureing ENBUILD](../configuring-enbuild/)***
