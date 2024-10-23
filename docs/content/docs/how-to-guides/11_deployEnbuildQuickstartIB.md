@@ -65,12 +65,12 @@ For local deployment however we require minimum deployment values.
 
 :exclamation: **Note:** For more information about the complete set of ENBUILD Helm values click [here](/docs/getting-started/helm-values/)!
 
-Refer to the [example helm input file to be used to pull images from IronBank](https://github.com/vivsoftorg/enbuild/blob/main/examples/enbuild/quick_install_ib.yaml) for guidance. 
+Refer to the [example helm input file to be used to pull images from IronBank](https://github.com/vivsoftorg/enbuild/blob/main/examples/enbuild/quick_install_ib.yaml) for guidance.
 
-Make sure to replace the 
+Make sure to replace the
 REGISTRY1_USER_NAME and REGISTRY1_PASSWORD , with your registry1 credentials.
 AppVersion with the ENBUILD application version you want to install. ( Make sure the images with the selected tags are present in IronBank)
- 
+
 
 ### Deploy ENBUILD HELM Chart
 
@@ -144,11 +144,11 @@ Forwarding from [::1]:3000 -> 8080
 
 Navigate your web browser to **http://127.0.0.1:3000**. and set the admin password.
 
-<picture><img src="/images/deployEnbuildQuickstart/initial-login.png" alt="Screenshot of ENBUILD Login Screen"></img></picture>
+<picture><img src="/images/getting-started/initial-login.png" alt="Screenshot of ENBUILD Login Screen"></img></picture>
 
 After you set the initial admin password, you should see the ENBUILD home page with BigBang Catalog.
 
-<picture><img src="/images/deployEnbuildQuickstart/enbuild_home_page_first_login.png" alt="Screenshot of ENBUILD Home Screen"></img></picture>
+<picture><img src="/images/getting-started/enbuild_home_page_first_login.png" alt="Screenshot of ENBUILD Home Screen"></img></picture>
 
 
 :zap: ***[Proceed to Configureing ENBUILD](../configuring-enbuild/)***

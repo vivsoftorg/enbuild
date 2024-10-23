@@ -1,13 +1,13 @@
 ---
-title: "Deploying ENBUILD for Local Testing"
-description: "Steps to deploy ENBUILD on local machine"
-summary: "Steps to deploy ENBUILD on local machine for quick testing"
+title: "Deploying ENBUILD using ENBUILD CLI"
+description: "Steps to Configure ENBUILD CLI and deploy ENBUILD using ENBUILD CLI"
+summary: "Configure ENBUILD CLI and deploy ENBUILD using ENBUILD CLI"
 draft: false
 menu:
   docs:
-    parent: "docs/how-to-guides/"
-    identifier: "deployEnbuildQuickstart"
-weight: 201
+    parent: "docs/how-to-guides/deploying-enbuild-for-local-testing/"
+    identifier: "configureEnbuildCLI"
+weight: 202
 toc: true
 seo:
   title: "" # custom title (optional)
@@ -16,79 +16,57 @@ seo:
   noindex: false # false (default) or true
 ---
 
-Follow these step-by-step instructions to deploy ENBUILD locally for testing.
+## Configure ENBUILD CLI
 
-## Prerequisites
+Follow these step-by-step instructions to configure ENBUILD CLI.
 
-### Existing Kubernetes Cluster
+### Prerequisites
 
-Ensure that you have access to a Kubernetes cluster and obtain the KubeConfig file.
+Make sure you install the following dependencies.
 
-You can use [rancher-desktop](https://docs.rancherdesktop.io/getting-started/installation/) or [k3d](../../references/k3d/) to spin up a local Kubernetes cluster.
+1. [Docker](https://docs.docker.com/engine/install/)
+    - Install docker by following these [steps](https://docs.docker.com/engine/install/).
+    - Make sure that docker engine is running before going using the Enbuild CLI.
 
-### ENBUILD Container Images
+2. [yq cli](https://mikefarah.gitbook.io/yq)
+    - Install yq cli following these [steps](https://github.com/mikefarah/yq/#install).
+    - Enbuild cli is using it internally for creating bigbang catalog template values file.
 
-Access to the ENBUILD container images are required for this deployment.
-These images are published to the VivSoft managed container reigistry on `registry.gitLab.com`.
-Make sure that you have the necessary credentials to pull these images.
-
-### Helm CLI
-
-The [Helm](https://helm.sh/) streamlines and automates Kubernetes deployments by managing charts, enabling users to easily package, version, and deploy complex applications.
-
-## Deployment Steps:
-
-Following are the steps you will need to take to deploy ENBUILD to your Kubernetes cluster.
-
-### Add ENBUILD Helm Chart Repository
-
-To add the ENBUILD Helm chart repository, run the following command:
-
-```bash
-helm repo add vivsoft https://vivsoftorg.github.io/enbuild
-
-"vivsoft" has been added to your repositories
-```
-
-:exclamation: **Note:** If the helm repo is already present on you machine , update it to get the latest version
-
-```bash
-❯ helm repo update vivsoft
-```
-
-### Configure ENBUILD Helm Values
-
-Before deploying ENBUILD to the Kubernetes cluster, you will need to create a custom values.yaml file so that we can specify configurations unique to this deployment.
-
-For local deployment however we require minimum deployment values.
-
-:exclamation: **Note:** For more information about the complete set of ENBUILD Helm values click [here](/docs/getting-started/helm-values/)!
-
-Refer to the [example helm input file](https://github.com/vivsoftorg/enbuild/blob/main/examples/enbuild/quick_install.yaml) for guidance.
+**Note:** Additional dependencies such as k3d, Helm, jq, grep, sed, curl, and iproute2 will be checked and installed by the ENBUILD CLI when executing the commands.
 
 
-:zap: **Note:** The `imageCredentials` section is only required if the images are not public.
+### Configuration
 
-### Deploy ENBUILD HELM Chart
+1. Download the ENBUILD CLI binary compatible with your operating system from this [link](https://github.com/vivsoftorg/enbuild/releases/tag/v0.0.11)
 
-Make sure you update the values input to reference the values you created in Step 2.
-Execute the command below.
+2. Extract the downloaded folder
 
-```bash
-helm upgrade --install --namespace enbuild enbuild vivsoft/enbuild --create-namespace -f target/quick_install.yaml
+3. Add the `enbuild` command to the PATH environment variable
 
-Release "enbuild" does not exist. Installing it now.
-NAME: enbuild
-LAST DEPLOYED: Fri Mar 22 17:37:23 2024
-NAMESPACE: enbuild
-STATUS: deployed
-REVISION: 1
-TEST SUITE: None
-NOTES:
-1. Get the application URL by running these commands:
-  echo "Visit http://127.0.0.1:3000 to use your application after starting the port forward"
-  kubectl --namespace enbuild port-forward svc/enbuild-enbuild-ui 3000:80
-```
+    ```bash
+    export PATH=$PATH:<path-to-the-above-extracted-enbuild-directory>
+    ```
+
+3. Verify that `enbuild` cli is ready to use by running these commands
+
+    ```bash
+    enbuild -v
+    ```
+4. For more information on enbuild cli commands, please run
+
+    ```bash
+    enbuild -h
+    ```
+
+## Deploy ENBUILD using ENBUILD CLI
+
+### Deployment Steps
+
+To Create a k3d kubernetes cluster with ENBUILD installed on your local machine, run the command
+
+  ```bash
+  enbuild demo up
+  ```
 
 ### Validate ENBUILD Deployment
 
@@ -150,12 +128,19 @@ After you set the initial admin password, you should see the ENBUILD home page w
 
 :zap: ***[Proceed to Configureing ENBUILD](../configuring-enbuild/)***
 
-### Uninstall ENBUILD
+### Uninstall ENBUILD using ENBUILD CLI
 
-Use the following command to uninstall ENBUILD from your Kubernetes cluster.
+To Uninstall ENBUILD on local k3d cluster and stop the k3d cluster on your local machine
 
-```bash
-helm uninstall enbuild -n enbuild
+  ```bash
+  enbuild demo down
+  ```
 
-release "enbuild" uninstalled
-```
+### Destroy the k3d cluster using ENBUILD CLI
+
+To completely Remove k3d cluster with ENBUILD installed on your local machine
+
+  ```bash
+  enbuild demo destroy
+  ```
+
