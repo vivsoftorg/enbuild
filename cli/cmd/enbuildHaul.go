@@ -19,9 +19,9 @@ metadata:
   name: enbuild-chart-hauler
 spec:
   charts:
-	- name: enbuild
-	  repoURL: https://vivsoftorg.github.io/enbuild
-	  version: {{.ChartVersion}}
+    - name: enbuild
+      repoURL: https://vivsoftorg.github.io/enbuild
+      version: {{.ChartVersion}}
 ---
 apiVersion: content.hauler.cattle.io/v1alpha1
 kind: Images
@@ -29,41 +29,37 @@ metadata:
   name: enbuild-images-hauler 
 spec:
   images:
-	{{range .Images}}- name: {{.}}
-	  platform: linux/amd64
-	{{end}}
+    {{range .Images}}- name: {{.}}
+      platform: linux/amd64
+    {{end}}
 `
 
-// Data holds the chart version and images list to be rendered in the template
-type Data struct {
+// ChartData holds the chart version and image list for the template
+type ChartData struct {
 	ChartVersion string
 	Images       []string
 }
 
-// createHaulCmd represents the createHaul command
+// createENBUILDHaulCmd represents the create-enbuild-haul command
 var createENBUILDHaulCmd = &cobra.Command{
-	Use:           `create-enbuild-haul`,
-	Short:         "Create a haul manifest file for ENBUILD Helm Chart",
-	Long:          "Create a haul manifest.yaml file given the BigBang version.",
-	RunE:          createENBUILDHaul,
-	SilenceUsage:  true,
-	SilenceErrors: true,
+	Use:   `create-enbuild-haul`,
+	Short: "Create a haul manifest file for the ENBUILD Helm Chart",
+	Long:  "Create a haul manifest.yaml file given the ENBUILD Helm Chart version.",
+	RunE:  runCreateENBUILDHaul,
 }
 
 func init() {
 	rootCmd.AddCommand(createENBUILDHaulCmd)
-	createENBUILDHaulCmd.Flags().StringP("enbuild-helm-chart-version", "v", "", "Specify the BigBang version (required)")
+	createENBUILDHaulCmd.Flags().StringP("helm-chart-version", "v", "", "Specify the ENBUILD Helm Chart version")
 }
 
-func GetENBUILDChartVersion() (string, error) {
-	_, err := runCommand("helm", "repo", "add", "vivsoft", "https://vivsoftorg.github.io/enbuild")
-	if err != nil {
+func getHelmChartVersion() (string, error) {
+	if _, err := runCommand("helm", "repo", "add", "vivsoft", "https://vivsoftorg.github.io/enbuild"); err != nil {
 		return "", fmt.Errorf("failed to add Helm repo: %v", err)
 	}
 	log.Println("ENBUILD Helm repo added successfully")
 
-	_, err = runCommand("helm", "repo", "update")
-	if err != nil {
+	if _, err := runCommand("helm", "repo", "update"); err != nil {
 		return "", fmt.Errorf("failed to update Helm repo: %v", err)
 	}
 	log.Println("Helm repo updated successfully")
@@ -78,26 +74,30 @@ func GetENBUILDChartVersion() (string, error) {
 	if err != nil {
 		return "", fmt.Errorf("failed to extract chart version: %v", err)
 	}
-	log.Printf("Latest ENBUILD chart version is : %s", chartVersion)
+	log.Printf("Latest ENBUILD chart version is: %s", chartVersion)
 	return chartVersion, nil
 }
 
-func createENBUILDHaul(cmd *cobra.Command, args []string) error {
-
-	// Retrieve the version flag value
-	chartVersion, err := cmd.Flags().GetString("enbuild-helm-chart-version")
+func runCreateENBUILDHaul(cmd *cobra.Command, args []string) error {
+	// Get the version flag value
+	chartVersion, err := cmd.Flags().GetString("helm-chart-version")
 	if err != nil {
-		return fmt.Errorf("failed to read 'enbuild-helm-chart-version' flag: %w", err)
+		return fmt.Errorf("failed to read 'helm-chart-version' flag: %w", err)
 	}
 
-	// If the version flag is not set, call GetENBUILDChartVersion
+	// If version is not provided, fetch the latest version
 	if chartVersion == "" {
-		chartVersion, err = GetENBUILDChartVersion()
+		chartVersion, err = getHelmChartVersion()
 		if err != nil {
 			return err
 		}
 	}
 
+	if _, err := runCommand("helm", "repo", "update"); err != nil {
+		return fmt.Errorf("failed to update Helm repo: %v", err)
+	}
+	log.Println("Helm repo updated successfully")
+	// Fetch images from the Helm chart
 	imagesOutput, err := runCommand("helm", "template", "vivsoft/enbuild", "--version", chartVersion)
 	if err != nil {
 		return fmt.Errorf("failed to template Helm chart %s: %v", chartVersion, err)
@@ -108,14 +108,14 @@ func createENBUILDHaul(cmd *cobra.Command, args []string) error {
 	if err != nil {
 		return fmt.Errorf("failed to extract images: %v", err)
 	}
-	// log.Printf("Image list for ENBUILD Helm Chart: %s", images)
 
-	log.Println("Preparing data for the HaulTemplate")
-	data := Data{
+	// Prepare data for the template
+	data := ChartData{
 		ChartVersion: chartVersion,
 		Images:       strings.Split(images, "\n"),
 	}
-	// log.Println("Rendering the YAML template")
+
+	// Render the YAML template
 	tmpl, err := template.New("yaml").Parse(yamlTemplate)
 	if err != nil {
 		return fmt.Errorf("failed to parse template: %v", err)
@@ -127,23 +127,20 @@ func createENBUILDHaul(cmd *cobra.Command, args []string) error {
 	}
 	log.Println("Template rendered successfully")
 
-	// log.Println("Outputting the rendered YAML")
-	// fmt.Println(rendered.String())
-
-	targetDirectory := "target"
-	if err := os.MkdirAll(targetDirectory, 0755); err != nil {
-		return fmt.Errorf("failed to create directory %s: %w", targetDirectory, err)
+	// Create the target directory and write the output file
+	targetDir := "target"
+	if err := os.MkdirAll(targetDir, 0755); err != nil {
+		return fmt.Errorf("failed to create directory %s: %w", targetDir, err)
 	}
 
-	enbuildHaulFile := fmt.Sprintf("%s/enbuild_%s_haul.yaml", targetDirectory, chartVersion)
-
-	if err = os.WriteFile(enbuildHaulFile, rendered.Bytes(), 0644); err != nil {
+	outputFile := fmt.Sprintf("%s/enbuild_%s_haul.yaml", targetDir, chartVersion)
+	if err = os.WriteFile(outputFile, rendered.Bytes(), 0644); err != nil {
 		return fmt.Errorf("failed to write the YAML file: %w", err)
 	}
 
-	fmt.Printf("Haul file created successfully: %s\n", enbuildHaulFile)
-	fmt.Printf("You can now run \n")
-	fmt.Printf("hauler store sync -f %s\n", enbuildHaulFile)
+	fmt.Printf("Haul file created successfully: %s\n", outputFile)
+	fmt.Printf("You can now run:\n")
+	fmt.Printf("hauler store sync -f %s\n", outputFile)
 	fmt.Printf("hauler store save --filename enbuild-%s-haul.tar.zst\n", chartVersion)
 	return nil
 }
