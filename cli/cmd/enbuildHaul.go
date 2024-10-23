@@ -50,33 +50,51 @@ var createENBUILDHaulCmd = &cobra.Command{
 
 func init() {
 	rootCmd.AddCommand(createENBUILDHaulCmd)
+	createENBUILDHaulCmd.Flags().StringP("enbuild-helm-chart-version", "v", "", "Specify the BigBang version (required)")
 }
 
-func createENBUILDHaul(cmd *cobra.Command, args []string) error {
-	// log.Println("Adding the Vivsoft Helm repo")
+func GetENBUILDChartVersion() (string, error) {
 	_, err := runCommand("helm", "repo", "add", "vivsoft", "https://vivsoftorg.github.io/enbuild")
 	if err != nil {
-		return fmt.Errorf("failed to add Helm repo: %v", err)
+		return "", fmt.Errorf("failed to add Helm repo: %v", err)
 	}
 	log.Println("ENBUILD Helm repo added successfully")
 
 	_, err = runCommand("helm", "repo", "update")
 	if err != nil {
-		return fmt.Errorf("failed to update Helm repo: %v", err)
+		return "", fmt.Errorf("failed to update Helm repo: %v", err)
 	}
 	log.Println("Helm repo updated successfully")
 
 	versionJSON, err := runCommand("helm", "search", "repo", "vivsoft/enbuild", "-o", "json")
 	if err != nil {
-		return fmt.Errorf("failed to search Helm chart: %v", err)
+		return "", fmt.Errorf("failed to search Helm chart: %v", err)
 	}
 
 	log.Println("Extracting chart version from JSON using jq")
 	chartVersion, err := runPipedCommand(fmt.Sprintf("echo '%s' | jq -r '.[0].version'", versionJSON))
 	if err != nil {
-		return fmt.Errorf("failed to extract chart version: %v", err)
+		return "", fmt.Errorf("failed to extract chart version: %v", err)
 	}
 	log.Printf("Latest ENBUILD chart version is : %s", chartVersion)
+	return chartVersion, nil
+}
+
+func createENBUILDHaul(cmd *cobra.Command, args []string) error {
+
+	// Retrieve the version flag value
+	chartVersion, err := cmd.Flags().GetString("enbuild-helm-chart-version")
+	if err != nil {
+		return fmt.Errorf("failed to read 'enbuild-helm-chart-version' flag: %w", err)
+	}
+
+	// If the version flag is not set, call GetENBUILDChartVersion
+	if chartVersion == "" {
+		chartVersion, err = GetENBUILDChartVersion()
+		if err != nil {
+			return err
+		}
+	}
 
 	imagesOutput, err := runCommand("helm", "template", "vivsoft/enbuild", "--version", chartVersion)
 	if err != nil {
