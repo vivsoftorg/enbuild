@@ -42,10 +42,12 @@ type Data struct {
 
 // createHaulCmd represents the createHaul command
 var createENBUILDHaulCmd = &cobra.Command{
-	Use:   `create-enbuild-haul`,
-	Short: "Create a haul manifest file for ENBUILD Helm Chart",
-	Long:  "Create a haul manifest.yaml file given the BigBang version.",
-	RunE:  createENBUILDHaul,
+	Use:           `create-enbuild-haul`,
+	Short:         "Create a haul manifest file for ENBUILD Helm Chart",
+	Long:          "Create a haul manifest.yaml file given the BigBang version.",
+	RunE:          createENBUILDHaul,
+	SilenceUsage:  true,
+	SilenceErrors: true,
 }
 
 func init() {
@@ -98,7 +100,7 @@ func createENBUILDHaul(cmd *cobra.Command, args []string) error {
 
 	imagesOutput, err := runCommand("helm", "template", "vivsoft/enbuild", "--version", chartVersion)
 	if err != nil {
-		return fmt.Errorf("failed to template Helm chart: %v", err)
+		return fmt.Errorf("failed to template Helm chart %s: %v", chartVersion, err)
 	}
 
 	log.Println("Extracting images using yq and sorting them")
