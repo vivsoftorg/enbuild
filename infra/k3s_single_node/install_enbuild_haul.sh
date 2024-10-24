@@ -9,10 +9,10 @@ ENBUILD_HAULER_URL="https://enbuild-haul.s3.us-east-1.amazonaws.com/enbuild-${EN
 
 echo "Starting script execution..."
 
-# Update package list and install jq
-echo "Updating package list and installing jq..."
-apt-get update && apt-get install -y jq
-echo "Package list updated and jq installed."
+# # Update package list and install jq
+# echo "Updating package list and installing jq..."
+# apt-get update && apt-get install -y jq
+# echo "Package list updated and jq installed."
 
 # Download and install Helm
 echo "Downloading Helm version ${HELM_VERSION}..."
