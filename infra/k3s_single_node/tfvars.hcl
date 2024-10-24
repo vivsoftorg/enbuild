@@ -1,0 +1,5 @@
+aws_region         = "us-east-1"
+environment        = "prod"
+owner              = "ENBUILD"
+cluster_name       = "ENBUILD-in-k3s"
+instance_type      = "t3.xlarge"

@@ -1,16 +1,9 @@
 global:
   image:
-    registry: 44.210.192.97:5000
+    registry: 127.0.0.1:5000
     pullPolicy: Always
-mongodb:
-  enabled: true
-  mongo_root_username: "enbuild"
-  mongo_root_password: "SuperSecret"
-  image:
-    repository: enbuild-staging/vivsoft-platform-ui/mongodb
-    tag: 4.4.5
 rabbitmq:
   image:
-    registry: 44.210.192.97:5000
+    registry: 127.0.0.1:5000
     repository: bitnami/rabbitmq
     tag: 3.11.13-debian-11-r0
