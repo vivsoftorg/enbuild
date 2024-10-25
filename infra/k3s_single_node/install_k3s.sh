@@ -7,9 +7,6 @@ HELM_VERSION="v3.16.1"
 
 echo "Starting script execution..."
 
-echo "Making sure the kubectl is working properly..."
-kubectl get nodes
-
 # Update package list and install jq
 echo "Updating package list and installing jq..."
 apt-get update && apt-get install -y jq
