@@ -5,7 +5,7 @@ summary: "Configure ENBUILD CLI and deploy ENBUILD using ENBUILD CLI"
 draft: false
 menu:
   docs:
-    parent: "docs/how-to-guides/deploying-enbuild-for-local-testing/"
+    parent: "docs/how-to-guides/"
     identifier: "configureEnbuildCLI"
 weight: 202
 toc: true

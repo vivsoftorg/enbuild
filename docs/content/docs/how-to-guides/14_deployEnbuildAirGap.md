@@ -1,3 +1,20 @@
+---
+title: "ENBUILD Helm Chart Installation in Airgapped Kubernetes Environment"
+description: "Steps to install ENBUILD in Airgapped Kubernetes Environment"
+summary: "Steps to install ENBUILD in Airgapped Kubernetes Environment"
+draft: false
+menu:
+  docs:
+    parent: "docs/how-to-guides/"
+    identifier: "enbuildHaulerAirGap"
+weight: 202
+toc: true
+seo:
+  title: "" # custom title (optional)
+  description: "" # custom description (recommended)
+  canonical: "" # custom canonical URL (optional)
+  noindex: false # false (default) or true
+---
 
 # ENBUILD Helm Chart Installation in Airgapped Kubernetes Environment
 
@@ -31,8 +48,8 @@ The ENBUILD haul file is available as a [public artifact](https://enbuild-haul.s
 
 ```bash
 ENBUILD_HELM_CHART_VERSION=0.0.20
-ENBUILD_HAULER_URL="https://your-client-side-s3-bucket/enbuild-\${ENBUILD_HELM_CHART_VERSION}.tar.zst"
-curl -O \${ENBUILD_HAULER_URL}
+ENBUILD_HAULER_URL="https://your-client-side-s3-bucket/enbuild-${ENBUILD_HELM_CHART_VERSION}.tar.zst"
+curl -O ${ENBUILD_HAULER_URL}
 ```
 
 ### 5. Load the ENBUILD Haul File and Start the Registry
@@ -40,7 +57,7 @@ curl -O \${ENBUILD_HAULER_URL}
 Once the haul file is available in the airgapped environment, load the haul file into the Hauler registry and start the registry service:
 
 ```bash
-hauler store load enbuild-\${ENBUILD_HELM_CHART_VERSION}.tar.zst
+hauler store load enbuild-${ENBUILD_HELM_CHART_VERSION}.tar.zst
 hauler store serve registry &
 sleep 5
 ```
@@ -82,11 +99,11 @@ Create the necessary Helm configuration file for ENBUILD installation:
 cat <<EOF > quick_install_hauler.yaml
 global:
   image:
-    registry: \${PRIVATE_IP_LOCAL_REGISTRY_SERVER}:5000
+    registry: ${PRIVATE_IP_LOCAL_REGISTRY_SERVER}:5000
     pullPolicy: Always
 rabbitmq:
   image:
-    registry: \${PRIVATE_IP_LOCAL_REGISTRY_SERVER}:5000
+    registry: ${PRIVATE_IP_LOCAL_REGISTRY_SERVER}:5000
     repository: bitnami/rabbitmq
     tag: 3.11.13-debian-11-r0
 EOF
@@ -96,7 +113,7 @@ EOF
 Finally, install the ENBUILD Helm chart using the private registry:
 
 ```bash
-helm upgrade --install --namespace enbuild enbuild --plain-http oci://\${PRIVATE_IP_LOCAL_REGISTRY_SERVER}:5000/hauler/enbuild --version \${ENBUILD_HELM_CHART_VERSION} -f quick_install_hauler.yaml --create-namespace
+helm upgrade --install --namespace enbuild enbuild --plain-http oci://${PRIVATE_IP_LOCAL_REGISTRY_SERVER}:5000/hauler/enbuild --version ${ENBUILD_HELM_CHART_VERSION} -f quick_install_hauler.yaml --create-namespace
 ```
 
 This command will install the ENBUILD release in the `enbuild` namespace of your Kubernetes cluster.
