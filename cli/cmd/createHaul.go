@@ -181,7 +181,7 @@ func createHaulYaml(inputFilePath string, bbVersion string, outpurFilePath strin
 	fmt.Printf("Haul file created successfully: %s\n", outpurFilePath)
 	fmt.Printf("You can now run \n")
 	fmt.Printf("hauler login registry1.dso.mil -u <registry1_username> -p <registry1_password>\n")
-	fmt.Printf("hauler store sync -f %s`\n", outpurFilePath)
+	fmt.Printf("hauler store sync -f %s\n", outpurFilePath)
 	fmt.Printf("hauler store save --filename bb%s-haul.tar.zst\n", bbVersion)
 	return nil
 }

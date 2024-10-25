@@ -26,6 +26,8 @@ spec:
       - env:
         - name: MAX_CONTEXT_LENGTH
           value: "1000"
+        - name: AUTH_API_URL
+          value: "http://{{ .Release.Name }}-enbuild-user/api/v1/roles/auth"
         envFrom:
         - secretRef:
             name: {{ .Release.Name }}-backend-secret

@@ -1,0 +1,9 @@
+global:
+  image:
+    registry: 127.0.0.1:5000
+    pullPolicy: Always
+rabbitmq:
+  image:
+    registry: 127.0.0.1:5000
+    repository: bitnami/rabbitmq
+    tag: 3.11.13-debian-11-r0

@@ -1,0 +1,22 @@
+{
+    "name": "ENBUILD CLI",
+    "image": "golang:1.21.3",
+    "forwardPorts": [
+      3000
+    ],
+    "customizations": {
+      "vscode": {
+        "settings": {
+          "go.useLanguageServer": true,
+          "go.toolsEnvVars": {
+            "GO111MODULE": "on"
+          },
+          "editor.codeActionsOnSave": {
+            "source.organizeImports": true
+          },
+          "go.formatTool": "gofmt"
+        }
+      }
+    },
+    "postCreateCommand": "go mod tidy && npm install --prefix docs"
+  }

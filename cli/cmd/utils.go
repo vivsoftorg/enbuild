@@ -1,12 +1,16 @@
 package cmd
 
 import (
+	"bytes"
 	"fmt"
-	log "github.com/sirupsen/logrus"
 	"io"
 	"net/http"
 	"os"
+	"os/exec"
 	"runtime"
+	"strings"
+
+	log "github.com/sirupsen/logrus"
 )
 
 func downloadAndSaveFile(url, filepath string) error {
@@ -65,4 +69,28 @@ func DeleteFolder(path string) {
 	if err != nil {
 		log.Error(err)
 	}
+}
+
+// runCommand runs a shell command and returns its output or an error
+func runCommand(command string, args ...string) (string, error) {
+	cmd := exec.Command(command, args...)
+	var out bytes.Buffer
+	cmd.Stdout = &out
+	err := cmd.Run()
+	if err != nil {
+		return "", err
+	}
+	return strings.TrimSpace(out.String()), nil
+}
+
+// runPipedCommand runs a shell command with piping, combining multiple commands
+func runPipedCommand(command string) (string, error) {
+	cmd := exec.Command("bash", "-c", command)
+	var out bytes.Buffer
+	cmd.Stdout = &out
+	err := cmd.Run()
+	if err != nil {
+		return "", err
+	}
+	return strings.TrimSpace(out.String()), nil
 }
