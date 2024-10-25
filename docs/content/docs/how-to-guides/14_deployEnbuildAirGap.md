@@ -16,8 +16,6 @@ seo:
   noindex: false # false (default) or true
 ---
 
-# ENBUILD Helm Chart Installation in Airgapped Kubernetes Environment
-
 This document provides a step-by-step guide for deploying the ENBUILD Helm chart in a disconnected (airgapped) Kubernetes environment using an ENBUILD haul file.
 
 ## Prerequisites
