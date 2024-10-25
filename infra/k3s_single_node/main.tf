@@ -7,13 +7,13 @@ data "aws_vpc" "default" {
 }
 
 data "aws_ami" "ubuntu" {
-    most_recent = true
+  most_recent = true
 
-    filter {
-        name   = "name"
-        values = ["ubuntu/images/hvm-ssd/ubuntu-jammy-22.04-amd64-server-*"]
-    }
-    owners = ["099720109477"]  # Canonical's AWS account ID
+  filter {
+    name   = "name"
+    values = ["ubuntu/images/hvm-ssd/ubuntu-jammy-22.04-amd64-server-*"]
+  }
+  owners = ["099720109477"] # Canonical's AWS account ID
 }
 
 
@@ -23,6 +23,7 @@ data "aws_subnets" "default" {
     values = [data.aws_vpc.default.id]
   }
 }
+
 
 resource "tls_private_key" "ssh" {
   algorithm = "RSA"
@@ -45,12 +46,14 @@ data "aws_subnet" "public1" {
   id       = each.value
 }
 
-// data "cloudinit_config" "userData" {
-//   part {
-//     content      = file("install_rke2.sh")
-//     content_type = "text/x-shellscript"
-//   }
-// }
+data "cloudinit_config" "userData" {
+  part {
+    content      = file("install_k3s.sh")
+    content_type = "text/x-shellscript"
+  }
+}
+
+
 
 resource "aws_security_group" "k3s" {
   name        = "${local.name}-sg"
@@ -95,13 +98,33 @@ resource "aws_security_group_rule" "all_outbound" {
   cidr_blocks       = ["0.0.0.0/0"]
 }
 
+# for airgap installation
+
+resource "aws_vpc_endpoint" "s3" {
+  vpc_id       = data.aws_vpc.default.id
+  service_name = "com.amazonaws.${var.aws_region}.s3"
+}
+
+data "aws_prefix_list" "s3_prefix_list" {
+  name = "com.amazonaws.${var.aws_region}.s3"
+}
+
+resource "aws_security_group_rule" "outbound_to_s3_endpoint" {
+  from_port         = 443
+  to_port           = 443
+  protocol          = "tcp"
+  security_group_id = aws_security_group.k3s.id
+  type              = "egress"
+  prefix_list_ids   = [data.aws_prefix_list.s3_prefix_list.id]
+}
+
 resource "aws_instance" "k3s" {
   ami                         = data.aws_ami.ubuntu.id
   associate_public_ip_address = true
   instance_type               = var.instance_type
   key_name                    = aws_key_pair.admin.key_name
   subnet_id                   = tolist(data.aws_subnets.default.ids)[0]
-//   user_data                   = data.cloudinit_config.userData.rendered
+  user_data                   = data.cloudinit_config.userData.rendered
 
   tags = {
     Schedule = var.schedule
@@ -131,20 +154,20 @@ resource "aws_instance" "k3s" {
       host        = self.public_ip
     }
   }
+  # RUN THE SCRIPT MANUALLY
+  # provisioner "remote-exec" {
+  #   inline = [
+  #     "chmod +x /tmp/install_enbuild_haul.sh",
+  #     "sudo /tmp/install_enbuild_haul.sh"
+  #   ]
 
-  provisioner "remote-exec" {
-    inline = [
-      "chmod +x /tmp/install_enbuild_haul.sh",
-      "sudo /tmp/install_enbuild_haul.sh"
-    ]
-
-    connection {
-      type        = "ssh"
-      user        = "ubuntu"
-      private_key = file("/tmp/${local.name}.pem")
-      host        = self.public_ip
-    }
-  }
+  #   connection {
+  #     type        = "ssh"
+  #     user        = "ubuntu"
+  #     private_key = file("/tmp/${local.name}.pem")
+  #     host        = self.public_ip
+  #   }
+  # }
 }
 
 output "instance-ip" {
@@ -167,4 +190,13 @@ output "node_joining_token" {
 output "kubeconfig_file_for_remote_access" {
   value = "/tmp/kube_config.yaml"
 }
+
+output "security_group_id" {
+  value = aws_security_group.k3s.id
+}
+
+output "install_enbuild_haul_script_location" {
+  value = "/tmp/install_enbuild_haul.sh"
+}
+
 
