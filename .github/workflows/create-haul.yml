@@ -27,6 +27,13 @@ jobs:
         id: get_current_var
         run: echo "current_version=$(.github/scripts/update_versions.py get_chart_version)" >> $GITHUB_OUTPUT
 
+      - name: Add repo
+        run: |
+          helm repo add bitnami https://charts.bitnami.com/bitnami
+          helm repo add jupyterhub https://jupyterhub.github.io/helm-chart
+          helm repo add open-webui https://helm.openwebui.com/
+          helm repo add loki-stack https://grafana.github.io/helm-charts
+
       - name: Create Haul
         run: |
           .github/scripts/create_haul_file.sh ${{ steps.get_current_var.outputs.current_version }} charts/enbuild/
