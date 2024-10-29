@@ -36,4 +36,7 @@ jobs:
 
       - name: Create Haul
         run: |
+          cd charts/enbuild 
+          helm dependency build
+          cd ../../
           .github/scripts/create_haul_file.sh ${{ steps.get_current_var.outputs.current_version }} charts/enbuild/
