@@ -1,0 +1,29 @@
+name: Create Haul
+on:
+  push:
+    branches:
+      - dev
+    paths:
+      - "charts/**"
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+          token: "${{ secrets.CR_TOKEN }}"
+      - name: Prepare Environment
+        run: pip3 install ruamel-yaml semver
+      - name: Configure Git
+        run: |
+          git config user.name "junaid18183"
+          git config user.email "$GITHUB_ACTOR@users.noreply.github.com"
+      - name: Get current version
+        id: get_current_var
+        run: echo "current_version=$(.github/scripts/update_versions.py get_chart_version)" >> $GITHUB_OUTPUT
+      - name: Create Haul
+        run: |
+          .github/scripts/create_haul_file.sh ${{ steps.get_current_var.outputs.current_version }}
+          mv haul charts/
