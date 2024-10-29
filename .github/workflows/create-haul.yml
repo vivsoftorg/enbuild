@@ -26,8 +26,9 @@ jobs:
       - name: Get current version
         id: get_current_var
         run: echo "current_version=$(.github/scripts/update_versions.py get_chart_version)" >> $GITHUB_OUTPUT
-        
+
       - name: Create Haul
         run: |
-          .github/scripts/create_haul_file.sh ${{ steps.get_current_var.outputs.current_version }}
-          mv haul charts/
+          .github/scripts/create_haul_file.sh ${{ steps.get_current_var.outputs.current_version }} charts/enbuild/
+        packages:
+          - /tmp/enbuild-${{ steps.get_current_var.outputs.current_version }}-haul.tar.zst

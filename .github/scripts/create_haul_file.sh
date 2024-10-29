@@ -73,5 +73,5 @@ done <<< "$IMAGES"
 
 echo "Hauler file generated: $HAULER_FILE"
 
-/usr/local/bin/hauler store sync -f $HAULER_FILE
-/usr/local/bin/hauler store save --filename enbuild-${HELM_CHART_VERSION}-haul.tar.zst
+# /usr/local/bin/hauler store sync -f $HAULER_FILE
+# /usr/local/bin/hauler store save --filename enbuild-${HELM_CHART_VERSION}-haul.tar.zst
