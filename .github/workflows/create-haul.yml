@@ -30,5 +30,3 @@ jobs:
       - name: Create Haul
         run: |
           .github/scripts/create_haul_file.sh ${{ steps.get_current_var.outputs.current_version }} charts/enbuild/
-        packages:
-          - /tmp/enbuild-${{ steps.get_current_var.outputs.current_version }}-haul.tar.zst
