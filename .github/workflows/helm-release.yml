@@ -14,8 +14,10 @@ jobs:
         with:
           fetch-depth: 0
           token: "${{ secrets.CR_TOKEN }}"
+
       - name: Prepare Environment
         run: pip3 install ruamel-yaml semver
+        
       - name: Configure Git
         run: |
           git config user.name "junaid18183"
@@ -23,31 +25,38 @@ jobs:
       - name: Get current version
         id: get_current_var
         run: echo "current_version=$(.github/scripts/update_versions.py get_chart_version)" >> $GITHUB_OUTPUT
+
       - name: Update Files
         run: .github/scripts/update_versions.py set_chart_version
+
       - name: Get the new version
         id: new_version_var
         run: echo "new_version=$(.github/scripts/update_versions.py get_chart_version)" >> $GITHUB_OUTPUT
+
       - name: Add repo
         run: |
           helm repo add bitnami https://charts.bitnami.com/bitnami
           helm repo add jupyterhub https://jupyterhub.github.io/helm-chart
           helm repo add open-webui https://helm.openwebui.com/
           helm repo add loki-stack https://grafana.github.io/helm-charts
+
       - name: Run chart-releaser
         uses: helm/chart-releaser-action@v1.6.0
         env:
           CR_TOKEN: "${{ secrets.CR_TOKEN }}"
+
       # - uses: EndBug/add-and-commit@v9
       #   with:
       #     message: "[skip ci] New Chart version to ${{ steps.new_version_var.outputs.new_version }}"
       #     default_author: github_actions
+
       - name: Commit new version
         id: commit_version
         continue-on-error: true
         run: |
           git commit -am "[skip ci] New Chart version to ${{ steps.new_version_var.outputs.new_version }}"
           git push
+
       - name: Delete release tag in case of version update commit failure
         id: delete-tag
         if: steps.commit_version.outcome == 'failure'
