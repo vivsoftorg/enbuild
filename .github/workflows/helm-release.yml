@@ -5,61 +5,96 @@ on:
       - main
     paths:
       - "charts/**"
+
 jobs:
   release:
     runs-on: ubuntu-latest
     steps:
+    
+      # Checkout the repository with full history
       - name: Checkout
         uses: actions/checkout@v3
         with:
           fetch-depth: 0
           token: "${{ secrets.CR_TOKEN }}"
 
-      - name: Prepare Environment
-        run: pip3 install ruamel-yaml semver
-        
+      # Set up Python and install dependencies
+      - name: Setup Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.x'
+
+      - name: Install Package Dependencies
+        run: pip install ruamel-yaml semver
+
+      # Configure Git user
       - name: Configure Git
         run: |
           git config user.name "junaid18183"
           git config user.email "$GITHUB_ACTOR@users.noreply.github.com"
-      - name: Get current version
-        id: get_current_var
-        run: echo "current_version=$(.github/scripts/update_versions.py get_chart_version)" >> $GITHUB_OUTPUT
 
-      - name: Update Files
+      # Retrieve current version
+      - name: Get Current Version
+        id: get_current_var
+        run: echo "current_version=$( .github/scripts/update_versions.py get_chart_version )" >> $GITHUB_OUTPUT
+
+      # Update the chart version files
+      - name: Update Chart Version
         run: .github/scripts/update_versions.py set_chart_version
 
-      - name: Get the new version
+      # Retrieve the new version after update
+      - name: Get New Version
         id: new_version_var
-        run: echo "new_version=$(.github/scripts/update_versions.py get_chart_version)" >> $GITHUB_OUTPUT
+        run: echo "new_version=$( .github/scripts/update_versions.py get_chart_version )" >> $GITHUB_OUTPUT
 
-      - name: Add repo
+      # Add Helm repositories
+      - name: Add Helm Repositories
         run: |
           helm repo add bitnami https://charts.bitnami.com/bitnami
           helm repo add jupyterhub https://jupyterhub.github.io/helm-chart
           helm repo add open-webui https://helm.openwebui.com/
           helm repo add loki-stack https://grafana.github.io/helm-charts
 
-      - name: Run chart-releaser
+      # Run the Helm Chart Releaser Action
+      - name: Run Chart-Releaser
         uses: helm/chart-releaser-action@v1.6.0
         env:
           CR_TOKEN: "${{ secrets.CR_TOKEN }}"
 
-      # - uses: EndBug/add-and-commit@v9
-      #   with:
-      #     message: "[skip ci] New Chart version to ${{ steps.new_version_var.outputs.new_version }}"
-      #     default_author: github_actions
-
-      - name: Commit new version
+      # Commit changes made by version updating
+      - name: Commit New Version
         id: commit_version
         continue-on-error: true
         run: |
           git commit -am "[skip ci] New Chart version to ${{ steps.new_version_var.outputs.new_version }}"
           git push
 
-      - name: Delete release tag in case of version update commit failure
-        id: delete-tag
+      # Delete release tag if the commit fails
+      - name: Delete Tag on Commit Failure
         if: steps.commit_version.outcome == 'failure'
         run: |
           git push origin --delete "enbuild-${{ steps.new_version_var.outputs.new_version }}"
           git ls-remote --tags
+
+      # Create, sync, and save haul file
+      - name: Create and Save Haul File
+        id: generate-haul-file
+        if: steps.commit_version.outcome == 'success'
+        run: |
+          cd charts/enbuild 
+          helm dependency build
+          cd ../../
+          .github/scripts/create_haul_file.sh ${{ steps.get_current_var.outputs.current_version }} charts/enbuild
+          /usr/local/bin/hauler store sync -f "/tmp/enbuild_${{ steps.get_current_var.outputs.current_version }}_haul.yaml"
+          /usr/local/bin/hauler store save --filename enbuild-${{ steps.get_current_var.outputs.current_version }}-tar.zst
+
+      # Upload the tar file to AWS S3
+      - name: Upload to S3
+        uses: keithweaver/aws-s3-github-action@v1.0.0
+        with:
+          command: cp
+          source: enbuild-${{ steps.get_current_var.outputs.current_version }}-tar.zst
+          destination: s3://enbuild-haul/enbuild-${{ steps.get_current_var.outputs.current_version }}-tar.zst
+          aws_access_key_id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws_secret_access_key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws_region: ${{ secrets.AWS_DEFAULT_REGION }}
