@@ -151,4 +151,4 @@ To uninstall/delete the `enbuild` deployment:
 | `enbuildAI.model_name`       | model_name for OpenAI service.                                                                      | `"ollama/llama3.1"`                              |
 | `enbuildAI.ollama_endpoint`  | ollama_endpoint for OpenAI service.                                                                 | `"http://open-webui-ollama:11434"`               |
 
-<!-- # ----- -->
+<!-- # ----- ---->

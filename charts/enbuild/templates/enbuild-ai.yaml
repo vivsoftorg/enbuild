@@ -28,7 +28,11 @@ spec:
           value: "1000"
         - name: AUTH_API_URL
           value: "http://{{ .Release.Name }}-enbuild-user/api/v1/roles/auth"
+        - name: MONGODB_ENDPOINT
+          value: mongodb://$(MONGO_INITDB_ROOT_USERNAME):$(MONGO_INITDB_ROOT_PASSWORD)@$(MONGO_SERVER)
         envFrom:
+        - secretRef:
+            name: {{ .Release.Name }}-mongo-secrets
         - secretRef:
             name: {{ .Release.Name }}-backend-secret
         imagePullPolicy: {{ .Values.global.image.pullPolicy }}
