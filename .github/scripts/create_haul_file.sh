@@ -7,13 +7,12 @@ if [ "$#" -ne 2 ]; then
     exit 1
 fi
 
-
 HELM_CHART_VERSION=$1
 HAULER_FILE="/tmp/enbuild_${HELM_CHART_VERSION}_haul.yaml"
 HELM_CHART_LOCATION=$2
 UPLOAD=${3:-false}
 
-# # make sure yq is installed if not install it 
+# # make sure yq is installed if not install it
 # if ! command -v yq &> /dev/null
 # then
 #     echo "yq could not be found, installing it"
@@ -21,8 +20,7 @@ UPLOAD=${3:-false}
 # fi
 
 # make sure hauler is installed if not install it
-if ! command -v hauler &> /dev/null
-then
+if ! command -v hauler &>/dev/null; then
     echo "hauler could not be found, installing it"
     curl -sfL https://get.hauler.dev | bash
 fi
@@ -32,8 +30,6 @@ if [ ! -d "$HELM_CHART_LOCATION" ]; then
     echo "Helm chart location is not correct"
     exit 1
 fi
-
-
 
 # Run the Helm command to get the list of images
 # IMAGES=$(helm template $HELM_CHART_LOCATION | yq -N '..|.image? | select(.)' | sort -u)
@@ -45,9 +41,8 @@ if [ -z "$IMAGES" ]; then
     exit 1
 fi
 
-
 # Start creating the Hauler file
-cat <<EOL > $HAULER_FILE
+cat <<EOL >$HAULER_FILE
 apiVersion: content.hauler.cattle.io/v1alpha1
 kind: Charts
 metadata:
@@ -68,11 +63,9 @@ EOL
 
 # Append each image to the Hauler file
 while IFS= read -r image; do
-  echo "    - name: ${image}" >> $HAULER_FILE
-  echo "      platform: linux/amd64" >> $HAULER_FILE
-done <<< "$IMAGES"
-
-
+    echo "    - name: ${image}" >>$HAULER_FILE
+    echo "      platform: linux/amd64" >>$HAULER_FILE
+done <<<"$IMAGES"
 
 if [ -f "$HAULER_FILE" ]; then
     echo "Hauler file generated: $HAULER_FILE"
@@ -81,14 +74,15 @@ else
     exit 1
 fi
 
-echo "Syncing the Hauler file with the Hauler server"
-/usr/local/bin/hauler store sync -f $HAULER_FILE
-
-echo "Saving the Hauler tar.zst file"
-/usr/local/bin/hauler store save --filename /tmp/enbuild-${HELM_CHART_VERSION}-haul.tar.zst
-echo "enbuild-${HELM_CHART_VERSION}-haul.tar.zst file saved"
-
 if $UPLOAD; then
+
+    echo "Syncing the Hauler file with the Hauler server"
+    /usr/local/bin/hauler store sync -f $HAULER_FILE
+
+    echo "Saving the Hauler tar.zst file"
+    /usr/local/bin/hauler store save --filename /tmp/enbuild-${HELM_CHART_VERSION}-haul.tar.zst
+    echo "enbuild-${HELM_CHART_VERSION}-haul.tar.zst file saved"
+
     echo "Uploading the Hauler tar.zst file to S3"
     aws s3 cp /tmp/enbuild-${HELM_CHART_VERSION}-haul.tar.zst s3://enbuild-haul/enbuild-${HELM_CHART_VERSION}-haul.tar.zst
     echo "enbuild-${HELM_CHART_VERSION}-haul.tar.zst file uploaded to S3"

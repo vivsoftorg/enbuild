@@ -35,13 +35,22 @@ jobs:
           helm repo add loki-stack https://grafana.github.io/helm-charts
 
       - name: Create Haul
+        id: generate-haul-file
         run: |
           cd charts/enbuild 
           helm dependency build
           cd ../../
           .github/scripts/create_haul_file.sh ${{ steps.get_current_var.outputs.current_version }} charts/enbuild
+          echo "Syncing the Hauler file with the Hauler server"
+          /usr/local/bin/hauler store sync -f "/tmp/enbuild_${{ steps.get_current_var.outputs.current_version }}_haul.yaml"
+          echo "Saving the Hauler tar.zst file"
+          /usr/local/bin/hauler store save --filename //tmp/enbuild-${{ steps.get_current_var.outputs.current_version }}-haul.tar.zst
+        artifacts:
+          paths:
+            - /tmp/enbuild-${{ steps.get_current_var.outputs.current_version }}-haul.tar.zst
 
       - uses: keithweaver/aws-s3-github-action@v1.0.0
+        needs: generate-haul-file
         with:
           command: cp
           source: /tmp/enbuild-${{ steps.get_current_var.outputs.current_version }}-haul.tar.zst
