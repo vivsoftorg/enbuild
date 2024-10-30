@@ -11,6 +11,7 @@ fi
 HELM_CHART_VERSION=$1
 HAULER_FILE="/tmp/enbuild_${HELM_CHART_VERSION}_haul.yaml"
 HELM_CHART_LOCATION=$2
+UPLOAD=${$3:-false}
 
 # # make sure yq is installed if not install it 
 # if ! command -v yq &> /dev/null
@@ -75,7 +76,6 @@ done <<< "$IMAGES"
 
 if [ -f "$HAULER_FILE" ]; then
     echo "Hauler file generated: $HAULER_FILE"
-    exit 0
 else
     echo "Hauler file creation failed"
     exit 1
@@ -88,6 +88,8 @@ echo "Saving the Hauler tar.zst file"
 /usr/local/bin/hauler store save --filename /tmp/enbuild-${HELM_CHART_VERSION}-haul.tar.zst
 echo "enbuild-${HELM_CHART_VERSION}-haul.tar.zst file saved"
 
-# echo "Uploading the Hauler tar.zst file to S3"
-# aws s3 cp enbuild-${HELM_CHART_VERSION}-haul.tar.zst s3://enbuild-haul/enbuild-${HELM_CHART_VERSION}-haul.tar.zst
-# echo "enbuild-${HELM_CHART_VERSION}-haul.tar.zst file uploaded to S3"
+if $UPLOAD; then
+    echo "Uploading the Hauler tar.zst file to S3"
+    aws s3 cp /tmp/enbuild-${HELM_CHART_VERSION}-haul.tar.zst s3://enbuild-haul/enbuild-${HELM_CHART_VERSION}-haul.tar.zst
+    echo "enbuild-${HELM_CHART_VERSION}-haul.tar.zst file uploaded to S3"
+fi
