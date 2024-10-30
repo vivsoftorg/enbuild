@@ -38,5 +38,13 @@ jobs:
         run: |
           cd charts/enbuild 
           helm dependency build
-          cd ../../
-          .github/scripts/create_haul_file.sh ${{ steps.get_current_var.outputs.current_version }} charts/enbuild/
+          .github/scripts/create_haul_file.sh ${{ steps.get_current_var.outputs.current_version }} ./
+
+      - uses: keithweaver/aws-s3-github-action@v1.0.0
+        with:
+          command: cp
+          source: /tmp/enbuild-${{ steps.get_current_var.outputs.current_version }}-haul.tar.zst
+          destination: s3://enbuild-haul/enbuild-${{ steps.get_current_var.outputs.current_version }}-haul.tar.zst
+          aws_access_key_id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws_secret_access_key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws_region: us-east-1

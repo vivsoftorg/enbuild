@@ -71,7 +71,23 @@ while IFS= read -r image; do
   echo "      platform: linux/amd64" >> $HAULER_FILE
 done <<< "$IMAGES"
 
-echo "Hauler file generated: $HAULER_FILE"
 
-# /usr/local/bin/hauler store sync -f $HAULER_FILE
-# /usr/local/bin/hauler store save --filename enbuild-${HELM_CHART_VERSION}-haul.tar.zst
+
+if [ -f "$HAULER_FILE" ]; then
+    echo "Hauler file generated: $HAULER_FILE"
+    exit 0
+else
+    echo "Hauler file creation failed"
+    exit 1
+fi
+
+echo "Syncing the Hauler file with the Hauler server"
+/usr/local/bin/hauler store sync -f $HAULER_FILE
+
+echo "Saving the Hauler tar.zst file"
+/usr/local/bin/hauler store save --filename /tmp/enbuild-${HELM_CHART_VERSION}-haul.tar.zst
+echo "enbuild-${HELM_CHART_VERSION}-haul.tar.zst file saved"
+
+# echo "Uploading the Hauler tar.zst file to S3"
+# aws s3 cp enbuild-${HELM_CHART_VERSION}-haul.tar.zst s3://enbuild-haul/enbuild-${HELM_CHART_VERSION}-haul.tar.zst
+# echo "enbuild-${HELM_CHART_VERSION}-haul.tar.zst file uploaded to S3"
