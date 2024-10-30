@@ -11,7 +11,7 @@ fi
 HELM_CHART_VERSION=$1
 HAULER_FILE="/tmp/enbuild_${HELM_CHART_VERSION}_haul.yaml"
 HELM_CHART_LOCATION=$2
-UPLOAD=${$3:-false}
+UPLOAD=${3:-false}
 
 # # make sure yq is installed if not install it 
 # if ! command -v yq &> /dev/null
