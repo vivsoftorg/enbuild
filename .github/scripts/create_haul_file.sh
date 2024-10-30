@@ -80,10 +80,10 @@ if $UPLOAD; then
     /usr/local/bin/hauler store sync -f $HAULER_FILE
 
     echo "Saving the Hauler tar.zst file"
-    /usr/local/bin/hauler store save --filename /tmp/enbuild-${HELM_CHART_VERSION}-tar.zst
-    echo "enbuild-${HELM_CHART_VERSION}-tar.zst file saved"
+    /usr/local/bin/hauler store save --filename /tmp/enbuild-${HELM_CHART_VERSION}.tar.zst
+    echo "enbuild-${HELM_CHART_VERSION}.tar.zst file saved"
 
     echo "Uploading the Hauler tar.zst file to S3"
-    aws s3 cp /tmp/enbuild-${HELM_CHART_VERSION}-tar.zst s3://enbuild-haul/enbuild-${HELM_CHART_VERSION}-tar.zst
-    echo "enbuild-${HELM_CHART_VERSION}-tar.zst file uploaded to S3"
+    aws s3 cp /tmp/enbuild-${HELM_CHART_VERSION}-tar.zst s3://enbuild-haul/enbuild-${HELM_CHART_VERSION}.tar.zst
+    echo "enbuild-${HELM_CHART_VERSION}.tar.zst file uploaded to S3"
 fi

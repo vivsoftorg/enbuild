@@ -53,15 +53,15 @@ jobs:
           cd ../../
           .github/scripts/create_haul_file.sh ${{ steps.get_current_var.outputs.current_version }} charts/enbuild
           /usr/local/bin/hauler store sync -f "/tmp/enbuild_${{ steps.get_current_var.outputs.current_version }}_haul.yaml"
-          /usr/local/bin/hauler store save --filename enbuild-${{ steps.get_current_var.outputs.current_version }}-tar.zst
+          /usr/local/bin/hauler store save --filename enbuild-${{ steps.get_current_var.outputs.current_version }}.tar.zst
 
       # Upload the resulting file to AWS S3
       - name: Upload to S3
         uses: keithweaver/aws-s3-github-action@v1.0.0
         with:
           command: cp
-          source: enbuild-${{ steps.get_current_var.outputs.current_version }}-tar.zst
-          destination: s3://enbuild-haul/enbuild-${{ steps.get_current_var.outputs.current_version }}-tar.zst
+          source: enbuild-${{ steps.get_current_var.outputs.current_version }}.tar.zst
+          destination: s3://enbuild-haul/enbuild-${{ steps.get_current_var.outputs.current_version }}.tar.zst
           aws_access_key_id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws_secret_access_key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws_region: ${{ secrets.AWS_DEFAULT_REGION }}
