@@ -28,7 +28,7 @@ This document provides a step-by-step guide for deploying the ENBUILD Helm chart
 ### 1. Install Kubernetes in the Airgapped Environment
 Install the Kubernetes environment in the client's disconnected environment. Follow the installation guide for the respective Kubernetes distribution:
 - [EKS Installation Guide](https://docs.aws.amazon.com/eks/latest/userguide/install-kubectl.html)
-- [RKE2 Installation Guide](https://docs.rke2.io/install/)
+- [RKE2 Installation Guide](https://docs.rke2.io/install/airgap)
 - [K3s Installation Guide](https://docs.k3s.io/installation/)
 
 ### 2. Create a Micro Instance for the Hauler Registry
