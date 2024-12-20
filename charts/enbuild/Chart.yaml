@@ -8,7 +8,7 @@ sources: [https://github.com/jupyterhub/zero-to-jupyterhub-k8s]
 icon: https://github.com/vivsoftorg/docs-enbuild/blob/main/assets/cover.png
 kubeVersion: '>=1.25.0-0'
 version: 0.0.24
-appVersion: 1.0.19
+appVersion: 1.0.20
 maintainers:
   - name: Juned Memon
     email: jmemon@vivsoft.io
