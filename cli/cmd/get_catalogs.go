@@ -45,6 +45,7 @@ var getCatalogsCmd = &cobra.Command{
 		}
 
 		if idFlag != "" {
+			log.Printf("ENBUILD_BASE_URL: %s\n", baseURL)
 			fmt.Printf("Getting catalog with ID %s:\n", idFlag)
 			manifest, err := client.Manifests.Get(idFlag, &manifests.ManifestListOptions{})
 			if err != nil {
@@ -59,6 +60,7 @@ var getCatalogsCmd = &cobra.Command{
 			Type: typeFlag,
 			Name: nameFlag,
 		}
+		log.Printf("ENBUILD_BASE_URL: %s\n", baseURL)
 		fmt.Println("Listing catalogs...")
 		results, err := client.Manifests.List(opts)
 		if err != nil {
@@ -70,9 +72,6 @@ var getCatalogsCmd = &cobra.Command{
 
 func init() {
 	getCmd.AddCommand(getCatalogsCmd)
-	getCatalogsCmd.Flags().StringVar(&token, "token", "", "API token (or set ENBUILD_API_TOKEN)")
-	getCatalogsCmd.Flags().StringVar(&baseURL, "base-url", "", "API base URL (or set ENBUILD_BASE_URL)")
-	getCatalogsCmd.Flags().BoolVar(&debug, "debug", false, "Enable debug output")
 	getCatalogsCmd.Flags().StringVar(&idFlag, "id", "", "Get catalog by ID")
 	getCatalogsCmd.Flags().StringVar(&vcsFlag, "vcs", "", "Filter catalogs by VCS (e.g., github)")
 	getCatalogsCmd.Flags().StringVar(&typeFlag, "type", "", "Filter catalogs by type (e.g., terraform)")
