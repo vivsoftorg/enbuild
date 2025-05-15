@@ -162,25 +162,19 @@ Usage:
 ### Creating a BigBang Template
 
 ```bash
-# Using flags
-enbuild create bigbang-template --bb-version 2.5.0 --token your-api-token --base-url https://custom-enbuild.example.com/
-
-# Using environment variables
-export ENBUILD_API_TOKEN=your-api-token
-export ENBUILD_BASE_URL=https://custom-enbuild.example.com/
 enbuild create bigbang-template --bb-version 2.5.0
 ```
 
 ### Creating a Haul Manifest for BigBang
 
 ```bash
-enbuild create haul bigbang --bb-version 2.5.0 --token your-api-token
+enbuild create haul bigbang --bb-version 2.5.0 
 ```
 
 ### Creating a Haul Manifest for ENBUILD
 
 ```bash
-enbuild create haul enbuild --helm-chart-version 0.1.0 --base-url https://custom-enbuild.example.com/
+enbuild create haul enbuild --helm-chart-version 0.1.0
 ```
 
 ### Getting Catalogs
@@ -196,10 +190,15 @@ enbuild get catalogs --id 6638a128d6852d0012a27491 --token your-api-token
 enbuild get catalogs --type terraform --base-url https://custom-enbuild.example.com/
 ```
 
-## Environment Variables
+Using Environment Variables
 
-- `ENBUILD_API_TOKEN`: API token for authentication with ENBUILD
-- `ENBUILD_BASE_URL`: Base URL for the ENBUILD API
+```bash
+# Using environment variables
+export ENBUILD_API_TOKEN=your-api-token
+export ENBUILD_BASE_URL=https://custom-enbuild.example.com/
+enbuild get catalogs --vcs gitlab
+
+```bash
 
 ## Version
 
