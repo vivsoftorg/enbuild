@@ -30,7 +30,4 @@ var getCmd = &cobra.Command{
 
 func init() {
 	rootCmd.AddCommand(getCmd)
-	getCmd.Flags().StringVar(&token, "token", "", "API token (or set ENBUILD_API_TOKEN)")
-	getCmd.Flags().StringVar(&baseURL, "base-url", "", "API base URL (or set ENBUILD_BASE_URL)")
-	getCmd.Flags().BoolVar(&debug, "debug", false, "Enable debug output")
 }
