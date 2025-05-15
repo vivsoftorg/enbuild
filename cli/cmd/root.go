@@ -45,7 +45,9 @@ func Execute() {
 func init() {
 	cobra.OnInitialize()
 	rootCmd.Flags().BoolP("version", "v", false, "Print the version and exit")
-	rootCmd.Flags().StringVar(&token, "token", "", "API token (or set env variable ENBUILD_API_TOKEN)")
-	rootCmd.Flags().StringVar(&baseURL, "base-url", "https://enbuild-dev.vivplatform.io/enbuild-bk/", "API base URL for ENBUILD (or set env variable ENBUILD_BASE_URL)")
-	rootCmd.Flags().BoolVar(&debug, "debug", false, "Enable debug output")
+	
+	// Make these flags persistent so they apply to all subcommands
+	rootCmd.PersistentFlags().StringVar(&token, "token", "enbuild", "API token for ENBUILD (or set env variable ENBUILD_API_TOKEN)")
+	rootCmd.PersistentFlags().StringVar(&baseURL, "base-url", "https://enbuild-dev.vivplatform.io/enbuild-bk/", "API base URL for ENBUILD (or set env variable ENBUILD_BASE_URL)")
+	rootCmd.PersistentFlags().BoolVar(&debug, "debug", false, "Enable debug output")
 }
