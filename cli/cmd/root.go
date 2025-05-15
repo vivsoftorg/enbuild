@@ -13,7 +13,7 @@ var Version = "v0.0.0" // Replace with current version number as needed.
 var rootCmd = &cobra.Command{
 	Use:   "enbuild",
 	Short: "enbuild cli",
-	Long:  `enbuild is a CLI to help generate the ENBUILD catalog templates`,
+	Long:  `enbuild is a CLI to work with ENBUILD`,
 	Run: func(cmd *cobra.Command, args []string) {
 		// Check if the version flag was passed
 		versionFlag, _ := cmd.Flags().GetBool("version")
