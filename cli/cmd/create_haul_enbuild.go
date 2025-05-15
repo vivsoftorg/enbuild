@@ -40,17 +40,17 @@ type ChartData struct {
 	Images       []string
 }
 
-// createENBUILDHaulCmd represents the create-enbuild-haul command
-var createENBUILDHaulCmd = &cobra.Command{
-	Use:   `create-enbuild-haul`,
-	Short: "Create a haul manifest file for the ENBUILD Helm Chart",
+// createHaulEnbuildCmd represents the enbuild command under create haul
+var createHaulEnbuildCmd = &cobra.Command{
+	Use:   "enbuild",
+	Short: "Create a haul manifest file for the ENBUILD Helm Chart and images",
 	Long:  "Create a haul manifest.yaml file given the ENBUILD Helm Chart version.",
 	RunE:  runCreateENBUILDHaul,
 }
 
 func init() {
-	rootCmd.AddCommand(createENBUILDHaulCmd)
-	createENBUILDHaulCmd.Flags().StringP("helm-chart-version", "v", "", "Specify the ENBUILD Helm Chart version")
+	createHaulCmd.AddCommand(createHaulEnbuildCmd)
+	createHaulEnbuildCmd.Flags().StringP("helm-chart-version", "v", "", "Specify the ENBUILD Helm Chart version")
 }
 
 func getHelmChartVersion() (string, error) {

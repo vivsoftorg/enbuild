@@ -31,21 +31,21 @@ type Metadata struct {
 	Name string `yaml:"name"`
 }
 
-// createHaulCmd represents the createHaul command
-var createHaulCmd = &cobra.Command{
-	Use:   "create-haul",
-	Short: "Create a haul manifest file",
+// createHaulBigbangCmd represents the bigbang command under create haul
+var createHaulBigbangCmd = &cobra.Command{
+	Use:   "bigbang",
+	Short: "Create a haul manifest file for BigBang",
 	Long:  "Create a haul manifest.yaml file given the BigBang version.",
-	RunE:  createHaul,
+	RunE:  createBigbangHaul,
 }
 
 func init() {
-	bigbangCmd.AddCommand(createHaulCmd)
-	createHaulCmd.Flags().StringP("bb-version", "v", "", "Specify the BigBang version (required)")
-	_ = createHaulCmd.MarkFlagRequired("bb-version")
+	createHaulCmd.AddCommand(createHaulBigbangCmd)
+	createHaulBigbangCmd.Flags().StringP("bb-version", "v", "", "Specify the BigBang version (required)")
+	_ = createHaulBigbangCmd.MarkFlagRequired("bb-version")
 }
 
-func createHaul(cmd *cobra.Command, args []string) error {
+func createBigbangHaul(cmd *cobra.Command, args []string) error {
 	bbVersion, err := cmd.Flags().GetString("bb-version")
 	if err != nil {
 		return fmt.Errorf("failed to read 'bb-version' flag: %w", err)
@@ -85,7 +85,6 @@ func createHaul(cmd *cobra.Command, args []string) error {
 	}
 
 	// merge the two files
-
 	if err := mergeFiles(bbImageListFile, bbHelmListFile, bbInputList, bbVersion); err != nil {
 		return err
 	}
@@ -185,26 +184,3 @@ func createHaulYaml(inputFilePath string, bbVersion string, outpurFilePath strin
 	fmt.Printf("hauler store save --filename bb%s-haul.tar.zst\n", bbVersion)
 	return nil
 }
-
-// func runHaulerCommands(haulFilePath string) error {
-// 	log.Printf("Now You can run `hauler login registry1.dso.mil`\n")
-// 	log.Printf("And then run `hauler store sync -f %s`\n", haulFilePath)
-
-// 	// Run hauler login command
-// 	loginCmd := exec.Command("hauler", "login", "registry1.dso.mil")
-// 	loginCmd.Stdout = os.Stdout
-// 	loginCmd.Stderr = os.Stderr
-// 	if err := loginCmd.Run(); err != nil {
-// 		return fmt.Errorf("failed to run hauler login command: %w", err)
-// 	}
-
-// 	// Run hauler store sync command
-// 	syncCmd := exec.Command("hauler", "store", "sync", "-f", haulFilePath)
-// 	syncCmd.Stdout = os.Stdout
-// 	syncCmd.Stderr = os.Stderr
-// 	if err := syncCmd.Run(); err != nil {
-// 		return fmt.Errorf("failed to run hauler store sync command: %w", err)
-// 	}
-
-// 	return nil
-// }
