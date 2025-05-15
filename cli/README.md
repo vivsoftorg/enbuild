@@ -41,6 +41,8 @@ Flags:
   -v, --version           Print the version and exit
 ```
 
+Note: The `--base-url` and `--token` flags can be used with any command or subcommand.
+
 ## Command Details
 
 ### Create Resources
@@ -160,32 +162,38 @@ Usage:
 ### Creating a BigBang Template
 
 ```bash
+# Using flags
+enbuild create bigbang-template --bb-version 2.5.0 --token your-api-token --base-url https://custom-enbuild.example.com/
+
+# Using environment variables
+export ENBUILD_API_TOKEN=your-api-token
+export ENBUILD_BASE_URL=https://custom-enbuild.example.com/
 enbuild create bigbang-template --bb-version 2.5.0
 ```
 
 ### Creating a Haul Manifest for BigBang
 
 ```bash
-enbuild create haul bigbang --bb-version 2.5.0
+enbuild create haul bigbang --bb-version 2.5.0 --token your-api-token
 ```
 
 ### Creating a Haul Manifest for ENBUILD
 
 ```bash
-enbuild create haul enbuild --helm-chart-version 0.1.0
+enbuild create haul enbuild --helm-chart-version 0.1.0 --base-url https://custom-enbuild.example.com/
 ```
 
 ### Getting Catalogs
 
 ```bash
 # List all catalogs
-enbuild get catalogs
+enbuild get catalogs --token your-api-token
 
 # Get a specific catalog by ID
-enbuild get catalogs --id 6638a128d6852d0012a27491
+enbuild get catalogs --id 6638a128d6852d0012a27491 --token your-api-token
 
 # Filter catalogs by type
-enbuild get catalogs --type terraform
+enbuild get catalogs --type terraform --base-url https://custom-enbuild.example.com/
 ```
 
 ## Environment Variables
