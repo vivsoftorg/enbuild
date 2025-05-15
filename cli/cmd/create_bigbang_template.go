@@ -21,23 +21,23 @@ const (
 	sourceType           = "helmRepo" // Default sourceType is "git" in BigBang , but we want helmrepo
 )
 
-var createTemplateCmd = &cobra.Command{
-	Use:   "create-template",
+var createBigbangTemplateCmd = &cobra.Command{
+	Use:   "bigbang-template",
 	Short: "Create a BigBang ENBUILD Catalog template for given version",
 	Long:  "Create a BigBang ENBUILD Catalog template for given version",
-	RunE:  createTemplate,
+	RunE:  createBigbangTemplate,
 }
 
 func init() {
-	bigbangCmd.AddCommand(createTemplateCmd)
-	createTemplateCmd.Flags().StringP("bb-version", "v", "", "Specify the BigBang version (required)")
-	if err := createTemplateCmd.MarkFlagRequired("bb-version"); err != nil {
+	createCmd.AddCommand(createBigbangTemplateCmd)
+	createBigbangTemplateCmd.Flags().StringP("bb-version", "v", "", "Specify the BigBang version (required)")
+	if err := createBigbangTemplateCmd.MarkFlagRequired("bb-version"); err != nil {
 		fmt.Fprintf(os.Stderr, "Error setting bb-version flag as required: %v\n", err)
 		os.Exit(1)
 	}
 }
 
-func createTemplate(cmd *cobra.Command, args []string) error {
+func createBigbangTemplate(cmd *cobra.Command, args []string) error {
 	bbVersion, err := cmd.Flags().GetString("bb-version")
 	if err != nil {
 		return fmt.Errorf("failed to read 'bb-version' flag: %w", err)
