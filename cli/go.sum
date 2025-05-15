@@ -87,6 +87,8 @@ github.com/stretchr/testify v1.9.0 h1:HtqpIVDClZ4nwg75+f6Lvsy/wHu+3BoSGCbBAcpTsT
 github.com/stretchr/testify v1.9.0/go.mod h1:r2ic/lqez/lEtzL7wO/rwa5dbSLXVDPFyf8C91i36aY=
 github.com/vivsoftorg/enbuild-sdk-go v0.0.0-20250515085314-fb7d2861a9b2 h1:M0c4CCAdRyEmQLa+xJv21zTAUWElEp0kkDT5VzCEl0g=
 github.com/vivsoftorg/enbuild-sdk-go v0.0.0-20250515085314-fb7d2861a9b2/go.mod h1:wEeuhyWIVUv/4A/nZ0r/WxpaaM5whTylcDEmhqoo0mc=
+github.com/vivsoftorg/enbuild-sdk-go v0.0.0-20250515105934-2d288c98e117 h1:RtthOAPDq0rpNmXLut4vphWMMwqQhRLrnvs0510F2lQ=
+github.com/vivsoftorg/enbuild-sdk-go v0.0.0-20250515105934-2d288c98e117/go.mod h1:IisPHgtDkUqtIYIU5ahjqPQCI/3001W/AqYAyzT2D/w=
 github.com/yuin/gopher-lua v1.1.1 h1:kYKnWBjvbNP4XLT3+bPEwAXJx262OhaHDWDVOPjL46M=
 github.com/yuin/gopher-lua v1.1.1/go.mod h1:GBR0iDaNXjAgGg9zfCvksxSRnQx76gclCIb7kdAd1Pw=
 golang.org/x/crypto v0.22.0 h1:g1v0xeRhjcugydODzvb3mEM9SQ0HGp9s/nh3COQ/C30=

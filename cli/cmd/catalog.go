@@ -23,7 +23,7 @@ var (
 )
 
 
-var manifestCmd = &cobra.Command{
+var catalogCmd = &cobra.Command{
     Use:   "catalog",
     Short: "CLI to interact with Enbuild catalogs",
     Run: func(cmd *cobra.Command, args []string) {
@@ -54,12 +54,13 @@ var manifestCmd = &cobra.Command{
         }
 
         if idFlag != "" {
-            fmt.Printf("Getting manifest with ID %s:\n", idFlag)
+            log.Printf("Getting catalog from ENBUILD %s", baseURL)
+            fmt.Printf("Getting catalog with ID %s:\n", idFlag)
             manifest, err := client.Manifests.Get(idFlag, &manifests.ManifestListOptions{})
             if err != nil {
-                log.Fatalf("Error getting manifest: %v", err)
+                log.Fatalf("Error getting catalog: %v", err)
             }
-            printManifestTable([]*types.Manifest{manifest})
+            printCatalogTable([]*types.Manifest{manifest})
             return
         }
 
@@ -68,28 +69,28 @@ var manifestCmd = &cobra.Command{
             Type: typeFlag,
             Name: nameFlag,
         }
-        fmt.Println("Listing manifests...")
+        log.Printf("Listing catalogs from ENBUILD %s", baseURL)
         results, err := client.Manifests.List(opts)
         if err != nil {
-            log.Fatalf("Error listing manifests: %v", err)
+            log.Fatalf("Error listing catalogs: %v", err)
         }
-        printManifestTable(results)
+        printCatalogTable(results)
     },
 }
 
 func init() {
-    rootCmd.AddCommand(manifestCmd)
-    manifestCmd.Flags().StringVar(&token, "token", "", "API token (or set ENBUILD_API_TOKEN)")
-    manifestCmd.Flags().StringVar(&baseURL, "base-url", "", "API base URL (or set ENBUILD_BASE_URL)")
-    manifestCmd.Flags().BoolVar(&debug, "debug", false, "Enable debug output")
-    manifestCmd.Flags().StringVar(&idFlag, "id", "", "Get manifest by ID")
-    manifestCmd.Flags().StringVar(&vcsFlag, "vcs", "", "Filter manifests by VCS (e.g., github)")
-    manifestCmd.Flags().StringVar(&typeFlag, "type", "", "Filter manifests by type (e.g., terraform)")
-    manifestCmd.Flags().StringVar(&nameFlag, "name", "", "Search manifests by name")
+    rootCmd.AddCommand(catalogCmd)
+    catalogCmd.Flags().StringVar(&token, "token", "", "API token (or set ENBUILD_API_TOKEN)")
+    catalogCmd.Flags().StringVar(&baseURL, "base-url", "", "API base URL (or set ENBUILD_BASE_URL)")
+    catalogCmd.Flags().BoolVar(&debug, "debug", false, "Enable debug output")
+    catalogCmd.Flags().StringVar(&idFlag, "id", "", "Get catalog by ID")
+    catalogCmd.Flags().StringVar(&vcsFlag, "vcs", "", "Filter catalogs by VCS (e.g., github)")
+    catalogCmd.Flags().StringVar(&typeFlag, "type", "", "Filter catalogs by type (e.g., terraform)")
+    catalogCmd.Flags().StringVar(&nameFlag, "name", "", "Search catalogs by name")
 }
 
-func printManifestTable(manifests []*types.Manifest) {
-    fmt.Printf("Found %d manifest(s):\n", len(manifests))
+func printCatalogTable(manifests []*types.Manifest) {
+    fmt.Printf("Found %d catalog(s):\n", len(manifests))
     table := tablewriter.NewWriter(os.Stdout)
     table.Header([]string{"ID", "Name", "Type", "Slug", "VCS"})
 
