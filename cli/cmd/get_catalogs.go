@@ -33,20 +33,43 @@ var getCatalogsCmd = &cobra.Command{
             listCatalogs(client)
         }
     },
-    PersistentPreRunE: func(cmd *cobra.Command, args []string) error {
-        baseURL = getEnvOrFlag(baseURL, "base-url", "ENBUILD_BASE_URL")
-        username = getEnvOrFlag(username, "username", "ENBUILD_USERNAME")
-        password = getEnvOrFlag(password, "password", "ENBUILD_PASSWORD")
-        return nil // Return nil as it completes successfully
-    },
+	PreRunE: func(cmd *cobra.Command, args []string) error {
+		if username == "" {
+			username = os.Getenv("ENBUILD_USERNAME")
+		}
+		if username == "" {
+			return fmt.Errorf("username is required, set with --username or ENBUILD_USERNAME env var")
+		}
+
+		if password == "" {
+			password = os.Getenv("ENBUILD_PASSWORD")
+		}
+		if password == "" {
+			return fmt.Errorf("password is required, set with --password or ENBUILD_PASSWORD env var")
+		}
+
+		if baseURL == "" {
+			baseURL = os.Getenv("ENBUILD_BASE_URL")
+		}
+		if baseURL == "" {
+			baseURL = "https://enbuild.vivplatform.io"
+			// return fmt.Errorf("base-url is required, set with --base-url or ENBUILD_BASE_URL env var")
+		}
+
+		return nil
+	},
 }
 
 func init() {
-    getCmd.AddCommand(getCatalogsCmd) // Assuming getCmd is defined elsewhere
+    getCmd.AddCommand(getCatalogsCmd)
     getCatalogsCmd.Flags().StringVar(&idFlag, "id", "", "Get catalog by ID")
     getCatalogsCmd.Flags().StringVar(&vcsFlag, "vcs", "", "Filter catalogs by VCS (e.g., github)")
     getCatalogsCmd.Flags().StringVar(&typeFlag, "type", "", "Filter catalogs by type (e.g., terraform)")
     getCatalogsCmd.Flags().StringVar(&nameFlag, "name", "", "Search catalogs by name")
+
+	rootCmd.MarkFlagRequired("username")
+    rootCmd.MarkFlagRequired("password")
+    rootCmd.MarkFlagRequired("base-url")
 }
 
 func getEnvOrFlag(flag, flagname string, env string) string {

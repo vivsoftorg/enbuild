@@ -35,7 +35,7 @@ func init() {
 	rootCmd.Flags().BoolP("version", "v", false, "Print the version and exit")
 	rootCmd.PersistentFlags().StringVar(&username, "username", "", "Username for ENBUILD (or set env variable ENBUILD_USERNAME)")
 	rootCmd.PersistentFlags().StringVar(&password, "password", "", "Password for ENBUILD (or set env variable ENBUILD_PASSWORD)")
-	rootCmd.PersistentFlags().StringVar(&baseURL, "base-url", "", "API base URL for ENBUILD (or set env variable ENBUILD_BASE_URL)")
+	rootCmd.PersistentFlags().StringVar(&baseURL, "base-url", "", "API base URL for ENBUILD (or set env variable ENBUILD_BASE_URL=https://enbuild.vivplatform.io)")
 	rootCmd.PersistentFlags().BoolVar(&debug, "debug", false, "Enable debug output")
 }
 
