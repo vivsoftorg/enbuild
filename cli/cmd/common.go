@@ -4,7 +4,8 @@ package cmd
 var (
 	baseURL  string
 	debug    bool
-	token    string
+	username string
+	password string
 	idFlag   string
 	vcsFlag  string
 	typeFlag string

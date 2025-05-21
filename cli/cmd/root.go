@@ -6,48 +6,57 @@ import (
 	"os"
 )
 
-// Version of the application, should be set during build time.
-var Version = "v0.0.0" // Replace with current version number as needed.
+var Version = "v0.0.0" // Set during build time.
 
-// rootCmd represents the base command when called without any subcommands
 var rootCmd = &cobra.Command{
 	Use:   "enbuild",
 	Short: "enbuild cli",
 	Long:  `enbuild is a CLI to work with ENBUILD`,
 	Run: func(cmd *cobra.Command, args []string) {
-		// Check if the version flag was passed
-		versionFlag, _ := cmd.Flags().GetBool("version")
-		if versionFlag {
-			currentVersion, err := GetCurrentVersion()
-			if err != nil {
-				fmt.Printf("Error Can not get version %s\n", err)
-				os.Exit(1)
-				panic("unreachable") // staticcheck false positive: https://staticcheck.io/docs/checks#SA5011
+		if versionFlag, _ := cmd.Flags().GetBool("version"); versionFlag {
+			if err := printVersion(); err != nil {
+				exitWithError(err, "Cannot get version")
 			}
-			fmt.Printf("enbuild version %v\n", currentVersion)
-			os.Exit(0) // Exit after printing the version
+			os.Exit(0)
 		}
-		// If no flag, print default help
 		cmd.Help()
 	},
 }
 
-// Execute adds all child commands to the root command and sets flags appropriately.
-// This is called by main.main(). It only needs to happen once to the rootCmd.
 func Execute() {
-	err := rootCmd.Execute()
-	if err != nil {
-		fmt.Println(err)
-		os.Exit(1)
+	if err := rootCmd.Execute(); err != nil {
+		exitWithError(err, "")
 	}
 }
 
 func init() {
-	cobra.OnInitialize()
+	cobra.OnInitialize(initConfig)
+
 	rootCmd.Flags().BoolP("version", "v", false, "Print the version and exit")
-	
-	// Make these flags persistent so they apply to all subcommands
-	rootCmd.PersistentFlags().StringVar(&token, "token", "enbuild", "API token for ENBUILD (or set env variable ENBUILD_API_TOKEN)")
-	rootCmd.PersistentFlags().StringVar(&baseURL, "base-url", "https://enbuild-dev.vivplatform.io/enbuild-bk/", "API base URL for ENBUILD (or set env variable ENBUILD_BASE_URL)")
+	rootCmd.PersistentFlags().StringVar(&username, "username", "", "Username for ENBUILD (or set env variable ENBUILD_USERNAME)")
+	rootCmd.PersistentFlags().StringVar(&password, "password", "", "Password for ENBUILD (or set env variable ENBUILD_PASSWORD)")
+	rootCmd.PersistentFlags().StringVar(&baseURL, "base-url", "", "API base URL for ENBUILD (or set env variable ENBUILD_BASE_URL=https://enbuild.vivplatform.io)")
 	rootCmd.PersistentFlags().BoolVar(&debug, "debug", false, "Enable debug output")
+}
+
+func initConfig() {
+	//fmt.Println("Loading environment variables...")
+}
+
+func printVersion() error {
+	currentVersion, err := GetCurrentVersion()
+	if err != nil {
+		return err
+	}
+	fmt.Printf("enbuild version %v\n", currentVersion)
+	return nil
+}
+
+func exitWithError(err error, msg string) {
+	if msg != "" {
+		fmt.Printf("Error: %s - %s\n", msg, err)
+	} else {
+		fmt.Printf("Error: %s\n", err)
+	}
+	os.Exit(1)
 }
