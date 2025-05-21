@@ -43,11 +43,43 @@ func Execute() {
 }
 
 func init() {
-	cobra.OnInitialize()
+	cobra.OnInitialize(func() {
+		// Set username from flag or ENV
+		if username == "" {
+			if envUser := os.Getenv("ENBUILD_USERNAME"); envUser != "" {
+				username = envUser
+			}
+		}
+		// Set password from flag or ENV
+		if password == "" {
+			if envPass := os.Getenv("ENBUILD_PASSWORD"); envPass != "" {
+				password = envPass
+			}
+		}
+		// Set baseURL from flag or ENV or default
+		if baseURL == "" {
+			if envBase := os.Getenv("ENBUILD_BASE_URL"); envBase != "" {
+				baseURL = envBase
+			}
+		}
+		// set default baseURL if not set
+		if baseURL == "" {
+			baseURL = "https://enbuild.vivplatform.io/"
+		}
+		// Set debug from flag or ENV
+		if !debug {
+			if envDebug := os.Getenv("ENBUILD_DEBUG"); envDebug != "" {
+				if envDebug == "1" || envDebug == "true" || envDebug == "TRUE" {
+					debug = true
+				}
+			}
+		}
+	})
 	rootCmd.Flags().BoolP("version", "v", false, "Print the version and exit")
-	
+
 	// Make these flags persistent so they apply to all subcommands
-	rootCmd.PersistentFlags().StringVar(&token, "token", "enbuild", "API token for ENBUILD (or set env variable ENBUILD_API_TOKEN)")
-	rootCmd.PersistentFlags().StringVar(&baseURL, "base-url", "https://enbuild-dev.vivplatform.io/enbuild-bk/", "API base URL for ENBUILD (or set env variable ENBUILD_BASE_URL)")
-	rootCmd.PersistentFlags().BoolVar(&debug, "debug", false, "Enable debug output")
+	rootCmd.PersistentFlags().StringVar(&username, "username", "", "Username for ENBUILD (or set env variable ENBUILD_USERNAME)")
+	rootCmd.PersistentFlags().StringVar(&password, "password", "", "Password for ENBUILD (or set env variable ENBUILD_PASSWORD)")
+	rootCmd.PersistentFlags().StringVar(&baseURL, "base-url", "", "API base URL for ENBUILD (or set env variable ENBUILD_BASE_URL)")
+	rootCmd.PersistentFlags().BoolVar(&debug, "debug", false, "Enable debug output(or set env variable ENBUILD_DEBUG=1)")
 }
