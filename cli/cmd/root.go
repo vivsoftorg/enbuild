@@ -64,7 +64,7 @@ func init() {
 		}
 		// set default baseURL if not set
 		if baseURL == "" {
-			baseURL = "https://enbuild.vivplatform.io/"
+			baseURL = "https://enbuild.vivplatform.io"
 		}
 		// Set debug from flag or ENV
 		if !debug {
@@ -80,6 +80,6 @@ func init() {
 	// Make these flags persistent so they apply to all subcommands
 	rootCmd.PersistentFlags().StringVar(&username, "username", "", "Username for ENBUILD (or set env variable ENBUILD_USERNAME)")
 	rootCmd.PersistentFlags().StringVar(&password, "password", "", "Password for ENBUILD (or set env variable ENBUILD_PASSWORD)")
-	rootCmd.PersistentFlags().StringVar(&baseURL, "base-url", "", "API base URL for ENBUILD (or set env variable ENBUILD_BASE_URL)")
+	rootCmd.PersistentFlags().StringVar(&baseURL, "base-url", "", "API base URL for ENBUILD default (or set env variable ENBUILD_BASE_URL)")
 	rootCmd.PersistentFlags().BoolVar(&debug, "debug", false, "Enable debug output(or set env variable ENBUILD_DEBUG=1)")
 }
