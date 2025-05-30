@@ -11,6 +11,7 @@ import (
 	"strings"
 
 	log "github.com/sirupsen/logrus"
+	"github.com/vivsoftorg/enbuild-sdk-go/pkg/enbuild"
 )
 
 func downloadAndSaveFile(url, filepath string) error {
@@ -93,4 +94,23 @@ func runPipedCommand(command string) (string, error) {
 		return "", err
 	}
 	return strings.TrimSpace(out.String()), nil
+}
+
+func getEnvOrFlag(flag, flagname string, env string) string {
+	value := flag
+	if value == "" {
+		value = os.Getenv(env)
+	}
+	if value == "" {
+		log.Fatalf("%s is required via flag or set via env variable %s", flagname, env)
+	}
+	return value
+}
+
+func prepareClientOptions(baseURL, username, password string) []enbuild.ClientOption {
+	return []enbuild.ClientOption{
+		enbuild.WithDebug(debug),
+		enbuild.WithBaseURL(baseURL),
+		enbuild.WithKeycloakAuth(username, password),
+	}
 }

@@ -13,7 +13,7 @@ var createCmd = &cobra.Command{
 		if len(args) == 0 {
 			return cmd.Help()
 		}
-		
+
 		// Find the appropriate subcommand
 		for _, subCmd := range cmd.Commands() {
 			if subCmd.Name() == args[0] {
@@ -22,7 +22,7 @@ var createCmd = &cobra.Command{
 				return subCmd.Execute()
 			}
 		}
-		
+
 		return cmd.Help()
 	},
 }

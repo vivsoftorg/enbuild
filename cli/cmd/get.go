@@ -14,7 +14,7 @@ var getCmd = &cobra.Command{
 		if len(args) == 0 {
 			return fmt.Errorf("you must specify the type of resource to get")
 		}
-		
+
 		// Find the appropriate subcommand
 		for _, subCmd := range cmd.Commands() {
 			if subCmd.Name() == args[0] {
@@ -23,7 +23,7 @@ var getCmd = &cobra.Command{
 				return subCmd.Execute()
 			}
 		}
-		
+
 		return fmt.Errorf("unknown resource type: %s", args[0])
 	},
 }
