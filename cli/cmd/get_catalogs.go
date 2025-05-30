@@ -1,39 +1,38 @@
 package cmd
 
 import (
-    "context"
-    "fmt"
-    "log"
-    "os"
+	"context"
+	"fmt"
+	"log"
+	"os"
 
-    "github.com/olekukonko/tablewriter"
-    "github.com/spf13/cobra"
-    "github.com/vivsoftorg/enbuild-sdk-go/pkg/enbuild"
+	"github.com/olekukonko/tablewriter"
+	"github.com/spf13/cobra"
+	"github.com/vivsoftorg/enbuild-sdk-go/pkg/enbuild"
 )
-
 
 // getCatalogsCmd represents the catalogs command under get
 var getCatalogsCmd = &cobra.Command{
-    Use:   "catalogs",
-    Short: "Get catalogs from Enbuild",
-    Long:  `Retrieve and list catalogs from the Enbuild platform.`,
-    Run: func(cmd *cobra.Command, args []string) {
-        options := prepareClientOptions(baseURL, username, password)
+	Use:   "catalogs",
+	Short: "Get catalogs from Enbuild",
+	Long:  `Retrieve and list catalogs from the Enbuild platform.`,
+	Run: func(cmd *cobra.Command, args []string) {
+		options := prepareClientOptions(baseURL, username, password)
 		fmt.Printf("Using base URL: %s\n", baseURL)
 		fmt.Printf("Using username: %s\n", username)
 
-        client, err := enbuild.NewClient(context.Background(), options...)
-        if err != nil {
-            log.Fatalf("Error creating client: %v", err)
-        }
+		client, err := enbuild.NewClient(context.Background(), options...)
+		if err != nil {
+			log.Fatalf("Error creating client: %v", err)
+		}
 
-        switch {
-        case idFlag != "":
-            processSingleCatalog(client, idFlag)
-        default:
-            listCatalogs(client)
-        }
-    },
+		switch {
+		case idFlag != "":
+			processSingleCatalog(client, idFlag)
+		default:
+			listCatalogs(client)
+		}
+	},
 	PreRunE: func(cmd *cobra.Command, args []string) error {
 		if username == "" {
 			username = os.Getenv("ENBUILD_USERNAME")
@@ -62,67 +61,48 @@ var getCatalogsCmd = &cobra.Command{
 }
 
 func init() {
-    getCmd.AddCommand(getCatalogsCmd)
-    getCatalogsCmd.Flags().StringVar(&idFlag, "id", "", "Get catalog by ID")
-    getCatalogsCmd.Flags().StringVar(&vcsFlag, "vcs", "", "Filter catalogs by VCS (e.g., github)")
-    getCatalogsCmd.Flags().StringVar(&typeFlag, "type", "", "Filter catalogs by type (e.g., terraform)")
-    getCatalogsCmd.Flags().StringVar(&nameFlag, "name", "", "Search catalogs by name")
+	getCmd.AddCommand(getCatalogsCmd)
+	getCatalogsCmd.Flags().StringVar(&idFlag, "id", "", "Get catalog by ID")
+	getCatalogsCmd.Flags().StringVar(&vcsFlag, "vcs", "", "Filter catalogs by VCS (e.g., github)")
+	getCatalogsCmd.Flags().StringVar(&typeFlag, "type", "", "Filter catalogs by type (e.g., terraform)")
+	getCatalogsCmd.Flags().StringVar(&nameFlag, "name", "", "Search catalogs by name")
 
 	rootCmd.MarkFlagRequired("username")
-    rootCmd.MarkFlagRequired("password")
-    rootCmd.MarkFlagRequired("base-url")
-}
-
-func getEnvOrFlag(flag, flagname string, env string) string {
-    value := flag
-    if value == "" {
-        value = os.Getenv(env)
-    }
-    if value == "" {
-        log.Fatalf("%s is required via flag or set via env variable %s", flagname, env)
-    }
-    return value
-}
-
-func prepareClientOptions(baseURL, username, password string) []enbuild.ClientOption {
-    return []enbuild.ClientOption{
-        enbuild.WithDebug(debug),
-        enbuild.WithBaseURL(baseURL),
-        enbuild.WithKeycloakAuth(username, password),
-    }
+	rootCmd.MarkFlagRequired("password")
+	rootCmd.MarkFlagRequired("base-url")
 }
 
 func processSingleCatalog(client *enbuild.Client, id string) {
-    fmt.Printf("Getting catalog with ID %s:\n", id)
-    catalog, err := client.Catalogs.GetCatalog(context.Background(), id, &enbuild.CatalogListOptions{})
-    if err != nil {
-        log.Fatalf("Error getting catalog: %v", err)
-    }
-    printCatalogTable([]*enbuild.Catalog{catalog})
+	fmt.Printf("Getting catalog with ID %s:\n", id)
+	catalog, err := client.Catalogs.GetCatalog(context.Background(), id, &enbuild.CatalogListOptions{})
+	if err != nil {
+		log.Fatalf("Error getting catalog: %v", err)
+	}
+	printCatalogTable([]*enbuild.Catalog{catalog})
 }
 
 func listCatalogs(client *enbuild.Client) {
-    opts := &enbuild.CatalogListOptions{
-        VCS:  vcsFlag,
-        Type: typeFlag,
-        Name: nameFlag,
-    }
-    fmt.Println("Listing catalogs...")
-    results, err := client.Catalogs.ListCatalog(context.Background(), opts)
-    if err != nil {
-        log.Fatalf("Error listing catalogs: %v", err)
-    }
-    printCatalogTable(results)
+	opts := &enbuild.CatalogListOptions{
+		VCS:  vcsFlag,
+		Type: typeFlag,
+		Name: nameFlag,
+	}
+	fmt.Println("Listing catalogs...")
+	results, err := client.Catalogs.ListCatalog(context.Background(), opts)
+	if err != nil {
+		log.Fatalf("Error listing catalogs: %v", err)
+	}
+	printCatalogTable(results)
 }
 
 func printCatalogTable(catalogs []*enbuild.Catalog) {
-    fmt.Printf("Found %d catalog(s):\n", len(catalogs))
-    table := tablewriter.NewWriter(os.Stdout)
-    table.Header([]string{"ID", "Name", "Type", "Slug", "VCS"})
+	fmt.Printf("Found %d catalog(s):\n", len(catalogs))
+	table := tablewriter.NewWriter(os.Stdout)
+	table.Header([]string{"ID", "Name", "Type", "Slug", "VCS"})
 
-    for _, c := range catalogs {
-        id := fmt.Sprintf("%v", c.ID)
-        table.Append([]string{id, c.Name, c.Type, c.Slug, c.VCS})
-    }
-    table.Render()
+	for _, c := range catalogs {
+		id := fmt.Sprintf("%v", c.ID)
+		table.Append([]string{id, c.Name, c.Type, c.Slug, c.VCS})
+	}
+	table.Render()
 }
