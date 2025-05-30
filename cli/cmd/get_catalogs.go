@@ -1,6 +1,7 @@
 package cmd
 
 import (
+    "context"
     "fmt"
     "log"
     "os"
@@ -21,7 +22,7 @@ var getCatalogsCmd = &cobra.Command{
 		fmt.Printf("Using base URL: %s\n", baseURL)
 		fmt.Printf("Using username: %s\n", username)
 
-        client, err := enbuild.NewClient(options...)
+        client, err := enbuild.NewClient(context.Background(), options...)
         if err != nil {
             log.Fatalf("Error creating client: %v", err)
         }
@@ -93,7 +94,7 @@ func prepareClientOptions(baseURL, username, password string) []enbuild.ClientOp
 
 func processSingleCatalog(client *enbuild.Client, id string) {
     fmt.Printf("Getting catalog with ID %s:\n", id)
-    catalog, err := client.Catalogs.Get(id, &enbuild.CatalogListOptions{})
+    catalog, err := client.Catalogs.GetCatalog(context.Background(), id, &enbuild.CatalogListOptions{})
     if err != nil {
         log.Fatalf("Error getting catalog: %v", err)
     }
@@ -107,7 +108,7 @@ func listCatalogs(client *enbuild.Client) {
         Name: nameFlag,
     }
     fmt.Println("Listing catalogs...")
-    results, err := client.Catalogs.List(opts)
+    results, err := client.Catalogs.ListCatalog(context.Background(), opts)
     if err != nil {
         log.Fatalf("Error listing catalogs: %v", err)
     }
