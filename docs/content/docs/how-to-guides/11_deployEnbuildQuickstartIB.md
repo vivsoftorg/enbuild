@@ -75,10 +75,10 @@ AppVersion with the ENBUILD application version you want to install. ( Make sure
 ### Deploy ENBUILD HELM Chart
 
 Make sure you update the values input to reference the values you created in Step 2.
-Execute the command below.
+Execute the command below. Adjust the `--set global.AppVersion=1.0.21` to the version you want to deploy and ensure the `--version` matches the version of the chart you want to deploy.
 
 ```bash
-helm upgrade --install --namespace enbuild enbuild vivsoft/enbuild --create-namespace -f /tmp/quick_install_ib.yaml
+helm upgrade --install --namespace enbuild enbuild vivsoft/enbuild --version 0.0.27 --create-namespace -f target/quick_install_ib.yaml --set global.AppVersion=1.0.21
 
 Release "enbuild" does not exist. Installing it now.
 NAME: enbuild
