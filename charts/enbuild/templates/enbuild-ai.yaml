@@ -25,7 +25,7 @@ spec:
       containers:
       - env:
         - name: MAX_CONTEXT_LENGTH
-          value: "1000"
+          value: "1001"
         - name: AUTH_API_URL
           value: "http://{{ .Release.Name }}-enbuild-user/api/v1/roles/auth"
         - name: MONGODB_ENDPOINT
@@ -47,10 +47,10 @@ spec:
             drop:
             - ALL
           privileged: false
-          runAsGroup: 1000
+          runAsGroup: 1001
           runAsNonRoot: true
           readOnlyRootFilesystem: false
-          runAsUser: 1000
+          runAsUser: 1001
         # livenessProbe:
         #   httpGet:
         #     path: /health
