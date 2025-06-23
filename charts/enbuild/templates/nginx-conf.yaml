@@ -51,6 +51,11 @@ data:
       location /enbuild-ai/ {
         proxy_pass http://{{ .Release.Name }}-enbuild-ai/;
       }
+
+      location /headlamp/ {
+        proxy_pass http://headlamp.kube-system.svc.cluster.local/headlamp/;
+      }
+
 {{- end }}
 
 {{- if .Values.global.monitoring.enabled }}
