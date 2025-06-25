@@ -21,6 +21,19 @@ data:
       proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
       proxy_set_header X-Forwarded-Proto $scheme;
 
+      location = /auth-check {
+          internal;
+          proxy_pass http://{{ .Release.Name }}-enbuild-user/api/v1/roles/auth;
+
+          # Force method = GET
+          proxy_pass_request_body off;
+          proxy_set_header Content-Length "";
+
+          # Include session info
+          proxy_set_header Cookie $http_cookie;
+          proxy_set_header Authorization $http_x_auth_token;
+      }
+
       location /enbuild-bk/ {
         proxy_pass http://{{ .Release.Name }}-enbuild-backend/;
       }
@@ -36,6 +49,8 @@ data:
       }
       {{- if .Values.jupyterhub.cull.enabled }}
       location /jupyter/ {
+          # auth_request /auth-check;
+          # error_page 401 = /;
           proxy_pass http://proxy-public/jupyter/;
           proxy_redirect /hub/ /jupyter/hub/;
           proxy_cookie_path /hub/ /jupyter/hub/;
@@ -51,28 +66,13 @@ data:
       location /enbuild-ai/ {
         proxy_pass http://{{ .Release.Name }}-enbuild-ai/;
       }
+{{- end }}
 
-      location = /auth-check {
-          internal;
-          proxy_pass http://{{ .Release.Name }}-enbuild-user/api/v1/roles/auth;
-
-          # Force method = GET
-          proxy_pass_request_body off;
-          proxy_set_header Content-Length "";
-
-          # Include session info
-          proxy_set_header Authorization $http_authorization;
-          proxy_set_header Cookie $http_cookie;
-      }
-
+{{- if .Values.global.headlamp.enabled }}
       location /headlamp/ {
-        auth_request /auth-check;
-        error_page 401 = /;
-        # Block requests that do not include this header
-        # if ($http_x_from_ui != "true") {
-        #   return 403;
-        # }
-        proxy_pass http://headlamp.kube-system.svc.cluster.local/headlamp/;
+        # auth_request /auth-check;
+        # error_page 401 = /;
+        proxy_pass http://{{ .Release.Name }}-headlamp/headlamp/;
       }
 
 {{- end }}
@@ -80,8 +80,10 @@ data:
 {{- if .Values.global.monitoring.enabled }}
 
       location /grafana/ {
+        # auth_request /auth-check;
+        # error_page 401 = /;
         proxy_pass http://{{ .Release.Name }}-grafana/;
         rewrite ^/grafana/(.*) /$1 break;
      }
 {{- end }}
-    }
+    } # end of server block

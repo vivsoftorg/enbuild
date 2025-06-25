@@ -29,3 +29,7 @@ dependencies:
     version: 2.10.2
     repository: https://grafana.github.io/helm-charts
     condition: global.monitoring.enabled
+  - name: headlamp
+    version: 0.31.1
+    repository: https://kubernetes-sigs.github.io/headlamp/
+    condition: global.headlamp.enabled
