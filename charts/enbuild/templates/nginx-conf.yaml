@@ -23,6 +23,7 @@ data:
 
       location = /auth-check {
           internal;
+          # return 200;  # proxy not working with auth_request
           proxy_pass http://{{ .Release.Name }}-enbuild-user/api/v1/roles/auth;
 
           # Force method = GET
@@ -32,6 +33,7 @@ data:
           # Include session info
           proxy_set_header Cookie $http_cookie;
           proxy_set_header Authorization $http_x_auth_token;
+          proxy_set_header X-Original-URI $request_uri;
       }
 
       location /enbuild-bk/ {
@@ -49,8 +51,6 @@ data:
       }
       {{- if .Values.jupyterhub.cull.enabled }}
       location /jupyter/ {
-          # auth_request /auth-check;
-          # error_page 401 = /;
           proxy_pass http://proxy-public/jupyter/;
           proxy_redirect /hub/ /jupyter/hub/;
           proxy_cookie_path /hub/ /jupyter/hub/;
@@ -71,7 +71,7 @@ data:
 {{- if .Values.global.headlamp.enabled }}
       location /headlamp/ {
         # auth_request /auth-check;
-        # error_page 401 = /;
+        # error_page 401 = /headlamp/;
         proxy_pass http://{{ .Release.Name }}-headlamp/headlamp/;
       }
 
