@@ -71,7 +71,7 @@ data:
 {{- if .Values.global.headlamp.enabled }}
       location /headlamp/ {
         # auth_request /auth-check;
-        # error_page 401 = /headlamp/;
+        # error_page 401 = /;
         proxy_pass http://{{ .Release.Name }}-headlamp/headlamp/;
       }
 
