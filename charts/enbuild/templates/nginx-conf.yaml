@@ -75,12 +75,6 @@ data:
 
 {{- if .Values.global.headlamp.enabled }}
       location /headlamp/ {
-        # auth_request /auth-check;
-        # error_page 401 = /;
-        # Block requests if Enbuild header is missing or incorrect
-        # if ($enbuild_ok = 0) {
-        #     return 403;  # Forbidden
-        # }
         proxy_pass http://{{ .Release.Name }}-headlamp/headlamp/;
       }
 
