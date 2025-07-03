@@ -330,37 +330,37 @@ headlamp:
     - mountPath: /build/plugins
       name: headlamp-plugins
 
-  # - command:
-  #     - /bin/sh
-  #     - "-c"
-  #     - |
-  #       kubectl config set-cluster main --server=https://kubernetes.default.svc --certificate-authority=/var/run/secrets/kubernetes.io/serviceaccount/ca.crt
-  #       kubectl config set-credentials main --token=$(cat /var/run/secrets/kubernetes.io/serviceaccount/token)
-  #       kubectl config set-context main --cluster=main --user=main
-  #       kubectl config use-context main
-  #   env:
-  #     - name: KUBERNETES_SERVICE_HOST
-  #       valueFrom:
-  #         fieldRef:
-  #           fieldPath: status.hostIP
-  #     - name: KUBERNETES_SERVICE_PORT
-  #       value: "6443"
-  #     - name: KUBECONFIG
-  #       value: /home/headlamp/.config/Headlamp/kubeconfigs/config
-  #   image: bitnami/kubectl:1.32.0
-  #   name: create-kubeconfig
-  #   securityContext:
-  #     capabilities:
-  #       drop:
-  #         - ALL
-  #     privileged: false
-  #     readOnlyRootFilesystem: true
-  #     runAsGroup: 101
-  #     runAsNonRoot: true
-  #     runAsUser: 100
-  #   volumeMounts:
-  #     - mountPath: /home/headlamp/.config/Headlamp/kubeconfigs
-  #       name: kubeconfig
+  - command:
+      - /bin/sh
+      - "-c"
+      - |
+        kubectl config set-cluster main --server=https://kubernetes.default.svc --certificate-authority=/var/run/secrets/kubernetes.io/serviceaccount/ca.crt
+        kubectl config set-credentials main --token=$(cat /var/run/secrets/kubernetes.io/serviceaccount/token)
+        kubectl config set-context main --cluster=main --user=main
+        kubectl config use-context main
+    env:
+      - name: KUBERNETES_SERVICE_HOST
+        valueFrom:
+          fieldRef:
+            fieldPath: status.hostIP
+      - name: KUBERNETES_SERVICE_PORT
+        value: "6443"
+      - name: KUBECONFIG
+        value: /home/headlamp/.config/Headlamp/kubeconfigs/config
+    image: bitnami/kubectl:1.32.0
+    name: create-kubeconfig
+    securityContext:
+      capabilities:
+        drop:
+          - ALL
+      privileged: false
+      readOnlyRootFilesystem: true
+      runAsGroup: 101
+      runAsNonRoot: true
+      runAsUser: 100
+    volumeMounts:
+      - mountPath: /home/headlamp/.config/Headlamp/kubeconfigs
+        name: kubeconfig
 
   config:
     # -- base url path at which headlamp should run
