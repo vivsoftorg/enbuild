@@ -54,6 +54,7 @@ jobs:
           helm repo add jupyterhub https://jupyterhub.github.io/helm-chart
           helm repo add open-webui https://helm.openwebui.com/
           helm repo add loki-stack https://grafana.github.io/helm-charts
+          helm repo add headlamp https://kubernetes-sigs.github.io/headlamp/
 
       # Run the Helm Chart Releaser Action
       - name: Run Chart-Releaser
