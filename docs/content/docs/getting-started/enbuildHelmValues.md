@@ -41,7 +41,8 @@ The following key value pairs are used to configure ENBUILD.
 | `global.image.registry_credentials`          | if the image.registry is private container registry, provide the credentials                                                                                                                     | `{}`                  |
 | `global.image.registry_credentials.username` | Container registry Username                                                                                                                                                                      | `""`                  |
 | `global.image.registry_credentials.password` | Container registry password                                                                                                                                                                      | `""`                  |
-| `global.monitoring.enabled`                  | Should we install loki-stack for monitoring , if yes set to true , set the lok-stack values in the values.yaml                                                                                   | `true`                |
+| `global.monitoring.enabled`                  | Should we install loki-stack for monitoring , if yes set to true , set the lok-stack values in the values.yaml                                                                                   | `false`               |
+| `global.headlamp.enabled`                    | Should we install headlamp for operations , if yes set to true , set the headlamp values in the values.yaml                                                                                      | `false`               |
 
 ### ENBUILD RabbitMQ parameters
 

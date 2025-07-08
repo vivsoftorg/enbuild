@@ -6,7 +6,6 @@ metadata:
 {{- include "enbuild-helm-chart.labels" . | nindent 4 }}
 data:
   default.conf: |-
-
     map $http_upgrade $connection_upgrade {
       default upgrade;
       '' close;
@@ -53,11 +52,20 @@ data:
       }
 {{- end }}
 
+{{- if .Values.global.headlamp.enabled }}
+      location /headlamp/ {
+        proxy_pass http://{{ .Release.Name }}-headlamp/headlamp/;
+      }
+
+{{- end }}
+
 {{- if .Values.global.monitoring.enabled }}
 
       location /grafana/ {
+        # auth_request /auth-check;
+        # error_page 401 = /;
         proxy_pass http://{{ .Release.Name }}-grafana/;
         rewrite ^/grafana/(.*) /$1 break;
      }
 {{- end }}
-    }
+    } # end of server block

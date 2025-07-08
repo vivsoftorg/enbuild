@@ -11,5 +11,8 @@ dependencies:
 - name: loki-stack
   repository: https://grafana.github.io/helm-charts
   version: 2.10.2
-digest: sha256:758c66f2b2c355f96e3ff402eec5d0363900598d699ba7efa08c571c94fb568a
-generated: "2024-08-27T12:03:52.109025+05:30"
+- name: headlamp
+  repository: https://kubernetes-sigs.github.io/headlamp/
+  version: 0.31.1
+digest: sha256:20a3d09cd389550538df9daaf47936de26ee4297b8389022628a4ec94cbdc40d
+generated: "2025-06-25T12:09:31.768342+05:30"
