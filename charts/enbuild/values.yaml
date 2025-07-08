@@ -323,7 +323,8 @@ headlamp:
     - -c
     - mkdir -p /build/plugins && cp -r /plugins/* /build/plugins/
     # image: knrt10/headlamp-plugins-test:latest # it has all the plugins
-    image: ghcr.io/orange-cloudfoundry/headlamp-plugin:latest # no dynamic clusters plugin
+    # image: ghcr.io/orange-cloudfoundry/headlamp-plugin:latest # no dynamic clusters plugin
+    image: ghcr.io/vivsoftorg/enbuild-headlamp-theme:0.0.1
     imagePullPolicy: IfNotPresent
     name: headlamp-plugins
     volumeMounts:
