@@ -5,7 +5,7 @@ type: application
 keywords: [enbuild, bigbang]
 home: https://www.vivsoft.io/
 sources: [https://github.com/jupyterhub/zero-to-jupyterhub-k8s]
-icon: https://github.com/vivsoftorg/docs-enbuild/blob/main/assets/cover.png
+icon: https://enbuild-docs.vivplatform.io/images/emma/enbuild-logo.png
 kubeVersion: '>=1.25.0-0'
 version: 0.0.30
 appVersion: 1.0.23
