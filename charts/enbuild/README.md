@@ -63,6 +63,12 @@ To uninstall/delete the `enbuild` deployment:
 | `global.monitoring.enabled`                  | Should we install loki-stack for monitoring , if yes set to true , set the lok-stack values in the values.yaml                                                                                   | `false`               |
 | `global.headlamp.enabled`                    | Should we install headlamp for operations , if yes set to true , set the headlamp values in the values.yaml                                                                                      | `false`               |
 
+### ENBUILD Backend Services parameters
+
+| Name              | Description                            | Value   |
+| ----------------- | -------------------------------------- | ------- |
+| `jupyter.enabled` | Should we deploy the jupyterhub server | `false` |
+
 ### ENBUILD RabbitMQ parameters
 
 | Name                         | Description                                                          | Value         |
@@ -127,12 +133,6 @@ To uninstall/delete the `enbuild` deployment:
 | `enbuildConsumer.image.repository` | Container repository for enbuildConsumer                               | `enbuild-staging/vivsoft-platform-ui/enbuild-mq-consumer` |
 | `enbuildConsumer.image.tag`        | Container image tag. Skip to use the HelmChart appVersion as Image Tag | `undefined`                                               |
 | `enbuildConsumer.replicas`         | Container enbuildConsumer Replicas                                     | `1`                                                       |
-
-### ENBUILD Backend Services parameters
-
-| Name              | Description                            | Value   |
-| ----------------- | -------------------------------------- | ------- |
-| `jupyter.enabled` | Should we deploy the jupyterhub server | `false` |
 
 ### ENBUILD AI Services parameters
 

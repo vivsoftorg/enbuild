@@ -42,8 +42,11 @@ global:
     # username: registry_user_name
     # password: registry_password
 
+## @section ENBUILD Backend Services parameters
+## @param jupyter.enabled [default: false] Should we deploy the jupyterhub server
 ## @skip jupyterhub
 jupyterhub:
+  enabled: false
   proxy:
     service:
       type: ClusterIP
@@ -169,10 +172,6 @@ enbuildConsumer:
     repository: enbuild-staging/vivsoft-platform-ui/enbuild-mq-consumer
   replicas: 1
 
-## @section ENBUILD Backend Services parameters
-## @param jupyter.enabled [default: false] Should we deploy the jupyterhub server
-jupyter:
-  enabled: false
 ## @section ENBUILD AI Services parameters
 ## @param enbuildAI.enabled [default: false] Should we create the ENBUILD AI microservice, which also controls whether or not to install Ollama.
 ## @param enbuildAI.image.repository  Container repository for enbuildAI

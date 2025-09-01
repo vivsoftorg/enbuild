@@ -20,7 +20,7 @@ dependencies:
   - name: jupyterhub
     version: 3.3.7
     repository: https://jupyterhub.github.io/helm-chart
-    condition: jupyter.enabled
+    condition: jupyterhub.enabled
   - name: open-webui
     version: 3.1.6
     repository: https://helm.openwebui.com/
