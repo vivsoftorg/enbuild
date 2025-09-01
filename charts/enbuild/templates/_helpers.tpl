@@ -68,7 +68,7 @@ Create the name of the service account to use
 {{- end }}
 
 {{- define "jupyterhubUrl" }}
-{{- if .Values.enbuildMl.enabled }}
+{{- if .Values.jupyter.enabled }}
 {{- printf "/jupyter/"}}
 {{- else }}
 {{- .Values.global.jupyterhubUrl -}}

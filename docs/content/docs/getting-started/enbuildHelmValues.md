@@ -109,15 +109,11 @@ The following key value pairs are used to configure ENBUILD.
 | `enbuildConsumer.image.tag`        | Container image tag. Skip to use the HelmChart appVersion as Image Tag | `undefined`                                               |
 | `enbuildConsumer.replicas`         | Container enbuildConsumer Replicas                                     | `1`                                                       |
 
-### ENBUILD ML Services parameters
+### ENBUILD Backend Services parameters
 
-| Name                         | Description                                                                                            | Value                                            |
-| ---------------------------- | ------------------------------------------------------------------------------------------------------ | ------------------------------------------------ |
-| `enbuildMl.enabled`          | Should we create the ENBUILD ML microservice, which also controls whether or not to install jupyterhub | `false`                                          |
-| `enbuildMl.image.repository` | Container repository for enbuildMl                                                                     | `enbuild-staging/vivsoft-platform-ui/enbuild-ml` |
-| `enbuildMl.image.tag`        | Container image tag. Skip to use the HelmChart appVersion as Image Tag                                 | `undefined`                                      |
-| `enbuildMl.replicas`         | Container enbuildMl Replicas                                                                           | `1`                                              |
-| `enbuildMl.service_type`     | enbuildMl service_type                                                                                 | `ClusterIP`                                      |
+| Name              | Description                            | Value   |
+| ----------------- | -------------------------------------- | ------- |
+| `jupyter.enabled` | Should we deploy the jupyterhub server | `false` |
 
 ### ENBUILD AI Services parameters
 

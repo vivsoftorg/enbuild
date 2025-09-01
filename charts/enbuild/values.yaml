@@ -16,7 +16,7 @@
 ## @param global.image.registry_credentials.password  [nullable,string] Container registry password
 ## @param global.monitoring.enabled  [default: false] Should we install loki-stack for monitoring , if yes set to true , set the lok-stack values in the values.yaml
 ## @param global.headlamp.enabled  [default: false] Should we install headlamp for operations , if yes set to true , set the headlamp values in the values.yaml
-## 
+##
 global:
   AppVersion: ""
   domain: ijuned.com
@@ -120,10 +120,10 @@ mongodb:
 ## @param enbuildUi.service_type  enbuildUI service_type
 ## @param enbuildUi.node_port  enbuildUI node_port
 ## @param enbuildUi.hostname  enbuild service hostname. `enbuildUi.hostname`.`global.domain` becomes your FQDN
-## @param enbuildUi.kiali_url  kiali_url 
-## @param enbuildUi.grafana_url  grafana_url 
-## @param enbuildUi.loki_url  loki_url 
-## @param enbuildUi.kubecost_url  kubecost_url 
+## @param enbuildUi.kiali_url  kiali_url
+## @param enbuildUi.grafana_url  grafana_url
+## @param enbuildUi.loki_url  loki_url
+## @param enbuildUi.kubecost_url  kubecost_url
 enbuildUi:
   image:
     repository: enbuild-staging/vivsoft-platform-ui/enbuild-frontend
@@ -169,19 +169,10 @@ enbuildConsumer:
     repository: enbuild-staging/vivsoft-platform-ui/enbuild-mq-consumer
   replicas: 1
 
-## @section ENBUILD ML Services parameters
-## @param enbuildMl.enabled [default: false] Should we create the ENBUILD ML microservice, which also controls whether or not to install jupyterhub
-## @param enbuildMl.image.repository  Container repository for enbuildMl
-## @param enbuildMl.image.tag  [nullable] Container image tag. Skip to use the HelmChart appVersion as Image Tag
-## @param enbuildMl.replicas Container enbuildMl Replicas
-## @param enbuildMl.service_type  enbuildMl service_type
-enbuildMl:
+## @section ENBUILD Backend Services parameters
+## @param jupyter.enabled [default: false] Should we deploy the jupyterhub server
+jupyter:
   enabled: false
-  image:
-    repository: enbuild-staging/vivsoft-platform-ui/enbuild-ml
-  replicas: 1
-  service_type: ClusterIP
-
 ## @section ENBUILD AI Services parameters
 ## @param enbuildAI.enabled [default: false] Should we create the ENBUILD AI microservice, which also controls whether or not to install Ollama.
 ## @param enbuildAI.image.repository  Container repository for enbuildAI

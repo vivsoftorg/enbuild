@@ -10,7 +10,7 @@ data:
       default upgrade;
       '' close;
     }
-    
+
     server {
       listen 8080 default_server;
       server_name _;
@@ -27,23 +27,6 @@ data:
       location /enbuild-user/ {
         proxy_pass http://{{ .Release.Name }}-enbuild-user/;
       }
-
-{{- if .Values.enbuildMl.enabled }}
-
-      location /enbuild-ml/ {
-        proxy_pass http://{{ .Release.Name }}-enbuild-ml/;
-      }
-      {{- if .Values.jupyterhub.cull.enabled }}
-      location /jupyter/ {
-          proxy_pass http://proxy-public/jupyter/;
-          proxy_redirect /hub/ /jupyter/hub/;
-          proxy_cookie_path /hub/ /jupyter/hub/;
-          sub_filter 'href="/hub/' 'href="/jupyter/hub/';
-          sub_filter 'src="/hub/' 'src="/jupyter/hub/';
-          sub_filter_once off;
-      }
-      {{- end }}
-{{- end }}
 
 {{- if .Values.enbuildAI.enabled }}
 
