@@ -10,6 +10,8 @@ metadata:
   {{- include "enbuild-helm-chart.labels" . | nindent 4 }}
 spec:
   replicas: {{ .Values.enbuildUi.replicas }}
+  strategy:
+  type: Recreate
   selector:
     matchLabels:
       app: ui
