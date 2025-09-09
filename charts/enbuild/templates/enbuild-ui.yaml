@@ -11,7 +11,7 @@ metadata:
 spec:
   replicas: {{ .Values.enbuildUi.replicas }}
   strategy:
-  type: Recreate
+    type: Recreate
   selector:
     matchLabels:
       app: ui
