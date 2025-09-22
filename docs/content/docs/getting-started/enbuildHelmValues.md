@@ -41,14 +41,17 @@ The following key value pairs are used to configure ENBUILD.
 | `global.image.registry_credentials`          | if the image.registry is private container registry, provide the credentials                                                                                                                     | `{}`                  |
 | `global.image.registry_credentials.username` | Container registry Username                                                                                                                                                                      | `""`                  |
 | `global.image.registry_credentials.password` | Container registry password                                                                                                                                                                      | `""`                  |
-| `global.monitoring.enabled`                  | Should we install loki-stack for monitoring , if yes set to true , set the lok-stack values in the values.yaml                                                                                   | `false`               |
-| `global.headlamp.enabled`                    | Should we install headlamp for operations , if yes set to true , set the headlamp values in the values.yaml                                                                                      | `false`               |
 
-### ENBUILD Backend Services parameters
+### ENBUILD Lightning Features to be enabled
 
-| Name              | Description                            | Value   |
-| ----------------- | -------------------------------------- | ------- |
-| `jupyter.enabled` | Should we deploy the jupyterhub server | `false` |
+| Name                                                 | Description                    | Value   |
+| ---------------------------------------------------- | ------------------------------ | ------- |
+| `lightning_features.develop_lightning.application`   | Enable Bolt deployment         | `false` |
+| `lightning_features.develop_lightning.models`        | Enable JupyterHub deployment   | `false` |
+| `lightning_features.secure_lightning.ctf`            | Enable CTF deployment          | `false` |
+| `lightning_features.deploy_lightning.ai_lightning`   | Enable AI Lightning deployment | `false` |
+| `lightning_features.operations_lightning.headlamp`   | Enable Headlamp deployment     | `false` |
+| `lightning_features.operations_lightning.monitoring` | Enable Loki Stack deployment   | `false` |
 
 ### ENBUILD RabbitMQ parameters
 
@@ -62,7 +65,7 @@ The following key value pairs are used to configure ENBUILD.
 | `rabbitmq.host`              | If `rabbitmq.enabled` is false , provide the right rabbitmq endpoint | `""`          |
 | `rabbitmq.queue_prefix`      | Queue Prefix for all RabbitMQ Queues                                 | `enbuild`     |
 
-### ENBUILD Backend/DB parameters
+### ENBUILD Database parameters
 
 | Name                          | Description                                                                                                                    | Value                                         |
 | ----------------------------- | ------------------------------------------------------------------------------------------------------------------------------ | --------------------------------------------- |
@@ -107,7 +110,7 @@ The following key value pairs are used to configure ENBUILD.
 | `enbuildUser.replicas`         | Container enbuildUser Replicas                                         | `1`                                                |
 | `enbuildUser.service_type`     | enbuildUser service_type                                               | `ClusterIP`                                        |
 
-### ENBUILD MQ Consumer Services parameters
+### ENBUILD Consumer Services parameters
 
 | Name                               | Description                                                            | Value                                                     |
 | ---------------------------------- | ---------------------------------------------------------------------- | --------------------------------------------------------- |
@@ -125,6 +128,16 @@ The following key value pairs are used to configure ENBUILD.
 | `enbuildAI.replicas`         | Container enbuilAI Replicas                                                                         | `1`                                              |
 | `enbuildAI.service_type`     | enbuildAI service_type                                                                              | `ClusterIP`                                      |
 | `enbuildAI.api_key`          | api_key [default: "dummy"] for OpenAI service if you planning to use OpenAI service                 | `dummy`                                          |
-| `enbuildAI.ollama.enabled`   | model_name for OpenAI service.                                                                      | `"ollama/llama3.1"`                              |
-| `enbuildAI.model_name`       | model_name for OpenAI service.                                                                      | `"ollama/llama3.1"`                              |
+| `enbuildAI.ollama.enabled`   | model_name for OpenAI service.                                                                      | `"ollama/llama3.2"`                              |
+| `enbuildAI.model_name`       | model_name for OpenAI service.                                                                      | `"ollama/llama3.2"`                              |
 | `enbuildAI.ollama_endpoint`  | ollama_endpoint for OpenAI service.                                                                 | `"http://open-webui-ollama:11434"`               |
+
+### enbuildBolt Services parameters
+
+| Name                           | Description                                                                                          | Value                              |
+| ------------------------------ | ---------------------------------------------------------------------------------------------------- | ---------------------------------- |
+| `enbuildBolt.enabled`          | Should we create the enbuildBolt microservice, which also controls whether or not to install Ollama. | `false`                            |
+| `enbuildBolt.image.repository` | Container repository for enbuildBolt                                                                 | `ghcr.io/vivsoftorg/dev-lightning` |
+| `enbuildBolt.image.tag`        | Container image tag. Skip to use the HelmChart appVersion as Image Tag                               | `v1.0.0`                           |
+| `enbuildBolt.replicas`         | Container enbuildBolt Replicas                                                                       | `1`                                |
+| `enbuildBolt.service_type`     | enbuildBolt service_type                                                                             | `ClusterIP`                        |

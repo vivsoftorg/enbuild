@@ -14,17 +14,11 @@
 ## @param global.image.registry_credentials [nullable,object] if the image.registry is private container registry, provide the credentials
 ## @param global.image.registry_credentials.username [nullable,string]  Container registry Username
 ## @param global.image.registry_credentials.password  [nullable,string] Container registry password
-## @param global.monitoring.enabled  [default: false] Should we install loki-stack for monitoring , if yes set to true , set the lok-stack values in the values.yaml
-## @param global.headlamp.enabled  [default: false] Should we install headlamp for operations , if yes set to true , set the headlamp values in the values.yaml
 ##
 global:
   AppVersion: ""
   domain: ijuned.com
   disable_tls_gitlab: false  # Set to true if you are using self-signed certificates
-  monitoring:
-    enabled: false
-  headlamp:
-    enabled: false
   ingress:
     enabled: false
     tls: false
@@ -42,40 +36,24 @@ global:
     # username: registry_user_name
     # password: registry_password
 
-## @section ENBUILD Backend Services parameters
-## @param jupyter.enabled [default: false] Should we deploy the jupyterhub server
-## @skip jupyterhub
-jupyterhub:
-  enabled: false
-  proxy:
-    service:
-      type: ClusterIP
-  hub:
-    baseUrl: /jupyter
-    config:
-      JupyterHub:
-        authenticator_class: dummy
-        allow_named_servers: False
-      Authenticator:
-        auto_login: false
-  cull:
-    enabled: true
-  singleuser:
-    image:
-      pullPolicy: Always
-    profileList:
-      - display_name: "CDAO Reliable AI Instance"
-        description: "Includes base Reliable AI Security Toolkit Python Tools - Counterfit, Foolbox and Armory"
-        default: true
-      - display_name: "CDAO Reliable AI Datascience Instance"
-        description: "Includes base Reliable AI Explainability Toolkit Python Tools - XAITK - Saliency, lime, Shap, Explainer Dashboard"
-        kubespawner_override:
-          image: jupyter/scipy-notebook:latest
-      - display_name: "Spark environment"
-        description: "The Jupyter Stacks spark image!"
-        # kubespawner_override:
-        #   image: jupyter/all-spark-notebook:2343e33dec46
-
+## @section ENBUILD Lightning Features to be enabled
+## @param lightning_features.develop_lightning.application [default: false] Enable Bolt deployment
+## @param lightning_features.develop_lightning.models [default: false] Enable JupyterHub deployment
+## @param lightning_features.secure_lightning.ctf [default: false] Enable CTF deployment
+## @param lightning_features.deploy_lightning.ai_lightning [default: false] Enable AI Lightning deployment
+## @param lightning_features.operations_lightning.headlamp [default: false] Enable Headlamp deployment
+## @param lightning_features.operations_lightning.monitoring [default: false] Enable Loki Stack deployment
+lightning_features:
+  develop_lightning:
+    application: false
+    models: false
+  secure_lightning:
+    ctf: false
+  deploy_lightning:
+    ai_lightning: false
+  operations_lightning:
+    headlamp: false
+    monitoring: false
 
 ## @section ENBUILD RabbitMQ parameters
 ## @param rabbitmq.enabled  [default: true] Set to false to use existing RabbitMQ
@@ -87,6 +65,7 @@ jupyterhub:
 ## @param rabbitmq.host [nullable,string] If `rabbitmq.enabled` is false , provide the right rabbitmq endpoint
 ## @skip rabbitmq.env
 ## @param rabbitmq.queue_prefix Queue Prefix for all RabbitMQ Queues
+
 rabbitmq:
   enabled: true
   replicaCount: 1
@@ -100,7 +79,7 @@ rabbitmq:
   env: prod
   queue_prefix: enbuild
 
-## @section ENBUILD Backend/DB parameters
+## @section ENBUILD Database parameters
 ## @param mongodb.enabled  [default: false] Set to true to Deploy the MongoDB.
 ## @param mongodb.mongo_root_username [string] DB username. If `mongodb.enabled` this is used to to set the username. Else this is username for existing Cosmos or DocumentDB
 ## @param mongodb.mongo_root_password [string]  DB Password. If `mongodb.enabled` this is used to to set the password. Else this is password for existing Cosmos or DocumentDB
@@ -163,7 +142,7 @@ enbuildUser:
   replicas: 1
   service_type: ClusterIP
 
-## @section ENBUILD MQ Consumer Services parameters
+## @section ENBUILD Consumer Services parameters
 ## @param enbuildConsumer.image.repository  Container repository for enbuildConsumer
 ## @param enbuildConsumer.image.tag [nullable] Container image tag. Skip to use the HelmChart appVersion as Image Tag
 ## @param enbuildConsumer.replicas Container enbuildConsumer Replicas
@@ -179,14 +158,13 @@ enbuildConsumer:
 ## @param enbuildAI.replicas Container enbuilAI Replicas
 ## @param enbuildAI.service_type  enbuildAI service_type
 ## @param enbuildAI.api_key  api_key [default: "dummy"] for OpenAI service if you planning to use OpenAI service
-## @param enbuildAI.ollama.enabled [default: "ollama/llama3.1"] model_name for OpenAI service.
-## @param enbuildAI.model_name [default: "ollama/llama3.1"] model_name for OpenAI service.
+## @param enbuildAI.ollama.enabled [default: "ollama/llama3.2"] model_name for OpenAI service.
+## @param enbuildAI.model_name [default: "ollama/llama3.2"] model_name for OpenAI service.
 ## @param enbuildAI.ollama_endpoint [default: "http://open-webui-ollama:11434"] ollama_endpoint for OpenAI service.
 enbuildAI:
-  enabled: false
   ollama:
     enabled: false # Set to true to install Ollama
-  model_name: "ollama/llama3.1"
+  model_name: "ollama/llama3.2"
   api_key: "dummy"
   ollama_endpoint: "http://open-webui-ollama:11434"
   image:
@@ -194,6 +172,20 @@ enbuildAI:
   replicas: 1
   service_type: ClusterIP
 
+## @section enbuildBolt Services parameters
+## @param enbuildBolt.enabled [default: false] Should we create the enbuildBolt microservice, which also controls whether or not to install Ollama.
+## @param enbuildBolt.image.repository  Container repository for enbuildBolt
+## @param enbuildBolt.image.tag  Container image tag. Skip to use the HelmChart appVersion as Image Tag
+## @param enbuildBolt.replicas Container enbuildBolt Replicas
+## @param enbuildBolt.service_type  enbuildBolt service_type
+enbuildBolt:
+  image:
+    repository: ghcr.io/vivsoftorg/dev-lightning
+    tag: v1.0.0
+  replicas: 1
+  service_type: ClusterIP
+
+## Third Party Charts
 ## @skip open-webui
 open-webui:
   ollama:
@@ -534,3 +526,35 @@ headlamp:
 
   # -- Affinity settings for pod assignment
   affinity: {}
+
+## @skip jupyterhub
+jupyterhub:
+  enabled: false
+  proxy:
+    service:
+      type: ClusterIP
+  hub:
+    baseUrl: /jupyter
+    config:
+      JupyterHub:
+        authenticator_class: dummy
+        allow_named_servers: False
+      Authenticator:
+        auto_login: false
+  cull:
+    enabled: true
+  singleuser:
+    image:
+      pullPolicy: Always
+    profileList:
+      - display_name: "CDAO Reliable AI Instance"
+        description: "Includes base Reliable AI Security Toolkit Python Tools - Counterfit, Foolbox and Armory"
+        default: true
+      - display_name: "CDAO Reliable AI Datascience Instance"
+        description: "Includes base Reliable AI Explainability Toolkit Python Tools - XAITK - Saliency, lime, Shap, Explainer Dashboard"
+        kubespawner_override:
+          image: jupyter/scipy-notebook:latest
+      - display_name: "Spark environment"
+        description: "The Jupyter Stacks spark image!"
+        # kubespawner_override:
+        #   image: jupyter/all-spark-notebook:2343e33dec46
