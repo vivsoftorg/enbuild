@@ -28,27 +28,47 @@ data:
         proxy_pass http://{{ .Release.Name }}-enbuild-user/;
       }
 
-{{- if .Values.enbuildAI.enabled }}
+{{- if .Values.lightning_features.deploy_lightning.ai_lightning }}
 
       location /enbuild-ai/ {
         proxy_pass http://{{ .Release.Name }}-enbuild-ai/;
       }
 {{- end }}
 
-{{- if .Values.global.headlamp.enabled }}
+{{- if .Values.lightning_features.operations_lightning.headlamp }}
       location /headlamp/ {
         proxy_pass http://{{ .Release.Name }}-headlamp/headlamp/;
       }
 
 {{- end }}
 
-{{- if .Values.global.monitoring.enabled }}
+{{- if .Values.lightning_features.operations_lightning.monitoring }}
 
       location /grafana/ {
-        # auth_request /auth-check;
-        # error_page 401 = /;
         proxy_pass http://{{ .Release.Name }}-grafana/;
         rewrite ^/grafana/(.*) /$1 break;
      }
+{{- end }}
+
+{{- if .Values.lightning_features.develop_lightning.application }}
+
+      location /bolt/ {
+          proxy_pass http://{{ .Release.Name }}-bolt/bolt/;
+          proxy_http_version 1.1;
+          proxy_set_header Upgrade $http_upgrade;
+          proxy_set_header Connection 'upgrade';
+          proxy_set_header Host $host;
+      }
+{{- end }}
+
+{{- if .Values.lightning_features.develop_lightning.models }}
+        location /jupyter/ {
+            proxy_pass http://proxy-public/jupyter/;
+            proxy_redirect /hub/ /jupyter/hub/;
+            proxy_cookie_path /hub/ /jupyter/hub/;
+            sub_filter 'href="/hub/' 'href="/jupyter/hub/';
+            sub_filter 'src="/hub/' 'src="/jupyter/hub/';
+            sub_filter_once off;
+        }
 {{- end }}
     } # end of server block
