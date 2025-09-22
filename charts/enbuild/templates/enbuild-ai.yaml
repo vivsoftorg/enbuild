@@ -1,4 +1,4 @@
-{{- if .Values.enbuildAI.enabled -}}
+{{- if .Values.lightning_features.deploy_lightning.ai_lightning -}}
 ---
 apiVersion: apps/v1
 kind: Deployment

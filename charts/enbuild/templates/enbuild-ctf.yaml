@@ -1,0 +1,3 @@
+{ { - if .Values.lightning_features.secure_lightning.ctf - } }
+---
+{ { - end } }
