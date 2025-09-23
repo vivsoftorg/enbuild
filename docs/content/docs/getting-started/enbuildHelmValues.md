@@ -120,24 +120,22 @@ The following key value pairs are used to configure ENBUILD.
 
 ### ENBUILD AI Services parameters
 
-| Name                         | Description                                                                                         | Value                                            |
-| ---------------------------- | --------------------------------------------------------------------------------------------------- | ------------------------------------------------ |
-| `enbuildAI.enabled`          | Should we create the ENBUILD AI microservice, which also controls whether or not to install Ollama. | `false`                                          |
-| `enbuildAI.image.repository` | Container repository for enbuildAI                                                                  | `enbuild-staging/vivsoft-platform-ui/enbuild-ai` |
-| `enbuildAI.image.tag`        | Container image tag. Skip to use the HelmChart appVersion as Image Tag                              | `undefined`                                      |
-| `enbuildAI.replicas`         | Container enbuilAI Replicas                                                                         | `1`                                              |
-| `enbuildAI.service_type`     | enbuildAI service_type                                                                              | `ClusterIP`                                      |
-| `enbuildAI.api_key`          | api_key [default: "dummy"] for OpenAI service if you planning to use OpenAI service                 | `dummy`                                          |
-| `enbuildAI.ollama.enabled`   | model_name for OpenAI service.                                                                      | `"ollama/llama3.2"`                              |
-| `enbuildAI.model_name`       | model_name for OpenAI service.                                                                      | `"ollama/llama3.2"`                              |
-| `enbuildAI.ollama_endpoint`  | ollama_endpoint for OpenAI service.                                                                 | `"http://open-webui-ollama:11434"`               |
+| Name                         | Description                                                                         | Value                                            |
+| ---------------------------- | ----------------------------------------------------------------------------------- | ------------------------------------------------ |
+| `enbuildAI.image.repository` | Container repository for enbuildAI                                                  | `enbuild-staging/vivsoft-platform-ui/enbuild-ai` |
+| `enbuildAI.image.tag`        | Container image tag. Skip to use the HelmChart appVersion as Image Tag              | `undefined`                                      |
+| `enbuildAI.replicas`         | Container enbuilAI Replicas                                                         | `1`                                              |
+| `enbuildAI.service_type`     | enbuildAI service_type                                                              | `ClusterIP`                                      |
+| `enbuildAI.api_key`          | api_key [default: "dummy"] for OpenAI service if you planning to use OpenAI service | `dummy`                                          |
+| `enbuildAI.ollama.enabled`   | model_name for OpenAI service.                                                      | `"ollama/llama3.2"`                              |
+| `enbuildAI.model_name`       | model_name for OpenAI service.                                                      | `"ollama/llama3.2"`                              |
+| `enbuildAI.ollama_endpoint`  | ollama_endpoint for OpenAI service.                                                 | `"http://open-webui-ollama:11434"`               |
 
 ### enbuildBolt Services parameters
 
-| Name                           | Description                                                                                          | Value                              |
-| ------------------------------ | ---------------------------------------------------------------------------------------------------- | ---------------------------------- |
-| `enbuildBolt.enabled`          | Should we create the enbuildBolt microservice, which also controls whether or not to install Ollama. | `false`                            |
-| `enbuildBolt.image.repository` | Container repository for enbuildBolt                                                                 | `ghcr.io/vivsoftorg/dev-lightning` |
-| `enbuildBolt.image.tag`        | Container image tag. Skip to use the HelmChart appVersion as Image Tag                               | `v1.0.0`                           |
-| `enbuildBolt.replicas`         | Container enbuildBolt Replicas                                                                       | `1`                                |
-| `enbuildBolt.service_type`     | enbuildBolt service_type                                                                             | `ClusterIP`                        |
+| Name                           | Description                                                            | Value                              |
+| ------------------------------ | ---------------------------------------------------------------------- | ---------------------------------- |
+| `enbuildBolt.image.repository` | Container repository for enbuildBolt                                   | `ghcr.io/vivsoftorg/dev-lightning` |
+| `enbuildBolt.image.tag`        | Container image tag. Skip to use the HelmChart appVersion as Image Tag | `v1.0.0`                           |
+| `enbuildBolt.replicas`         | Container enbuildBolt Replicas                                         | `1`                                |
+| `enbuildBolt.service_type`     | enbuildBolt service_type                                               | `ClusterIP`                        |

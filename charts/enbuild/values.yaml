@@ -18,7 +18,7 @@
 global:
   AppVersion: ""
   domain: ijuned.com
-  disable_tls_gitlab: false  # Set to true if you are using self-signed certificates
+  disable_tls_gitlab: false # Set to true if you are using self-signed certificates
   ingress:
     enabled: false
     tls: false
@@ -152,7 +152,6 @@ enbuildConsumer:
   replicas: 1
 
 ## @section ENBUILD AI Services parameters
-## @param enbuildAI.enabled [default: false] Should we create the ENBUILD AI microservice, which also controls whether or not to install Ollama.
 ## @param enbuildAI.image.repository  Container repository for enbuildAI
 ## @param enbuildAI.image.tag  [nullable] Container image tag. Skip to use the HelmChart appVersion as Image Tag
 ## @param enbuildAI.replicas Container enbuilAI Replicas
@@ -173,7 +172,6 @@ enbuildAI:
   service_type: ClusterIP
 
 ## @section enbuildBolt Services parameters
-## @param enbuildBolt.enabled [default: false] Should we create the enbuildBolt microservice, which also controls whether or not to install Ollama.
 ## @param enbuildBolt.image.repository  Container repository for enbuildBolt
 ## @param enbuildBolt.image.tag  Container image tag. Skip to use the HelmChart appVersion as Image Tag
 ## @param enbuildBolt.replicas Container enbuildBolt Replicas
@@ -195,7 +193,7 @@ open-webui:
     ollama:
       gpu:
         enabled: false
-        type: 'nvidia'
+        type: "nvidia"
         number: 1
       models:
         - llama3.2:1b
@@ -245,14 +243,14 @@ loki-stack:
       dashboardproviders.yaml:
         apiVersion: 1
         providers:
-        - name: 'default'
-          orgId: 1
-          folder: ''
-          type: file
-          disableDeletion: false
-          editable: true
-          options:
-            path: /var/lib/grafana/dashboards/default
+          - name: "default"
+            orgId: 1
+            folder: ""
+            type: file
+            disableDeletion: false
+            editable: true
+            options:
+              path: /var/lib/grafana/dashboards/default
     grafana.ini:
       preferences:
         theme: light
@@ -300,50 +298,50 @@ headlamp:
 
   # -- An optional list of init containers to be run before the main containers.
   initContainers:
-  - command:
-    - /bin/sh
-    - -c
-    - mkdir -p /build/plugins && cp -r /plugins/* /build/plugins/
-    # image: knrt10/headlamp-plugins-test:latest # it has all the plugins
-    # image: ghcr.io/orange-cloudfoundry/headlamp-plugin:latest # no dynamic clusters plugin
-    image: ghcr.io/vivsoftorg/enbuild-headlamp-theme:0.0.1
-    imagePullPolicy: IfNotPresent
-    name: headlamp-plugins
-    volumeMounts:
-    - mountPath: /build/plugins
+    - command:
+        - /bin/sh
+        - -c
+        - mkdir -p /build/plugins && cp -r /plugins/* /build/plugins/
+      # image: knrt10/headlamp-plugins-test:latest # it has all the plugins
+      # image: ghcr.io/orange-cloudfoundry/headlamp-plugin:latest # no dynamic clusters plugin
+      image: ghcr.io/vivsoftorg/enbuild-headlamp-theme:0.0.1
+      imagePullPolicy: IfNotPresent
       name: headlamp-plugins
+      volumeMounts:
+        - mountPath: /build/plugins
+          name: headlamp-plugins
 
-  - command:
-      - /bin/sh
-      - "-c"
-      - |
-        kubectl config set-cluster main --server=https://kubernetes.default.svc --certificate-authority=/var/run/secrets/kubernetes.io/serviceaccount/ca.crt
-        kubectl config set-credentials main --token=$(cat /var/run/secrets/kubernetes.io/serviceaccount/token)
-        kubectl config set-context main --cluster=main --user=main
-        kubectl config use-context main
-    env:
-      - name: KUBERNETES_SERVICE_HOST
-        valueFrom:
-          fieldRef:
-            fieldPath: status.hostIP
-      - name: KUBERNETES_SERVICE_PORT
-        value: "6443"
-      - name: KUBECONFIG
-        value: /home/headlamp/.config/Headlamp/kubeconfigs/config
-    image: bitnami/kubectl:1.32.0
-    name: create-kubeconfig
-    securityContext:
-      capabilities:
-        drop:
-          - ALL
-      privileged: false
-      readOnlyRootFilesystem: true
-      runAsGroup: 101
-      runAsNonRoot: true
-      runAsUser: 100
-    volumeMounts:
-      - mountPath: /home/headlamp/.config/Headlamp/kubeconfigs
-        name: kubeconfig
+    - command:
+        - /bin/sh
+        - "-c"
+        - |
+          kubectl config set-cluster main --server=https://kubernetes.default.svc --certificate-authority=/var/run/secrets/kubernetes.io/serviceaccount/ca.crt
+          kubectl config set-credentials main --token=$(cat /var/run/secrets/kubernetes.io/serviceaccount/token)
+          kubectl config set-context main --cluster=main --user=main
+          kubectl config use-context main
+      env:
+        - name: KUBERNETES_SERVICE_HOST
+          valueFrom:
+            fieldRef:
+              fieldPath: status.hostIP
+        - name: KUBERNETES_SERVICE_PORT
+          value: "6443"
+        - name: KUBECONFIG
+          value: /home/headlamp/.config/Headlamp/kubeconfigs/config
+      image: bitnami/kubectl:1.32.0
+      name: create-kubeconfig
+      securityContext:
+        capabilities:
+          drop:
+            - ALL
+        privileged: false
+        readOnlyRootFilesystem: true
+        runAsGroup: 101
+        runAsNonRoot: true
+        runAsUser: 100
+      volumeMounts:
+        - mountPath: /home/headlamp/.config/Headlamp/kubeconfigs
+          name: kubeconfig
 
   config:
     # -- base url path at which headlamp should run
@@ -395,7 +393,7 @@ headlamp:
     pluginsDir: "/build/plugins"
     # Extra arguments that can be given to the container. See charts/headlamp/README.md for more information.
     extraArgs:
-    - "-enable-dynamic-clusters"
+      - "-enable-dynamic-clusters"
 
   # -- An optional list of environment variables
   # env:
@@ -445,31 +443,30 @@ headlamp:
 
   # -- Headlamp containers volume mounts
   volumeMounts:
-  - mountPath: /build/plugins
-    name: headlamp-plugins
+    - mountPath: /build/plugins
+      name: headlamp-plugins
 
-  - mountPath: /home/headlamp/.config/Headlamp/kubeconfigs/config
-    name: kubeconfig
-    readOnly: true
-    subPath: config
+    - mountPath: /home/headlamp/.config/Headlamp/kubeconfigs/config
+      name: kubeconfig
+      readOnly: true
+      subPath: config
 
   # -- Headlamp pod's volumes
   volumes:
-  - name: headlamp-plugins
-    persistentVolumeClaim:
-      claimName: enbuild-headlamp
-  - name: kubeconfig
-    emptyDir: {}
+    - name: headlamp-plugins
+      persistentVolumeClaim:
+        claimName: enbuild-headlamp
+    - name: kubeconfig
+      emptyDir: {}
 
   persistentVolumeClaim:
     # -- Enable Persistent Volume Claim
     enabled: true
     # -- Annotations to add to the persistent volume claim (if enabled)
-    annotations:
-      {}
+    annotations: {}
     # -- accessModes for the persistent volume claim, eg: ReadWriteOnce, ReadOnlyMany, ReadWriteMany etc.
     accessModes:
-    - ReadWriteOnce
+      - ReadWriteOnce
     # -- size of the persistent volume claim, eg: 10Gi. Required if enabled is true.
     size: "1Gi"
     # -- storageClassName for the persistent volume claim.
