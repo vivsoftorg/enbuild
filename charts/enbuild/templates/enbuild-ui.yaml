@@ -55,7 +55,7 @@ spec:
 {{- end }}
       volumes:
       - configMap:
-          defaultMode: 0755
+          defaultMode: "0755"
           name: {{ .Release.Name }}-frontend-config
         name: frontend-config
       - configMap:

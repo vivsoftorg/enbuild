@@ -13,7 +13,7 @@ spec:
   selector:
     matchLabels:
       app: bolt
-      app.kubernetes.io/component: ai
+      app.kubernetes.io/component: bolt
     {{- include "enbuild-helm-chart.selectorLabels" . | nindent 6 }}
   template:
     metadata:
@@ -39,21 +39,14 @@ spec:
           - name: RUNNING_IN_DOCKER
             value: "true"
         imagePullPolicy: {{ .Values.global.image.pullPolicy }}
-        image: {{ .Values.global.image.registry }}/${{ .Values.enbuildBolt.image.repository }}:{{ default .Chart.AppVersion (default .Values.global.AppVersion .Values.enbuildBolt.image.tag) }}
+        image: "{{ .Values.enbuildBolt.image.repository }}:{{ .Values.enbuildBolt.image.tag }}"
+        # image: {{ .Values.global.image.registry }}/{{ .Values.enbuildBolt.image.repository }}:{{ default .Chart.AppVersion (default .Values.global.AppVersion .Values.enbuildBolt.image.tag) }}
         name: enbuild-bolt
         ports:
         - containerPort: 5173
         resources: {}
         securityContext:
           allowPrivilegeEscalation: false
-          capabilities:
-            drop:
-            - ALL
-          privileged: false
-          runAsGroup: 1001
-          runAsNonRoot: true
-          readOnlyRootFilesystem: false
-          runAsUser: 1001
 {{- if .Values.global.image.registry_credentials }}
       imagePullSecrets:
       - name: {{ .Release.Name }}-image-pull-secret
