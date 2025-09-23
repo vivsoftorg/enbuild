@@ -20,3 +20,29 @@ data:
       REACT_APP_COST_UTILIZATION_KUBECOST_IFRAME_URL: "{{ .Values.enbuildUi.kubecost_url }}",
       REACT_APP_LOGS_GRAFANA_IFRAME_URL: "{{ .Values.enbuildUi.loki_url }}",
     };
+    featureFlags.json: |
+      {
+        "develop_lightning": {
+          "application": {{ .Values.lightning_features.develop_lightning.application | quote | default "false" }},
+          "models": {{ .Values.lightning_features.develop_lightning.models | quote | default "false" }}
+        },
+        "secure_lightning": {
+          "ctf": {{ .Values.lightning_features.secure_lightning.ctf | quote | default "false" }}
+        },
+        "deploy_lightning": {
+          "infra_lightning": {
+            "delete_stack": true,
+            "clone_stack": true,
+            "request": true
+          },
+          "ai_lightning": {
+            "deploy_models": {{ .Values.lightning_features.deploy_lightning.ai_lightning | quote | default "false" }},
+            "fabric": {{ .Values.lightning_features.deploy_lightning.ai_lightning | quote | default "false" }},
+            "link": {{ .Values.lightning_features.deploy_lightning.ai_lightning | quote | default "false" }}
+          },
+          "data_lightning": false
+        },
+        "operations_lightning": {
+          "headlamp": {{ .Values.lightning_features.operations_lightning.headlamp | quote | default "false" }}
+        }
+      }
