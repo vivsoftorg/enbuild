@@ -1,0 +1,8 @@
+{{- if .Values.lightning_features.secure_lightning.ctf }}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: enbuild-ctf-configmap
+data:
+  dummy-key: dummy-value
+{{- end }}

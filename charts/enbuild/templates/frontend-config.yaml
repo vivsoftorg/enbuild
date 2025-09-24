@@ -7,9 +7,9 @@ metadata:
 data:
   config.js: |
     window.ENV_VAR = {
-{{- if .Values.jupyterhub.enabled }}
+    {{- if .Values.jupyterhub.enabled }}
       REACT_APP_JUPYTER_NOTEBOOK_URL: "{{ template "jupyterhubUrl" . }}",
-{{- end }}
+    {{- end }}
       REACT_APP_API_DOMAIN_PRODUCTION: "/enbuild-bk",
       REACT_APP_API_REQUEST_DOMAIN_PRODUCTION: "/enbuild-request",
       REACT_APP_API_USER_DOMAIN_PRODUCTION: "/enbuild-user",
@@ -19,5 +19,30 @@ data:
       REACT_APP_MONITORING_GRAFANA_IFRAME_URL: "{{ .Values.enbuildUi.grafana_url }}",
       REACT_APP_COST_UTILIZATION_KUBECOST_IFRAME_URL: "{{ .Values.enbuildUi.kubecost_url }}",
       REACT_APP_LOGS_GRAFANA_IFRAME_URL: "{{ .Values.enbuildUi.loki_url }}",
-      REACT_APP_FEATURE_FLAG: "deleteStack,cloneStack,request,dataStacks,operations{{- if .Values.global.headlamp.enabled -}},headlamp{{- end }}{{- if .Values.jupyterhub.enabled -}},ml{{- end }}{{- if .Values.enbuildAI.enabled -}},genai,ctf{{- end }}",
     };
+  featureFlags.json: |
+    {
+      "develop_lightning": {
+        "application": {{ .Values.lightning_features.develop_lightning.application | quote | default "false" }},
+        "models": {{ .Values.lightning_features.develop_lightning.models | quote | default "false" }}
+      },
+      "secure_lightning": {
+        "ctf": {{ .Values.lightning_features.secure_lightning.ctf | quote | default "false" }}
+      },
+      "deploy_lightning": {
+        "infra_lightning": {
+          "delete_stack": true,
+          "clone_stack": true,
+          "request": true
+        },
+        "ai_lightning": {
+          "deploy_models": {{ .Values.lightning_features.deploy_lightning.ai_lightning | quote | default "false" }},
+          "fabric": {{ .Values.lightning_features.deploy_lightning.ai_lightning | quote | default "false" }},
+          "link": {{ .Values.lightning_features.deploy_lightning.ai_lightning | quote | default "false" }}
+        },
+        "data_lightning": false
+      },
+      "operations_lightning": {
+        "headlamp": {{ .Values.lightning_features.operations_lightning.headlamp | quote | default "false" }}
+      }
+    }
