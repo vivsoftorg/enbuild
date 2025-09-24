@@ -5,6 +5,11 @@ metadata:
   labels:
 {{- include "enbuild-helm-chart.labels" . | nindent 4 }}
 data:
+  override.conf: |-
+    # blank override.conf
+    # Intentionally left empty
+
+
   default.conf: |-
     map $http_upgrade $connection_upgrade {
       default upgrade;
