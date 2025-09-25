@@ -21,28 +21,29 @@ data:
       REACT_APP_LOGS_GRAFANA_IFRAME_URL: "{{ .Values.enbuildUi.loki_url }}",
     };
   featureFlags.json: |
-    {
-      "develop_lightning": {
-        "application": {{ .Values.lightning_features.develop_lightning.application | quote | default "false" }},
-        "models": {{ .Values.lightning_features.develop_lightning.models | quote | default "false" }}
-      },
-      "secure_lightning": {
-        "ctf": {{ .Values.lightning_features.secure_lightning.ctf | quote | default "false" }}
-      },
-      "deploy_lightning": {
-        "infra_lightning": {
-          "delete_stack": true,
-          "clone_stack": true,
-          "request": true
-        },
-        "ai_lightning": {
-          "deploy_models": {{ .Values.lightning_features.deploy_lightning.ai_lightning | quote | default "false" }},
-          "fabric": {{ .Values.lightning_features.deploy_lightning.ai_lightning | quote | default "false" }},
-          "link": {{ .Values.lightning_features.deploy_lightning.ai_lightning | quote | default "false" }}
-        },
-        "data_lightning": false
-      },
-      "operations_lightning": {
-        "headlamp": {{ .Values.lightning_features.operations_lightning.headlamp | quote | default "false" }}
-      }
-    }
+    {{- $flags := dict
+      "develop_lightning" (dict
+        "application" (.Values.lightning_features.develop_lightning.application | default false)
+        "models" (.Values.lightning_features.develop_lightning.models | default false)
+      )
+      "secure_lightning" (dict
+        "ctf" (.Values.lightning_features.secure_lightning.ctf | default false)
+      )
+      "deploy_lightning" (dict
+        "infra_lightning" (dict
+          "delete_stack" true
+          "clone_stack" true
+          "request" true
+        )
+        "ai_lightning" (dict
+          "deploy_models" (.Values.lightning_features.deploy_lightning.ai_lightning | default false)
+          "fabric" (.Values.lightning_features.deploy_lightning.ai_lightning | default false)
+          "link" (.Values.lightning_features.deploy_lightning.ai_lightning | default false)
+        )
+        "data_lightning" false
+      )
+      "operations_lightning" (dict
+        "headlamp" (.Values.lightning_features.operations_lightning.headlamp | default false)
+      )
+    }}
+    {{ $flags | toJson }}
