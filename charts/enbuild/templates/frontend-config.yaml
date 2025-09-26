@@ -27,7 +27,7 @@ data:
         "models" (.Values.lightning_features.develop_lightning.models | default false)
       )
       "secure_lightning" (dict
-        "ctf" (.Values.lightning_features.secure_lightning.ctf | default false)
+        "ctf_lightning" (.Values.lightning_features.secure_lightning.ctf | default false)
       )
       "deploy_lightning" (dict
         "infra_lightning" (dict
