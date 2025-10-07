@@ -65,6 +65,9 @@ lightning_features:
 ## @param rabbitmq.host [nullable,string] If `rabbitmq.enabled` is false , provide the right rabbitmq endpoint
 ## @skip rabbitmq.env
 ## @param rabbitmq.queue_prefix Queue Prefix for all RabbitMQ Queues
+## @param rabbitmq.image.registry RabbitMQ image registry
+## @param rabbitmq.image.repository RabbitMQ image repository
+## @param rabbitmq.image.tag RabbitMQ image tag
 
 rabbitmq:
   enabled: true
@@ -78,6 +81,10 @@ rabbitmq:
   host: rabbitmq.rabbitmq # Needed only rabbitmq.enabled is false
   env: prod
   queue_prefix: enbuild
+  image:
+    registry: public.ecr.aws
+    repository: bitnami/rabbitmq
+    tag: 3.11.13-debian-11-r0
 
 ## @section ENBUILD Database parameters
 ## @param mongodb.enabled  [default: false] Set to true to Deploy the MongoDB.

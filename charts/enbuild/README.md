@@ -74,15 +74,18 @@ To uninstall/delete the `enbuild` deployment:
 
 ### ENBUILD RabbitMQ parameters
 
-| Name                         | Description                                                          | Value         |
-| ---------------------------- | -------------------------------------------------------------------- | ------------- |
-| `rabbitmq.enabled`           | Set to false to use existing RabbitMQ                                | `true`        |
-| `rabbitmq.replicaCount`      | RabbitMQ replicaCount                                                | `1`           |
-| `rabbitmq.auth.username`     | RabbitMQ username                                                    | `admin`       |
-| `rabbitmq.auth.password`     | RabbitMQ password                                                    | `SuperSecret` |
-| `rabbitmq.auth.erlangCookie` | RabbitMQ erlangCookie                                                | `lamba`       |
-| `rabbitmq.host`              | If `rabbitmq.enabled` is false , provide the right rabbitmq endpoint | `""`          |
-| `rabbitmq.queue_prefix`      | Queue Prefix for all RabbitMQ Queues                                 | `enbuild`     |
+| Name                         | Description                                                          | Value                  |
+| ---------------------------- | -------------------------------------------------------------------- | ---------------------- |
+| `rabbitmq.enabled`           | Set to false to use existing RabbitMQ                                | `true`                 |
+| `rabbitmq.replicaCount`      | RabbitMQ replicaCount                                                | `1`                    |
+| `rabbitmq.auth.username`     | RabbitMQ username                                                    | `admin`                |
+| `rabbitmq.auth.password`     | RabbitMQ password                                                    | `SuperSecret`          |
+| `rabbitmq.auth.erlangCookie` | RabbitMQ erlangCookie                                                | `lamba`                |
+| `rabbitmq.host`              | If `rabbitmq.enabled` is false , provide the right rabbitmq endpoint | `""`                   |
+| `rabbitmq.queue_prefix`      | Queue Prefix for all RabbitMQ Queues                                 | `enbuild`              |
+| `rabbitmq.image.registry`    | RabbitMQ image registry                                              | `public.ecr.aws`       |
+| `rabbitmq.image.repository`  | RabbitMQ image repository                                            | `bitnami/rabbitmq`     |
+| `rabbitmq.image.tag`         | RabbitMQ image tag                                                   | `3.11.13-debian-11-r0` |
 
 ### ENBUILD Database parameters
 
