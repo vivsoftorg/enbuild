@@ -30,6 +30,6 @@ dependencies:
     repository: https://grafana.github.io/helm-charts
     condition: lightning_features.operations_lightning.monitoring
   - name: headlamp
-    version: 0.31.1
+    version: 0.36.0
     repository: https://kubernetes-sigs.github.io/headlamp/
     condition: lightning_features.operations_lightning.headlamp
