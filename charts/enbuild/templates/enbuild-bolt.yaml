@@ -1,0 +1,73 @@
+{{- if .Values.lightning_features.develop_lightning.application -}}
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ .Release.Name }}-enbuild-bolt
+  labels:
+    app: bolt
+    app.kubernetes.io/component: bolt
+  {{- include "enbuild-helm-chart.labels" . | nindent 4 }}
+spec:
+  replicas: {{ .Values.enbuildBolt.replicas }}
+  selector:
+    matchLabels:
+      app: bolt
+      app.kubernetes.io/component: bolt
+    {{- include "enbuild-helm-chart.selectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      labels:
+        app: bolt
+        app.kubernetes.io/component: bolt
+      {{- include "enbuild-helm-chart.selectorLabels" . | nindent 8 }}
+    spec:
+      containers:
+      - env:
+          - name: MAX_CONTEXT_LENGTH
+            value: "1000"
+          - name: NODE_ENV
+            value: "development"
+          - name: VITE_SERVER_ALLOWED_HOSTS
+            value: "lightning.vivplatform.io,{{ .Values.enbuildUi.hostname }}.{{ .Values.global.domain }}"
+          - name: VITE_BASE_PATH
+            value: "/bolt/"
+          - name: PORT
+            value: "5173"
+          - name: DEFAULT_NUM_CTX
+            value: "32768"
+          - name: RUNNING_IN_DOCKER
+            value: "true"
+        imagePullPolicy: {{ .Values.global.image.pullPolicy }}
+        image: "{{ .Values.enbuildBolt.image.repository }}:{{ .Values.enbuildBolt.image.tag }}"
+        # image: {{ .Values.global.image.registry }}/{{ .Values.enbuildBolt.image.repository }}:{{ default .Chart.AppVersion (default .Values.global.AppVersion .Values.enbuildBolt.image.tag) }}
+        name: enbuild-bolt
+        ports:
+        - containerPort: 5173
+        resources: {}
+        securityContext:
+          allowPrivilegeEscalation: false
+{{- if .Values.global.image.registry_credentials }}
+      imagePullSecrets:
+      - name: {{ .Release.Name }}-image-pull-secret
+{{- end }}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ .Release.Name }}-enbuild-bolt
+  labels:
+    app: bolt
+    app.kubernetes.io/component: bolt
+  {{- include "enbuild-helm-chart.labels" . | nindent 4 }}
+spec:
+  type: {{ .Values.enbuildBolt.service_type }}
+  selector:
+    app: bolt
+    app.kubernetes.io/component: bolt
+  {{- include "enbuild-helm-chart.selectorLabels" . | nindent 4 }}
+  ports:
+  - port: 80
+    protocol: TCP
+    targetPort: 5173
+{{- end }}

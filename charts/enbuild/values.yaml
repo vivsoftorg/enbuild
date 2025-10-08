@@ -14,17 +14,11 @@
 ## @param global.image.registry_credentials [nullable,object] if the image.registry is private container registry, provide the credentials
 ## @param global.image.registry_credentials.username [nullable,string]  Container registry Username
 ## @param global.image.registry_credentials.password  [nullable,string] Container registry password
-## @param global.monitoring.enabled  [default: false] Should we install loki-stack for monitoring , if yes set to true , set the lok-stack values in the values.yaml
-## @param global.headlamp.enabled  [default: false] Should we install headlamp for operations , if yes set to true , set the headlamp values in the values.yaml
-## 
+##
 global:
   AppVersion: ""
   domain: ijuned.com
-  disable_tls_gitlab: false  # Set to true if you are using self-signed certificates
-  monitoring:
-    enabled: false
-  headlamp:
-    enabled: false
+  disable_tls_gitlab: false # Set to true if you are using self-signed certificates
   ingress:
     enabled: false
     tls: false
@@ -42,37 +36,24 @@ global:
     # username: registry_user_name
     # password: registry_password
 
-## @skip jupyterhub
-jupyterhub:
-  proxy:
-    service:
-      type: ClusterIP
-  hub:
-    baseUrl: /jupyter
-    config:
-      JupyterHub:
-        authenticator_class: dummy
-        allow_named_servers: False
-      Authenticator:
-        auto_login: false
-  cull:
-    enabled: true
-  singleuser:
-    image:
-      pullPolicy: Always
-    profileList:
-      - display_name: "CDAO Reliable AI Instance"
-        description: "Includes base Reliable AI Security Toolkit Python Tools - Counterfit, Foolbox and Armory"
-        default: true
-      - display_name: "CDAO Reliable AI Datascience Instance"
-        description: "Includes base Reliable AI Explainability Toolkit Python Tools - XAITK - Saliency, lime, Shap, Explainer Dashboard"
-        kubespawner_override:
-          image: jupyter/scipy-notebook:latest
-      - display_name: "Spark environment"
-        description: "The Jupyter Stacks spark image!"
-        # kubespawner_override:
-        #   image: jupyter/all-spark-notebook:2343e33dec46
-
+## @section ENBUILD Lightning Features to be enabled
+## @param lightning_features.develop_lightning.application [default: false] Enable Bolt deployment
+## @param lightning_features.develop_lightning.models [default: false] Enable JupyterHub deployment
+## @param lightning_features.secure_lightning.ctf [default: false] Enable CTF deployment
+## @param lightning_features.deploy_lightning.ai_lightning [default: false] Enable AI Lightning deployment
+## @param lightning_features.operations_lightning.headlamp [default: false] Enable Headlamp deployment
+## @param lightning_features.operations_lightning.monitoring [default: false] Enable Loki Stack deployment
+lightning_features:
+  develop_lightning:
+    application: false
+    models: false
+  secure_lightning:
+    ctf: false
+  deploy_lightning:
+    ai_lightning: false
+  operations_lightning:
+    headlamp: false
+    monitoring: false
 
 ## @section ENBUILD RabbitMQ parameters
 ## @param rabbitmq.enabled  [default: true] Set to false to use existing RabbitMQ
@@ -84,6 +65,10 @@ jupyterhub:
 ## @param rabbitmq.host [nullable,string] If `rabbitmq.enabled` is false , provide the right rabbitmq endpoint
 ## @skip rabbitmq.env
 ## @param rabbitmq.queue_prefix Queue Prefix for all RabbitMQ Queues
+## @param rabbitmq.image.registry RabbitMQ image registry
+## @param rabbitmq.image.repository RabbitMQ image repository
+## @param rabbitmq.image.tag RabbitMQ image tag
+
 rabbitmq:
   enabled: true
   replicaCount: 1
@@ -96,8 +81,12 @@ rabbitmq:
   host: rabbitmq.rabbitmq # Needed only rabbitmq.enabled is false
   env: prod
   queue_prefix: enbuild
+  image:
+    registry: public.ecr.aws
+    repository: bitnami/rabbitmq
+    tag: 3.11.13-debian-11-r0
 
-## @section ENBUILD Backend/DB parameters
+## @section ENBUILD Database parameters
 ## @param mongodb.enabled  [default: false] Set to true to Deploy the MongoDB.
 ## @param mongodb.mongo_root_username [string] DB username. If `mongodb.enabled` this is used to to set the username. Else this is username for existing Cosmos or DocumentDB
 ## @param mongodb.mongo_root_password [string]  DB Password. If `mongodb.enabled` this is used to to set the password. Else this is password for existing Cosmos or DocumentDB
@@ -120,10 +109,10 @@ mongodb:
 ## @param enbuildUi.service_type  enbuildUI service_type
 ## @param enbuildUi.node_port  enbuildUI node_port
 ## @param enbuildUi.hostname  enbuild service hostname. `enbuildUi.hostname`.`global.domain` becomes your FQDN
-## @param enbuildUi.kiali_url  kiali_url 
-## @param enbuildUi.grafana_url  grafana_url 
-## @param enbuildUi.loki_url  loki_url 
-## @param enbuildUi.kubecost_url  kubecost_url 
+## @param enbuildUi.kiali_url  kiali_url
+## @param enbuildUi.grafana_url  grafana_url
+## @param enbuildUi.loki_url  loki_url
+## @param enbuildUi.kubecost_url  kubecost_url
 enbuildUi:
   image:
     repository: enbuild-staging/vivsoft-platform-ui/enbuild-frontend
@@ -160,7 +149,7 @@ enbuildUser:
   replicas: 1
   service_type: ClusterIP
 
-## @section ENBUILD MQ Consumer Services parameters
+## @section ENBUILD Consumer Services parameters
 ## @param enbuildConsumer.image.repository  Container repository for enbuildConsumer
 ## @param enbuildConsumer.image.tag [nullable] Container image tag. Skip to use the HelmChart appVersion as Image Tag
 ## @param enbuildConsumer.replicas Container enbuildConsumer Replicas
@@ -169,34 +158,19 @@ enbuildConsumer:
     repository: enbuild-staging/vivsoft-platform-ui/enbuild-mq-consumer
   replicas: 1
 
-## @section ENBUILD ML Services parameters
-## @param enbuildMl.enabled [default: false] Should we create the ENBUILD ML microservice, which also controls whether or not to install jupyterhub
-## @param enbuildMl.image.repository  Container repository for enbuildMl
-## @param enbuildMl.image.tag  [nullable] Container image tag. Skip to use the HelmChart appVersion as Image Tag
-## @param enbuildMl.replicas Container enbuildMl Replicas
-## @param enbuildMl.service_type  enbuildMl service_type
-enbuildMl:
-  enabled: false
-  image:
-    repository: enbuild-staging/vivsoft-platform-ui/enbuild-ml
-  replicas: 1
-  service_type: ClusterIP
-
 ## @section ENBUILD AI Services parameters
-## @param enbuildAI.enabled [default: false] Should we create the ENBUILD AI microservice, which also controls whether or not to install Ollama.
 ## @param enbuildAI.image.repository  Container repository for enbuildAI
 ## @param enbuildAI.image.tag  [nullable] Container image tag. Skip to use the HelmChart appVersion as Image Tag
 ## @param enbuildAI.replicas Container enbuilAI Replicas
 ## @param enbuildAI.service_type  enbuildAI service_type
 ## @param enbuildAI.api_key  api_key [default: "dummy"] for OpenAI service if you planning to use OpenAI service
-## @param enbuildAI.ollama.enabled [default: "ollama/llama3.1"] model_name for OpenAI service.
-## @param enbuildAI.model_name [default: "ollama/llama3.1"] model_name for OpenAI service.
+## @param enbuildAI.ollama.enabled [default: "ollama/llama3.2"] model_name for OpenAI service.
+## @param enbuildAI.model_name [default: "ollama/llama3.2"] model_name for OpenAI service.
 ## @param enbuildAI.ollama_endpoint [default: "http://open-webui-ollama:11434"] ollama_endpoint for OpenAI service.
 enbuildAI:
-  enabled: false
   ollama:
     enabled: false # Set to true to install Ollama
-  model_name: "ollama/llama3.1"
+  model_name: "ollama/llama3.2"
   api_key: "dummy"
   ollama_endpoint: "http://open-webui-ollama:11434"
   image:
@@ -204,6 +178,19 @@ enbuildAI:
   replicas: 1
   service_type: ClusterIP
 
+## @section enbuildBolt Services parameters
+## @param enbuildBolt.image.repository  Container repository for enbuildBolt
+## @param enbuildBolt.image.tag  Container image tag. Skip to use the HelmChart appVersion as Image Tag
+## @param enbuildBolt.replicas Container enbuildBolt Replicas
+## @param enbuildBolt.service_type  enbuildBolt service_type
+enbuildBolt:
+  image:
+    repository: ghcr.io/vivsoftorg/dev-lightning
+    tag: v1.0.0
+  replicas: 1
+  service_type: ClusterIP
+
+## Third Party Charts
 ## @skip open-webui
 open-webui:
   ollama:
@@ -213,7 +200,7 @@ open-webui:
     ollama:
       gpu:
         enabled: false
-        type: 'nvidia'
+        type: "nvidia"
         number: 1
       models:
         - llama3.2:1b
@@ -263,14 +250,14 @@ loki-stack:
       dashboardproviders.yaml:
         apiVersion: 1
         providers:
-        - name: 'default'
-          orgId: 1
-          folder: ''
-          type: file
-          disableDeletion: false
-          editable: true
-          options:
-            path: /var/lib/grafana/dashboards/default
+          - name: "default"
+            orgId: 1
+            folder: ""
+            type: file
+            disableDeletion: false
+            editable: true
+            options:
+              path: /var/lib/grafana/dashboards/default
     grafana.ini:
       preferences:
         theme: light
@@ -316,54 +303,57 @@ headlamp:
   # -- Overrides the full name of the chart
   fullnameOverride: ""
 
+  # -- Override the deployment namespace; defaults to .Release.Namespace
+  namespaceOverride: ""
+
   # -- An optional list of init containers to be run before the main containers.
   initContainers:
-  - command:
-    - /bin/sh
-    - -c
-    - mkdir -p /build/plugins && cp -r /plugins/* /build/plugins/
-    # image: knrt10/headlamp-plugins-test:latest # it has all the plugins
-    # image: ghcr.io/orange-cloudfoundry/headlamp-plugin:latest # no dynamic clusters plugin
-    image: ghcr.io/vivsoftorg/enbuild-headlamp-theme:0.0.1
-    imagePullPolicy: IfNotPresent
-    name: headlamp-plugins
-    volumeMounts:
-    - mountPath: /build/plugins
+    - command:
+        - /bin/sh
+        - -c
+        - mkdir -p /headlamp/plugins && cp -r /plugins/* /headlamp/plugins/
+      # image: knrt10/headlamp-plugins-test:latest # it has all the plugins
+      # image: ghcr.io/orange-cloudfoundry/headlamp-plugin:latest # no dynamic clusters plugin
+      image: ghcr.io/vivsoftorg/enbuild-headlamp-theme:0.0.1
+      imagePullPolicy: IfNotPresent
       name: headlamp-plugins
+      volumeMounts:
+        - mountPath: /headlamp/plugins
+          name: headlamp-plugins
 
-  - command:
-      - /bin/sh
-      - "-c"
-      - |
-        kubectl config set-cluster main --server=https://kubernetes.default.svc --certificate-authority=/var/run/secrets/kubernetes.io/serviceaccount/ca.crt
-        kubectl config set-credentials main --token=$(cat /var/run/secrets/kubernetes.io/serviceaccount/token)
-        kubectl config set-context main --cluster=main --user=main
-        kubectl config use-context main
-    env:
-      - name: KUBERNETES_SERVICE_HOST
-        valueFrom:
-          fieldRef:
-            fieldPath: status.hostIP
-      - name: KUBERNETES_SERVICE_PORT
-        value: "6443"
-      - name: KUBECONFIG
-        value: /home/headlamp/.config/Headlamp/kubeconfigs/config
-    image: bitnami/kubectl:1.32.0
-    name: create-kubeconfig
-    securityContext:
-      capabilities:
-        drop:
-          - ALL
-      privileged: false
-      readOnlyRootFilesystem: true
-      runAsGroup: 101
-      runAsNonRoot: true
-      runAsUser: 100
-    volumeMounts:
-      - mountPath: /home/headlamp/.config/Headlamp/kubeconfigs
-        name: kubeconfig
-
+    - command:
+        - /bin/sh
+        - "-c"
+        - |
+          kubectl config set-cluster main --server=https://kubernetes.default.svc --certificate-authority=/var/run/secrets/kubernetes.io/serviceaccount/ca.crt
+          kubectl config set-credentials main --token=$(cat /var/run/secrets/kubernetes.io/serviceaccount/token)
+          kubectl config set-context main --cluster=main --user=main
+          kubectl config use-context main
+      env:
+        - name: KUBERNETES_SERVICE_HOST
+          valueFrom:
+            fieldRef:
+              fieldPath: status.hostIP
+        - name: KUBERNETES_SERVICE_PORT
+          value: "6443"
+        - name: KUBECONFIG
+          value: /home/headlamp/.config/Headlamp/kubeconfigs/config
+      image: bitnami/kubectl:latest
+      name: create-kubeconfig
+      securityContext:
+        capabilities:
+          drop:
+            - ALL
+        privileged: false
+        readOnlyRootFilesystem: true
+        runAsGroup: 101
+        runAsNonRoot: true
+        runAsUser: 100
+      volumeMounts:
+        - mountPath: /home/headlamp/.config/Headlamp/kubeconfigs
+          name: kubeconfig
   config:
+    inCluster: true
     # -- base url path at which headlamp should run
     baseURL: "/headlamp"
     oidc:
@@ -394,6 +384,25 @@ headlamp:
       #     clientSecret: "clientSecret"
       #     issuerURL: "issuerURL"
       #     scopes: "scopes"
+
+      # -- OIDC client ID
+      clientID: ""
+      # -- OIDC client secret
+      clientSecret: ""
+      # -- OIDC issuer URL
+      issuerURL: ""
+      # -- OIDC scopes to be used
+      scopes: ""
+      # -- OIDC callback URL
+      callbackURL: ""
+
+      # -- OIDC client to be used during token validation
+      validatorClientID: ""
+      # -- OIDC Issuer URL to be used during token validation
+      validatorIssuerURL: ""
+      # -- Use 'access_token' instead of 'id_token' when authenticating using OIDC
+      useAccessToken: false
+
       # Option 3:
       # @param config.oidc - External OIDC secret configuration
       # If you want to use an external secret for OIDC configuration, enable this option.
@@ -410,10 +419,13 @@ headlamp:
         enabled: false
         name: ""
     # -- directory to look for plugins
-    pluginsDir: "/build/plugins"
+    pluginsDir: "/headlamp/plugins"
+    watchPlugins: false
+    # tlsCertPath: "/headlamp-cert/headlamp-ca.crt"
+    # tlsKeyPath: "/headlamp-cert/headlamp-tls.key"
     # Extra arguments that can be given to the container. See charts/headlamp/README.md for more information.
     extraArgs:
-    - "-enable-dynamic-clusters"
+      - "-enable-dynamic-clusters"
 
   # -- An optional list of environment variables
   # env:
@@ -421,6 +433,9 @@ headlamp:
   #     value: "localhost"
   #   - name: KUBERNETES_SERVICE_PORT
   #     value: "6443"
+
+  # -- Mount Service Account token in pod
+  automountServiceAccountToken: true
 
   serviceAccount:
     # -- Specifies whether a service account should be created
@@ -433,11 +448,20 @@ headlamp:
   clusterRoleBinding:
     # -- Specified whether a cluster role binding should be created
     create: true
+    # -- Set name of the Cluster Role with limited permissions from you cluster
+    # for example - clusterRoleName: user-ro
+    clusterRoleName: cluster-admin
     # -- Annotations to add to the cluster role binding
     annotations: {}
 
+  # -- Annotations to add to the deployment
+  deploymentAnnotations: {}
+
   # -- Annotations to add to the pod
   podAnnotations: {}
+
+  # -- Labels to add to the pod
+  podLabels: {}
 
   # -- Headlamp pod's Security Context
   podSecurityContext:
@@ -454,30 +478,49 @@ headlamp:
     privileged: false
     runAsUser: 100
     runAsGroup: 101
+  # Uses these defaults if this is empty.
+  #   allowPrivilegeEscalation: false
+  #   runAsNonRoot: true
+  #   seccompProfile:
+  #     type: RuntimeDefault
+  #   capabilities:
+  #     drop:
+  #       - ALL
+
 
   service:
+    # -- Annotations to add to the service
+    annotations: {}
     # -- Kubernetes Service type
     type: ClusterIP
     # -- Kubernetes Service port
     port: 80
+    # -- Kubernetes Service clusterIP
+    clusterIP: ""
+    # -- Kubernetes Service loadBalancerIP
+    loadBalancerIP: ""
+    # -- Kubernetes Service loadBalancerSourceRanges
+    loadBalancerSourceRanges: []
+    # -- Kubernetes Service Nodeport
+    nodePort: null
 
   # -- Headlamp containers volume mounts
   volumeMounts:
-  - mountPath: /build/plugins
-    name: headlamp-plugins
+    - mountPath: /headlamp/plugins
+      name: headlamp-plugins
 
-  - mountPath: /home/headlamp/.config/Headlamp/kubeconfigs/config
-    name: kubeconfig
-    readOnly: true
-    subPath: config
+    - mountPath: /home/headlamp/.config/Headlamp/kubeconfigs/config
+      name: kubeconfig
+      readOnly: true
+      subPath: config
 
   # -- Headlamp pod's volumes
   volumes:
-  - name: headlamp-plugins
-    persistentVolumeClaim:
-      claimName: enbuild-headlamp
-  - name: kubeconfig
-    emptyDir: {}
+    - name: headlamp-plugins
+      persistentVolumeClaim:
+        claimName: enbuild-headlamp
+    - name: kubeconfig
+      emptyDir: {}
 
   persistentVolumeClaim:
     # -- Enable Persistent Volume Claim
@@ -487,7 +530,7 @@ headlamp:
       {}
     # -- accessModes for the persistent volume claim, eg: ReadWriteOnce, ReadOnlyMany, ReadWriteMany etc.
     accessModes:
-    - ReadWriteOnce
+      - ReadWriteOnce
     # -- size of the persistent volume claim, eg: 10Gi. Required if enabled is true.
     size: "1Gi"
     # -- storageClassName for the persistent volume claim.
@@ -504,6 +547,11 @@ headlamp:
     annotations:
       {}
       # kubernetes.io/tls-acme: "true"
+
+    # -- Additional labels to add to the Ingress resource
+    labels: {}
+      # app.kubernetes.io/part-of: traefik
+      # environment: prod
 
     # -- Ingress class name. replacement for the deprecated "kubernetes.io/ingress.class" annotation
     ingressClassName: ""
@@ -544,3 +592,108 @@ headlamp:
 
   # -- Affinity settings for pod assignment
   affinity: {}
+
+  # Plugin Manager Sidecar Container Configuration
+  pluginsManager:
+    # -- Enable plugin manager
+    enabled: false
+    # -- Plugin configuration file name
+    configFile: "plugin.yml"
+    # -- Plugin configuration content in YAML format. This is required if plugins.enabled is true.
+    configContent: ""
+    # -- Base node image to use
+    baseImage: node:lts-alpine
+    # -- Headlamp plugin package version to install
+    version: latest
+    # -- Plugin manager env variable configuration
+    # env:
+    # - name: HTTPS_PROXY
+    #   value: "proxy.example.com:8080"
+    # -- Specify resrouces
+    # resources:
+    #   requests:
+    #     cpu: "500m"
+    #     memory: "2048Mi"
+    #   limits:
+    #     cpu: "1000m"
+    #     memory: "4096Mi"
+    # If omitted, the plugin manager will inherit the global securityContext
+    securityContext:
+      {}
+      # runAsUser: 1001
+      # runAsNonRoot: true
+      # allowPrivilegeEscalation: false
+      # readOnlyRootFilesystem: true
+      # capabilities:
+      #   drop:
+      #     - ALL
+
+  podDisruptionBudget:
+    # -- enable PodDisruptionBudget
+    # ref: https://kubernetes.io/docs/concepts/workloads/pods/disruptions/
+    enabled: false
+    # @schema
+    # type: [null, integer, string]
+    # @schema
+    # -- Minimum number/percentage of pods that should remain scheduled.
+    # When it's set, maxUnavailable must be disabled by `maxUnavailable: null`
+    minAvailable: 0
+    # @schema
+    # type: [null, integer, string]
+    # @schema
+    # -- Maximum number/percentage of pods that may be made unavailable
+    maxUnavailable: null
+    # @schema
+    # type: [null, string]
+    # @schema
+    # -- How are unhealthy, but running, pods counted for eviction
+    unhealthyPodEvictionPolicy: null
+
+  # -- Additional Kubernetes manifests to be deployed. Include the manifest as nested YAML.
+  extraManifests: []
+  # - |
+  #   apiVersion: v1
+  #   kind: ConfigMap
+  #   metadata:
+  #     name: my-config
+  #   data:
+  #     key: value
+  # - |
+  #   apiVersion: v1
+  #   kind: ConfigMap
+  #   metadata:
+  #     name: my-config-too
+  #   data:
+  #     key: value
+
+## @skip jupyterhub
+jupyterhub:
+  enabled: false
+  proxy:
+    service:
+      type: ClusterIP
+  hub:
+    baseUrl: /jupyter
+    config:
+      JupyterHub:
+        authenticator_class: dummy
+        allow_named_servers: False
+      Authenticator:
+        auto_login: false
+  cull:
+    enabled: true
+  singleuser:
+    image:
+      pullPolicy: Always
+    profileList:
+      - display_name: "CDAO Reliable AI Instance"
+        description: "Includes base Reliable AI Security Toolkit Python Tools - Counterfit, Foolbox and Armory"
+        default: true
+      - display_name: "CDAO Reliable AI Datascience Instance"
+        description: "Includes base Reliable AI Explainability Toolkit Python Tools - XAITK - Saliency, lime, Shap, Explainer Dashboard"
+        kubespawner_override:
+          image: jupyter/scipy-notebook:latest
+      - display_name: "Spark environment"
+        description: "The Jupyter Stacks spark image!"
+        # kubespawner_override:
+        #   image: jupyter/all-spark-notebook:2343e33dec46

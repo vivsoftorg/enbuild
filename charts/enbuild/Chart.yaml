@@ -20,7 +20,7 @@ dependencies:
   - name: jupyterhub
     version: 3.3.7
     repository: https://jupyterhub.github.io/helm-chart
-    condition: enbuildMl.enabled
+    condition: lightning_features.develop_lightning.models
   - name: open-webui
     version: 3.1.6
     repository: https://helm.openwebui.com/
@@ -28,8 +28,8 @@ dependencies:
   - name: loki-stack
     version: 2.10.2
     repository: https://grafana.github.io/helm-charts
-    condition: global.monitoring.enabled
+    condition: lightning_features.operations_lightning.monitoring
   - name: headlamp
-    version: 0.31.1
+    version: 0.36.0
     repository: https://kubernetes-sigs.github.io/headlamp/
-    condition: global.headlamp.enabled
+    condition: lightning_features.operations_lightning.headlamp

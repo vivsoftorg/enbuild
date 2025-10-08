@@ -60,22 +60,34 @@ To uninstall/delete the `enbuild` deployment:
 | `global.image.registry_credentials`          | if the image.registry is private container registry, provide the credentials                                                                                                                     | `{}`                  |
 | `global.image.registry_credentials.username` | Container registry Username                                                                                                                                                                      | `""`                  |
 | `global.image.registry_credentials.password` | Container registry password                                                                                                                                                                      | `""`                  |
-| `global.monitoring.enabled`                  | Should we install loki-stack for monitoring , if yes set to true , set the lok-stack values in the values.yaml                                                                                   | `false`               |
-| `global.headlamp.enabled`                    | Should we install headlamp for operations , if yes set to true , set the headlamp values in the values.yaml                                                                                      | `false`               |
+
+### ENBUILD Lightning Features to be enabled
+
+| Name                                                 | Description                    | Value   |
+| ---------------------------------------------------- | ------------------------------ | ------- |
+| `lightning_features.develop_lightning.application`   | Enable Bolt deployment         | `false` |
+| `lightning_features.develop_lightning.models`        | Enable JupyterHub deployment   | `false` |
+| `lightning_features.secure_lightning.ctf`            | Enable CTF deployment          | `false` |
+| `lightning_features.deploy_lightning.ai_lightning`   | Enable AI Lightning deployment | `false` |
+| `lightning_features.operations_lightning.headlamp`   | Enable Headlamp deployment     | `false` |
+| `lightning_features.operations_lightning.monitoring` | Enable Loki Stack deployment   | `false` |
 
 ### ENBUILD RabbitMQ parameters
 
-| Name                         | Description                                                          | Value         |
-| ---------------------------- | -------------------------------------------------------------------- | ------------- |
-| `rabbitmq.enabled`           | Set to false to use existing RabbitMQ                                | `true`        |
-| `rabbitmq.replicaCount`      | RabbitMQ replicaCount                                                | `1`           |
-| `rabbitmq.auth.username`     | RabbitMQ username                                                    | `admin`       |
-| `rabbitmq.auth.password`     | RabbitMQ password                                                    | `SuperSecret` |
-| `rabbitmq.auth.erlangCookie` | RabbitMQ erlangCookie                                                | `lamba`       |
-| `rabbitmq.host`              | If `rabbitmq.enabled` is false , provide the right rabbitmq endpoint | `""`          |
-| `rabbitmq.queue_prefix`      | Queue Prefix for all RabbitMQ Queues                                 | `enbuild`     |
+| Name                         | Description                                                          | Value                  |
+| ---------------------------- | -------------------------------------------------------------------- | ---------------------- |
+| `rabbitmq.enabled`           | Set to false to use existing RabbitMQ                                | `true`                 |
+| `rabbitmq.replicaCount`      | RabbitMQ replicaCount                                                | `1`                    |
+| `rabbitmq.auth.username`     | RabbitMQ username                                                    | `admin`                |
+| `rabbitmq.auth.password`     | RabbitMQ password                                                    | `SuperSecret`          |
+| `rabbitmq.auth.erlangCookie` | RabbitMQ erlangCookie                                                | `lamba`                |
+| `rabbitmq.host`              | If `rabbitmq.enabled` is false , provide the right rabbitmq endpoint | `""`                   |
+| `rabbitmq.queue_prefix`      | Queue Prefix for all RabbitMQ Queues                                 | `enbuild`              |
+| `rabbitmq.image.registry`    | RabbitMQ image registry                                              | `public.ecr.aws`       |
+| `rabbitmq.image.repository`  | RabbitMQ image repository                                            | `bitnami/rabbitmq`     |
+| `rabbitmq.image.tag`         | RabbitMQ image tag                                                   | `3.11.13-debian-11-r0` |
 
-### ENBUILD Backend/DB parameters
+### ENBUILD Database parameters
 
 | Name                          | Description                                                                                                                    | Value                                         |
 | ----------------------------- | ------------------------------------------------------------------------------------------------------------------------------ | --------------------------------------------- |
@@ -120,7 +132,7 @@ To uninstall/delete the `enbuild` deployment:
 | `enbuildUser.replicas`         | Container enbuildUser Replicas                                         | `1`                                                |
 | `enbuildUser.service_type`     | enbuildUser service_type                                               | `ClusterIP`                                        |
 
-### ENBUILD MQ Consumer Services parameters
+### ENBUILD Consumer Services parameters
 
 | Name                               | Description                                                            | Value                                                     |
 | ---------------------------------- | ---------------------------------------------------------------------- | --------------------------------------------------------- |
@@ -128,28 +140,26 @@ To uninstall/delete the `enbuild` deployment:
 | `enbuildConsumer.image.tag`        | Container image tag. Skip to use the HelmChart appVersion as Image Tag | `undefined`                                               |
 | `enbuildConsumer.replicas`         | Container enbuildConsumer Replicas                                     | `1`                                                       |
 
-### ENBUILD ML Services parameters
-
-| Name                         | Description                                                                                            | Value                                            |
-| ---------------------------- | ------------------------------------------------------------------------------------------------------ | ------------------------------------------------ |
-| `enbuildMl.enabled`          | Should we create the ENBUILD ML microservice, which also controls whether or not to install jupyterhub | `false`                                          |
-| `enbuildMl.image.repository` | Container repository for enbuildMl                                                                     | `enbuild-staging/vivsoft-platform-ui/enbuild-ml` |
-| `enbuildMl.image.tag`        | Container image tag. Skip to use the HelmChart appVersion as Image Tag                                 | `undefined`                                      |
-| `enbuildMl.replicas`         | Container enbuildMl Replicas                                                                           | `1`                                              |
-| `enbuildMl.service_type`     | enbuildMl service_type                                                                                 | `ClusterIP`                                      |
-
 ### ENBUILD AI Services parameters
 
-| Name                         | Description                                                                                         | Value                                            |
-| ---------------------------- | --------------------------------------------------------------------------------------------------- | ------------------------------------------------ |
-| `enbuildAI.enabled`          | Should we create the ENBUILD AI microservice, which also controls whether or not to install Ollama. | `false`                                          |
-| `enbuildAI.image.repository` | Container repository for enbuildAI                                                                  | `enbuild-staging/vivsoft-platform-ui/enbuild-ai` |
-| `enbuildAI.image.tag`        | Container image tag. Skip to use the HelmChart appVersion as Image Tag                              | `undefined`                                      |
-| `enbuildAI.replicas`         | Container enbuilAI Replicas                                                                         | `1`                                              |
-| `enbuildAI.service_type`     | enbuildAI service_type                                                                              | `ClusterIP`                                      |
-| `enbuildAI.api_key`          | api_key [default: "dummy"] for OpenAI service if you planning to use OpenAI service                 | `dummy`                                          |
-| `enbuildAI.ollama.enabled`   | model_name for OpenAI service.                                                                      | `"ollama/llama3.1"`                              |
-| `enbuildAI.model_name`       | model_name for OpenAI service.                                                                      | `"ollama/llama3.1"`                              |
-| `enbuildAI.ollama_endpoint`  | ollama_endpoint for OpenAI service.                                                                 | `"http://open-webui-ollama:11434"`               |
+| Name                         | Description                                                                         | Value                                            |
+| ---------------------------- | ----------------------------------------------------------------------------------- | ------------------------------------------------ |
+| `enbuildAI.image.repository` | Container repository for enbuildAI                                                  | `enbuild-staging/vivsoft-platform-ui/enbuild-ai` |
+| `enbuildAI.image.tag`        | Container image tag. Skip to use the HelmChart appVersion as Image Tag              | `undefined`                                      |
+| `enbuildAI.replicas`         | Container enbuilAI Replicas                                                         | `1`                                              |
+| `enbuildAI.service_type`     | enbuildAI service_type                                                              | `ClusterIP`                                      |
+| `enbuildAI.api_key`          | api_key [default: "dummy"] for OpenAI service if you planning to use OpenAI service | `dummy`                                          |
+| `enbuildAI.ollama.enabled`   | model_name for OpenAI service.                                                      | `"ollama/llama3.2"`                              |
+| `enbuildAI.model_name`       | model_name for OpenAI service.                                                      | `"ollama/llama3.2"`                              |
+| `enbuildAI.ollama_endpoint`  | ollama_endpoint for OpenAI service.                                                 | `"http://open-webui-ollama:11434"`               |
+
+### enbuildBolt Services parameters
+
+| Name                           | Description                                                            | Value                              |
+| ------------------------------ | ---------------------------------------------------------------------- | ---------------------------------- |
+| `enbuildBolt.image.repository` | Container repository for enbuildBolt                                   | `ghcr.io/vivsoftorg/dev-lightning` |
+| `enbuildBolt.image.tag`        | Container image tag. Skip to use the HelmChart appVersion as Image Tag | `v1.0.0`                           |
+| `enbuildBolt.replicas`         | Container enbuildBolt Replicas                                         | `1`                                |
+| `enbuildBolt.service_type`     | enbuildBolt service_type                                               | `ClusterIP`                        |
 
 <!-- # ------ ---------->

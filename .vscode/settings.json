@@ -1,0 +1,11 @@
+{
+  "files.associations": {
+    "*.yaml": "helm"
+  },
+  "yaml.validate": false,
+  "editor.formatOnSave": false,
+  "[helm]": {
+    "editor.formatOnSave": false,
+    "editor.defaultFormatter": null
+  }
+}
