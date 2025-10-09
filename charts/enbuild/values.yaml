@@ -672,7 +672,6 @@ headlamp:
 
 ## @skip jupyterhub
 jupyterhub:
-  enabled: false
   proxy:
     service:
       type: ClusterIP
