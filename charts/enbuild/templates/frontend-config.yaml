@@ -10,6 +10,9 @@ data:
     {{- if .Values.jupyterhub.enabled }}
       REACT_APP_JUPYTER_NOTEBOOK_URL: "{{ template "jupyterhubUrl" . }}",
     {{- end }}
+    {{- if .Values.lightning_features.operations_lightning.headlamp }}
+      REACT_APP_HEADLAMP_URL: "/headlamp/",
+    {{- end }}
       REACT_APP_API_DOMAIN_PRODUCTION: "/enbuild-bk",
       REACT_APP_API_REQUEST_DOMAIN_PRODUCTION: "/enbuild-request",
       REACT_APP_API_USER_DOMAIN_PRODUCTION: "/enbuild-user",
@@ -40,10 +43,12 @@ data:
           "fabric" (.Values.lightning_features.deploy_lightning.ai_lightning | default false)
           "link" (.Values.lightning_features.deploy_lightning.ai_lightning | default false)
         )
-        "data_lightning" false
+        "data_lightning" (.Values.lightning_features.deploy_lightning.data_lightning | default false)
       )
       "operations_lightning" (dict
+        "operations" true
         "headlamp" (.Values.lightning_features.operations_lightning.headlamp | default false)
+        "metrics" true
       )
     }}
     {{ $flags | toJson }}

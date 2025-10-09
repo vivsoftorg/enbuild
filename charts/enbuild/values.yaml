@@ -40,6 +40,8 @@ global:
 ## @param lightning_features.develop_lightning.application [default: false] Enable Bolt deployment
 ## @param lightning_features.develop_lightning.models [default: false] Enable JupyterHub deployment
 ## @param lightning_features.secure_lightning.ctf [default: false] Enable CTF deployment
+## @param lightning_features.deploy_lightning.infra_lightning [default: false] Enable Data Lightning deployment
+## @param lightning_features.deploy_lightning.data_lightning [default: false] Enable Data Lightning deployment
 ## @param lightning_features.deploy_lightning.ai_lightning [default: false] Enable AI Lightning deployment
 ## @param lightning_features.operations_lightning.headlamp [default: false] Enable Headlamp deployment
 ## @param lightning_features.operations_lightning.monitoring [default: false] Enable Loki Stack deployment
@@ -50,6 +52,8 @@ lightning_features:
   secure_lightning:
     ctf: false
   deploy_lightning:
+    infra_lightning: true
+    data_lightning: false
     ai_lightning: false
   operations_lightning:
     headlamp: false

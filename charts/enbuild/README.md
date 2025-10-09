@@ -63,14 +63,16 @@ To uninstall/delete the `enbuild` deployment:
 
 ### ENBUILD Lightning Features to be enabled
 
-| Name                                                 | Description                    | Value   |
-| ---------------------------------------------------- | ------------------------------ | ------- |
-| `lightning_features.develop_lightning.application`   | Enable Bolt deployment         | `false` |
-| `lightning_features.develop_lightning.models`        | Enable JupyterHub deployment   | `false` |
-| `lightning_features.secure_lightning.ctf`            | Enable CTF deployment          | `false` |
-| `lightning_features.deploy_lightning.ai_lightning`   | Enable AI Lightning deployment | `false` |
-| `lightning_features.operations_lightning.headlamp`   | Enable Headlamp deployment     | `false` |
-| `lightning_features.operations_lightning.monitoring` | Enable Loki Stack deployment   | `false` |
+| Name                                                  | Description                      | Value   |
+| ----------------------------------------------------- | -------------------------------- | ------- |
+| `lightning_features.develop_lightning.application`    | Enable Bolt deployment           | `false` |
+| `lightning_features.develop_lightning.models`         | Enable JupyterHub deployment     | `false` |
+| `lightning_features.secure_lightning.ctf`             | Enable CTF deployment            | `false` |
+| `lightning_features.deploy_lightning.infra_lightning` | Enable Data Lightning deployment | `false` |
+| `lightning_features.deploy_lightning.data_lightning`  | Enable Data Lightning deployment | `false` |
+| `lightning_features.deploy_lightning.ai_lightning`    | Enable AI Lightning deployment   | `false` |
+| `lightning_features.operations_lightning.headlamp`    | Enable Headlamp deployment       | `false` |
+| `lightning_features.operations_lightning.monitoring`  | Enable Loki Stack deployment     | `false` |
 
 ### ENBUILD RabbitMQ parameters
 
