@@ -7,7 +7,7 @@ home: https://www.vivsoft.io/
 sources: [https://github.com/jupyterhub/zero-to-jupyterhub-k8s]
 icon: https://enbuild-docs.vivplatform.io/images/emma/enbuild-logo.png
 kubeVersion: '>=1.25.0-0'
-version: 0.0.33
+version: 0.0.34
 appVersion: 1.0.25
 maintainers:
   - name: Juned Memon
