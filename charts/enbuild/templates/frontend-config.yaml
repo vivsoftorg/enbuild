@@ -8,7 +8,7 @@ data:
   config.js: |
     window.ENV_VAR = {
     {{- if .Values.lightning_features.develop_lightning.models }}
-      REACT_APP_JUPYTER_NOTEBOOK_URL: /jupyter/",
+      REACT_APP_JUPYTER_NOTEBOOK_URL: "/jupyter/",
     {{- end }}
     {{- if .Values.lightning_features.operations_lightning.headlamp }}
       REACT_APP_HEADLAMP_URL: "/headlamp/",
