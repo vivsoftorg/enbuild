@@ -688,15 +688,53 @@ jupyterhub:
   singleuser:
     image:
       pullPolicy: Always
+
     profileList:
       - display_name: "CDAO Reliable AI Instance"
         description: "Includes base Reliable AI Security Toolkit Python Tools - Counterfit, Foolbox and Armory"
         default: true
-      - display_name: "CDAO Reliable AI Datascience Instance"
-        description: "Includes base Reliable AI Explainability Toolkit Python Tools - XAITK - Saliency, lime, Shap, Explainer Dashboard"
         kubespawner_override:
-          image: jupyter/scipy-notebook:latest
-      - display_name: "Spark environment"
-        description: "The Jupyter Stacks spark image!"
-        # kubespawner_override:
-        #   image: jupyter/all-spark-notebook:2343e33dec46
+          image: quay.io/jupyter/scipy-notebook:2025-10-27
+          lifecycle_hooks:
+            postStart:
+              exec:
+                command:
+                  - /bin/sh
+                  - -c
+                  - |
+                    cd /home/jovyan
+                    if [ ! -d demo ]; then
+                      git clone https://github.com/vivsoftorg/iris-flower-classifier-demo-notebook.git demo
+                    fi
+
+      - display_name: "CDAO Reliable AI Datascience Instance"
+        description: "Includes base Reliable AI Explainability Toolkit Python Tools - XAITK, LIME, SHAP, Explainer Dashboard"
+        kubespawner_override:
+          image: quay.io/jupyter/datascience-notebook:2025-10-27
+          lifecycle_hooks:
+            postStart:
+              exec:
+                command:
+                  - /bin/sh
+                  - -c
+                  - |
+                    cd /home/jovyan
+                    if [ ! -d demo ]; then
+                      git clone https://github.com/vivsoftorg/iris-flower-classifier-demo-notebook.git demo
+                    fi
+
+      - display_name: "Spark Environment"
+        description: "The Jupyter Stacks Spark image with demo notebooks"
+        kubespawner_override:
+          image: quay.io/jupyter/all-spark-notebook:2025-10-27
+          lifecycle_hooks:
+            postStart:
+              exec:
+                command:
+                  - /bin/sh
+                  - -c
+                  - |
+                    cd /home/jovyan
+                    if [ ! -d demo ]; then
+                      git clone https://github.com/vivsoftorg/iris-flower-classifier-demo-notebook.git demo
+                    fi
