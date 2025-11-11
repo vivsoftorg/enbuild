@@ -4,7 +4,7 @@ dependencies:
   version: 11.13.0
 - name: jupyterhub
   repository: https://jupyterhub.github.io/helm-chart
-  version: 3.3.7
+  version: 4.3.1
 - name: open-webui
   repository: https://helm.openwebui.com/
   version: 3.1.6
@@ -14,5 +14,5 @@ dependencies:
 - name: headlamp
   repository: https://kubernetes-sigs.github.io/headlamp/
   version: 0.36.0
-digest: sha256:f21d3cea7393de3498c763475add2645f2bea913c148002ea4c3d14a231ead6a
-generated: "2025-10-07T19:39:46.493815+05:30"
+digest: sha256:01a9142f1bbbd1267a417891882955bfe853f1a3836535e381858e0687a7c7ea
+generated: "2025-10-28T14:25:07.632733+05:30"
