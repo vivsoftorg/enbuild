@@ -78,7 +78,7 @@ Make sure you update the values input to reference the values you created in Ste
 Execute the command below. Adjust the `--set global.AppVersion=1.0.21` to the version you want to deploy and ensure the `--version` matches the version of the chart you want to deploy.
 
 ```bash
-helm upgrade --install --namespace enbuild enbuild vivsoft/enbuild --version 0.0.29 --create-namespace -f target/quick_install_ib.yaml --set global.AppVersion=1.0.22
+helm upgrade --install --namespace enbuild enbuild vivsoft/enbuild --version 0.0.36 --create-namespace -f target/quick_install_ib.yaml --set global.AppVersion=1.0.25
 
 Release "enbuild" does not exist. Installing it now.
 NAME: enbuild
