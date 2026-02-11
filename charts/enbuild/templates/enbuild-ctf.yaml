@@ -23,13 +23,13 @@ spec:
     spec:
       containers:
       - env:
-        - name: MONGODB_ENDPOINT
+        - name: MONGODB_URL
           value: mongodb://$(MONGO_INITDB_ROOT_USERNAME):$(MONGO_INITDB_ROOT_PASSWORD)@$(MONGO_SERVER)
         envFrom:
         - secretRef:
             name: {{ .Release.Name }}-mongo-secrets
         - secretRef:
-            name: {{ .Release.Name }}-ctf-secret
+            name: {{ .Release.Name }}-backend-secret
         image: {{ .Values.global.image.registry }}/{{ .Values.enbuildCTF.image.repository }}:{{ default .Chart.AppVersion (default .Values.global.AppVersion .Values.enbuildCTF.image.tag) }}
         imagePullPolicy: {{ .Values.global.image.pullPolicy }}
         livenessProbe:
