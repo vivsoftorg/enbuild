@@ -17,7 +17,7 @@ data:
       REACT_APP_LIGHTNING_APP_IFRAME_URL: "/bolt/",
     {{- end }}
     {{- if .Values.lightning_features.secure_lightning.ctf }}
-      REACT_APP_CTF_URL: "/enbuild-bk/api/v1",
+      REACT_APP_CTF_URL: "/ctf/api/v1",
     {{- end }}
       REACT_APP_API_DOMAIN_PRODUCTION: "/enbuild-bk",
       REACT_APP_API_REQUEST_DOMAIN_PRODUCTION: "/enbuild-request",
