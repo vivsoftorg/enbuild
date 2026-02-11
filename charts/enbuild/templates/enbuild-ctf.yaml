@@ -1,8 +1,89 @@
 {{- if .Values.lightning_features.secure_lightning.ctf }}
-apiVersion: v1
-kind: ConfigMap
+apiVersion: apps/v1
+kind: Deployment
 metadata:
-  name: enbuild-ctf-configmap
-data:
-  dummy-key: dummy-value
+  name: {{ .Release.Name }}-enbuild-ctf
+  labels:
+    app: ctf
+    app.kubernetes.io/component: ctf
+  {{- include "enbuild-helm-chart.labels" . | nindent 4 }}
+spec:
+  replicas: {{ .Values.enbuildCTF.replicas }}
+  selector:
+    matchLabels:
+      app: ctf
+      app.kubernetes.io/component: ctf
+    {{- include "enbuild-helm-chart.selectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      labels:
+        app: ctf
+        app.kubernetes.io/component: ctf
+      {{- include "enbuild-helm-chart.selectorLabels" . | nindent 8 }}
+    spec:
+      containers:
+      - env:
+        - name: MONGODB_ENDPOINT
+          value: mongodb://$(MONGO_INITDB_ROOT_USERNAME):$(MONGO_INITDB_ROOT_PASSWORD)@$(MONGO_SERVER)
+        envFrom:
+        - secretRef:
+            name: {{ .Release.Name }}-mongo-secrets
+        - secretRef:
+            name: {{ .Release.Name }}-ctf-secret
+        image: {{ .Values.global.image.registry }}/{{ .Values.enbuildCTF.image.repository }}:{{ default .Chart.AppVersion (default .Values.global.AppVersion .Values.enbuildCTF.image.tag) }}
+        imagePullPolicy: {{ .Values.global.image.pullPolicy }}
+        livenessProbe:
+          failureThreshold: 3
+          httpGet:
+            path: /health
+            port: 8000
+          initialDelaySeconds: 3
+          periodSeconds: 10
+          successThreshold: 1
+          timeoutSeconds: 2
+        name: enbuild-ctf
+        ports:
+        - containerPort: 8000
+        readinessProbe:
+          failureThreshold: 3
+          httpGet:
+            path: /health
+            port: 8000
+          initialDelaySeconds: 3
+          periodSeconds: 10
+          successThreshold: 1
+          timeoutSeconds: 2
+        resources: {{- toYaml .Values.enbuildCTF.resources | nindent 10 }}
+        securityContext:
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop:
+            - ALL
+          privileged: false
+          runAsGroup: 1000
+          runAsNonRoot: true
+          runAsUser: 1000
+{{- if .Values.global.image.registry_credentials }}
+      imagePullSecrets:
+        - name: {{ .Release.Name }}-image-pull-secret
+{{- end }}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ .Release.Name }}-enbuild-ctf
+  labels:
+    app: ctf
+    app.kubernetes.io/component: ctf
+  {{- include "enbuild-helm-chart.labels" . | nindent 4 }}
+spec:
+  type: {{ .Values.enbuildCTF.service_type }}
+  selector:
+    app: ctf
+    app.kubernetes.io/component: ctf
+  {{- include "enbuild-helm-chart.selectorLabels" . | nindent 4 }}
+  ports:
+  - port: 80
+    protocol: TCP
+    targetPort: 8000
 {{- end }}

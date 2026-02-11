@@ -64,6 +64,14 @@ data:
       }
 {{- end }}
 
+{{- if .Values.lightning_features.secure_lightning.ctf }}
+      location /ctf/ {
+          proxy_pass http://{{ .Release.Name }}-enbuild-ctf/;
+          proxy_set_header Host $host;
+          proxy_set_header Connection '';
+      }
+{{- end }}
+
 {{- if .Values.lightning_features.develop_lightning.models }}
       location /jupyter/ {
           proxy_pass http://proxy-public/jupyter/;
