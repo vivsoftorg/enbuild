@@ -149,13 +149,10 @@ The following key value pairs are used to configure ENBUILD.
 | `enbuildCTF.replicas`                  | Container enbuildCTF Replicas                                          | `1`                                                                         |
 | `enbuildCTF.service_type`              | enbuildCTF service_type                                                | `ClusterIP`                                                                 |
 | `enbuildCTF.debug`                     | Set to true to enable debug mode in CTF backend                        | `true`                                                                      |
-| `enbuildCTF.mongodb_db_name`           | MongoDB database name for CTF backend                                  | `ctf`                                                                       |
 | `enbuildCTF.cors_origins`              | Allowed CORS origins for CTF backend                                   | `['http://localhost:5173','http://localhost:5000','http://localhost:3000']` |
 | `enbuildCTF.log_level`                 | Log level for CTF backend                                              | `DEBUG`                                                                     |
 | `enbuildCTF.log_format`                | Log format for CTF backend                                             | `json`                                                                      |
 | `enbuildCTF.aws_region`                | AWS region for CTF backend to use AWS services like S3                 | `us-east-1`                                                                 |
-| `enbuildCTF.gitlab_api_base`           | GitLab API base URL for CTF backend                                    | `https://gitlab.com/api/v4`                                                 |
-| `enbuildCTF.gitlab_access_token`       | GitLab access token for CTF backend to access GitLab API               | `gitlab_access_token`                                                       |
 | `enbuildCTF.resources.requests.memory` | Memory resource request for CTF backend                                | `1Gi`                                                                       |
 | `enbuildCTF.resources.requests.cpu`    | CPU resource request for CTF backend                                   | `500m`                                                                      |
 | `enbuildCTF.resources.limits.memory`   | Memory resource limit for CTF backend                                  | `1Gi`                                                                       |
