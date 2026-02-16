@@ -173,10 +173,6 @@ To uninstall/delete the `enbuild` deployment:
 | `enbuildCTF.log_level`                 | Log level for CTF backend                                              | `DEBUG`                                                                     |
 | `enbuildCTF.log_format`                | Log format for CTF backend                                             | `json`                                                                      |
 | `enbuildCTF.aws_region`                | AWS region for CTF backend to use AWS services like S3                 | `us-east-1`                                                                 |
-| `enbuildCTF.keycloak_url`              | Keycloak URL for CTF backend authentication                            | `https://keycloak.ijuned.com/auth`                                          |
-| `enbuildCTF.keycloak_realm`            | Keycloak realm for CTF backend authentication                          | `enbuild`                                                                   |
-| `enbuildCTF.keycloak_client_id`        | Keycloak client ID for CTF backend authentication                      | `enbuild`                                                                   |
-| `enbuildCTF.keycloak_client_secret`    | Keycloak client secret for CTF backend authentication                  | `keycloak_client_secret`                                                    |
 | `enbuildCTF.gitlab_api_base`           | GitLab API base URL for CTF backend                                    | `https://gitlab.com/api/v4`                                                 |
 | `enbuildCTF.gitlab_access_token`       | GitLab access token for CTF backend to access GitLab API               | `gitlab_access_token`                                                       |
 | `enbuildCTF.resources.requests.memory` | Memory resource request for CTF backend                                | `1Gi`                                                                       |
