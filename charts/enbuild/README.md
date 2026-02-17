@@ -170,7 +170,6 @@ To uninstall/delete the `enbuild` deployment:
 | `enbuildCTF.debug`                     | Set to true to enable debug mode in CTF backend                        | `true`                                                                      |
 | `enbuildCTF.cors_origins`              | Allowed CORS origins for CTF backend                                   | `['http://localhost:5173','http://localhost:5000','http://localhost:3000']` |
 | `enbuildCTF.log_level`                 | Log level for CTF backend                                              | `DEBUG`                                                                     |
-| `enbuildCTF.log_format`                | Log format for CTF backend                                             | `json`                                                                      |
 | `enbuildCTF.aws_region`                | AWS region for CTF backend to use AWS services like S3                 | `us-east-1`                                                                 |
 | `enbuildCTF.resources.requests.memory` | Memory resource request for CTF backend                                | `1Gi`                                                                       |
 | `enbuildCTF.resources.requests.cpu`    | CPU resource request for CTF backend                                   | `500m`                                                                      |
