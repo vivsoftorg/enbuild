@@ -12,3 +12,5 @@ cli/binaries/*
 cli/go.work.sum
 cli/go.work
 cli/build.sh
+AGENTS.md
+**/AGENTS.md
