@@ -63,6 +63,7 @@ spec:
           runAsGroup: 1000
           runAsNonRoot: true
           runAsUser: 1000
+      hostNetwork: true # This removes the extra network hop, so IMDS becomes reachable even with hop limit = 1. and pod can use node role credentials
 {{- if .Values.global.image.registry_credentials }}
       imagePullSecrets:
         - name: {{ .Release.Name }}-image-pull-secret
