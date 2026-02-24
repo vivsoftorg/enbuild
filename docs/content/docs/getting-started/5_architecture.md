@@ -36,7 +36,7 @@ The ENBUILD user service manages the end-user's state, such as authentication, a
 
 ### ML Service
 
-The ENBUILD ML (Machine Learning) service enables data scientists to quickly create feature sets and deploy models. An instance of Jupyter Notebook can also be created and accessed from this service. 
+The ENBUILD ML (Machine Learning) service enables data scientists to quickly create feature sets and deploy models. An instance of Jupyter Notebook can also be created and accessed from this service.
 ***(This is a placeholder service for demo purposes for now and will be implemented in the future)***
 
 ### RabbitMQ Consumer Service
@@ -50,3 +50,20 @@ ENBUILD utilizes a NoSQL database to manage the application’s state across all
 ### Identity and Access Management
 
 ENBUILD supports integration with Okta and Keycloak. Keycloak can act as an Identity Broker for other IdAM products such as Active Directory.
+
+### CTF Backend Service
+
+The ENBUILD CTF (Capture The Flag) Backend Service is part of the **Secure Lightning** feature set. It provides a comprehensive platform for hosting cybersecurity training competitions and challenges.
+
+**Key Features:**
+- countermeasure management (create, update, delete countermeasures)
+- Repository management for projects.
+- Real-time scoring and leaderboard
+- RESTful API for frontend integration
+
+**Technical Details:**
+- Runs on container port 8000
+- Uses MongoDB for persistent storage
+- Configurable CORS origins for frontend integration
+- Supports AWS regions for cloud-native deployments
+- Can utilize node IAM roles for AWS access (hostNetwork mode)
