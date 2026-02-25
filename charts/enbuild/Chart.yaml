@@ -8,7 +8,7 @@ sources: [https://github.com/jupyterhub/zero-to-jupyterhub-k8s]
 icon: https://enbuild-docs.vivplatform.io/images/emma/enbuild-logo.png
 kubeVersion: '>=1.25.0-0'
 version: 0.0.38
-appVersion: 1.0.27
+appVersion: 1.0.28
 maintainers:
   - name: Juned Memon
     email: jmemon@vivsoft.io
