@@ -2,6 +2,48 @@ apiVersion: v1
 entries:
   enbuild:
   - apiVersion: v2
+    appVersion: 1.0.28
+    created: "2026-02-26T12:01:46.526203874Z"
+    dependencies:
+    - condition: rabbitmq.enabled
+      name: rabbitmq
+      repository: https://charts.bitnami.com/bitnami
+      version: 11.13.0
+    - condition: lightning_features.develop_lightning.models
+      name: jupyterhub
+      repository: https://jupyterhub.github.io/helm-chart
+      version: 4.3.1
+    - condition: enbuildAI.ollama.enabled
+      name: open-webui
+      repository: https://helm.openwebui.com/
+      version: 3.1.6
+    - condition: lightning_features.operations_lightning.monitoring
+      name: loki-stack
+      repository: https://grafana.github.io/helm-charts
+      version: 2.10.2
+    - condition: lightning_features.operations_lightning.headlamp
+      name: headlamp
+      repository: https://kubernetes-sigs.github.io/headlamp/
+      version: 0.36.0
+    description: A Helm chart for ENBUILD
+    digest: 42c4fe1802c5af5a77e4f02a48b525951d6772875dbd3c7fb438ba3c395240b8
+    home: https://www.vivsoft.io/
+    icon: https://enbuild-docs.vivplatform.io/images/emma/enbuild-logo.png
+    keywords:
+    - enbuild
+    - bigbang
+    kubeVersion: '>=1.25.0-0'
+    maintainers:
+    - email: jmemon@vivsoft.io
+      name: Juned Memon
+    name: enbuild
+    sources:
+    - https://github.com/jupyterhub/zero-to-jupyterhub-k8s
+    type: application
+    urls:
+    - https://github.com/vivsoftorg/enbuild/releases/download/enbuild-0.0.39/enbuild-0.0.39.tgz
+    version: 0.0.39
+  - apiVersion: v2
     appVersion: 1.0.27
     created: "2026-02-09T06:05:22.452459763Z"
     dependencies:
@@ -1281,4 +1323,4 @@ entries:
     urls:
     - https://github.com/vivsoftorg/enbuild_helm_chart/releases/download/enbuild-0.0.2/enbuild-0.0.2.tgz
     version: 0.0.2
-generated: "2026-02-09T06:05:22.452717906Z"
+generated: "2026-02-26T12:01:46.526489979Z"
