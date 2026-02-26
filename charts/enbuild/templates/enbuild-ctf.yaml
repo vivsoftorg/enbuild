@@ -29,7 +29,11 @@ spec:
         app.kubernetes.io/name: {{ include "enbuild-helm-chart.name" . }}
         app.kubernetes.io/instance: {{ .Release.Name }}
     spec:
+      {{- if .Values.enbuildCTF.serviceAccount.create }}
       serviceAccountName: {{ .Release.Name }}-enbuild-ctf
+      {{- else }}
+      serviceAccountName: default
+      {{- end }}
       containers:
       - env:
         - name: MONGODB_URL

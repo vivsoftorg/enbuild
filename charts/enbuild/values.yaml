@@ -185,7 +185,7 @@ enbuildAI:
   replicas: 1
   service_type: ClusterIP
   serviceAccount:
-    create: true
+    create: false
     name: ""
     annotations: {}
 
@@ -235,7 +235,7 @@ enbuildCTF:
       memory: "1Gi"
       cpu: "1"
   serviceAccount:
-    create: true
+    create: false
     name: ""
     annotations: {}
 
