@@ -7,21 +7,34 @@ metadata:
   labels:
     app: ai
     app.kubernetes.io/component: ai
-  {{- include "enbuild-helm-chart.labels" . | nindent 4 }}
+    helm.sh/chart: {{ include "enbuild-helm-chart.chart" . }}
+    app.kubernetes.io/name: {{ include "enbuild-helm-chart.name" . }}
+    app.kubernetes.io/instance: {{ .Release.Name }}
+    {{- if .Chart.AppVersion }}
+    app.kubernetes.io/version: {{ .Chart.AppVersion | quote }}
+    {{- end }}
+    app.kubernetes.io/managed-by: {{ .Release.Service }}
 spec:
   replicas: {{ .Values.enbuildAI.replicas }}
   selector:
     matchLabels:
       app: ai
       app.kubernetes.io/component: ai
-    {{- include "enbuild-helm-chart.selectorLabels" . | nindent 6 }}
+      app.kubernetes.io/name: {{ include "enbuild-helm-chart.name" . }}
+      app.kubernetes.io/instance: {{ .Release.Name }}
   template:
     metadata:
       labels:
         app: ai
         app.kubernetes.io/component: ai
-      {{- include "enbuild-helm-chart.selectorLabels" . | nindent 8 }}
+        app.kubernetes.io/name: {{ include "enbuild-helm-chart.name" . }}
+        app.kubernetes.io/instance: {{ .Release.Name }}
     spec:
+      {{- if .Values.enbuildAI.serviceAccount.create }}
+      serviceAccountName: {{ .Release.Name }}-enbuild-ai
+      {{- else }}
+      serviceAccountName: default
+      {{- end }}
       containers:
       - env:
         - name: MAX_CONTEXT_LENGTH
@@ -75,13 +88,20 @@ metadata:
   labels:
     app: ai
     app.kubernetes.io/component: ai
-  {{- include "enbuild-helm-chart.labels" . | nindent 4 }}
+    helm.sh/chart: {{ include "enbuild-helm-chart.chart" . }}
+    app.kubernetes.io/name: {{ include "enbuild-helm-chart.name" . }}
+    app.kubernetes.io/instance: {{ .Release.Name }}
+    {{- if .Chart.AppVersion }}
+    app.kubernetes.io/version: {{ .Chart.AppVersion | quote }}
+    {{- end }}
+    app.kubernetes.io/managed-by: {{ .Release.Service }}
 spec:
   type: {{ .Values.enbuildAI.service_type }}
   selector:
     app: ai
     app.kubernetes.io/component: ai
-  {{- include "enbuild-helm-chart.selectorLabels" . | nindent 4 }}
+    app.kubernetes.io/name: {{ include "enbuild-helm-chart.name" . }}
+    app.kubernetes.io/instance: {{ .Release.Name }}
   ports:
   - port: 80
     protocol: TCP

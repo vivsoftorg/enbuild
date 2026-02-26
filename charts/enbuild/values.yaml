@@ -171,6 +171,9 @@ enbuildConsumer:
 ## @param enbuildAI.ollama.enabled [default: "ollama/llama3.2"] model_name for OpenAI service.
 ## @param enbuildAI.model_name [default: "ollama/llama3.2"] model_name for OpenAI service.
 ## @param enbuildAI.ollama_endpoint [default: "http://open-webui-ollama:11434"] ollama_endpoint for OpenAI service.
+## @param enbuildAI.serviceAccount.create [default: false] Create a dedicated service account for AI pod
+## @param enbuildAI.serviceAccount.name [default: ""] Name of service account. If empty, uses release name pattern
+## @param enbuildAI.serviceAccount.annotations [default: {}] Annotations for AI service account (e.g., for IRSA)
 enbuildAI:
   ollama:
     enabled: false # Set to true to install Ollama
@@ -181,6 +184,10 @@ enbuildAI:
     repository: enbuild-staging/vivsoft-platform-ui/enbuild-ai
   replicas: 1
   service_type: ClusterIP
+  serviceAccount:
+    create: false
+    name: ""
+    annotations: {}
 
 ## @section enbuildBolt Services parameters
 ## @param enbuildBolt.image.repository  Container repository for enbuildBolt
@@ -193,6 +200,45 @@ enbuildBolt:
     tag: v1.0.0
   replicas: 1
   service_type: ClusterIP
+
+## @section enbuildCTF Services parameters
+## @param enbuildCTF.image.repository  Container repository for enbuildCTF
+## @param enbuildCTF.image.tag  [nullable] Container image tag. Skip to use the HelmChart appVersion as Image Tag
+## @param enbuildCTF.replicas Container enbuildCTF Replicas
+## @param enbuildCTF.service_type  enbuildCTF service_type
+## @param enbuildCTF.debug  Set to true to enable debug mode in CTF backend
+## @param enbuildCTF.cors_origins  Allowed CORS origins for CTF backend
+## @param enbuildCTF.log_level  Log level for CTF backend
+## @param enbuildCTF.aws_region  AWS region for CTF backend to use AWS services like S3
+## @param enbuildCTF.resources.requests.memory  Memory resource request for CTF backend
+## @param enbuildCTF.resources.requests.cpu  CPU resource request for CTF backend
+## @param enbuildCTF.resources.limits.memory  Memory resource limit for CTF backend
+## @param enbuildCTF.resources.limits.cpu  CPU resource limit for CTF backend
+## @param enbuildCTF.serviceAccount.create [default: false] Create a dedicated service account for CTF pod
+## @param enbuildCTF.serviceAccount.name [default: ""] Name of service account. If empty, uses release name pattern
+## @param enbuildCTF.serviceAccount.annotations [default: {}] Annotations for CTF service account (e.g., for IRSA)
+
+enbuildCTF:
+  image:
+    repository: enbuild-staging/vivsoft-platform-ui/enbuild-ctf
+  replicas: 1
+  service_type: ClusterIP
+  debug: true
+  cors_origins: "['http://localhost:5173','http://localhost:5000','http://localhost:3000']"
+  log_level: "DEBUG"
+  aws_region: "us-east-1"
+  resources:
+    requests:
+      memory: "1Gi"
+      cpu: "500m"
+    limits:
+      memory: "1Gi"
+      cpu: "1"
+  serviceAccount:
+    create: false
+    name: ""
+    annotations: {}
+
 
 ## Third Party Charts
 ## @skip open-webui

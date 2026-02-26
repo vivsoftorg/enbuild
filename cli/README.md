@@ -207,3 +207,55 @@ enbuild version
 ```
 
 Current version: v0.0.11
+
+## EKS Pod Identity Setup
+
+For EKS clusters, ENBUILD supports AWS IAM access via EKS Pod Identity instead of node-level credentials.
+
+### Enabling Service Accounts
+
+To enable Pod Identity for AI and CTF services:
+
+```yaml
+# values.yaml
+lightning_features:
+  deploy_lightning:
+    ai_lightning: true
+  secure_lightning:
+    ctf: true
+
+enbuildAI:
+  serviceAccount:
+    create: true
+
+enbuildCTF:
+  serviceAccount:
+    create: true
+```
+
+### AWS Configuration
+
+After deploying with service accounts enabled, create IAM roles and Pod Identity associations:
+
+```bash
+# Create role for AI
+aws iam create-role \
+  --role-name enbuild-ai-bedrock \
+  --assume-role-policy-document '{
+    "Version": "2012-10-17",
+    "Statement": [{
+      "Effect": "Allow",
+      "Principal": { "Service": "pods.eks.amazonaws.com" },
+      "Action": ["sts:AssumeRole", "sts:TagSession"]
+    }]
+  }'
+
+# Create Pod Identity association
+aws eks create-pod-identity-association \
+  --cluster-name your-cluster \
+  --namespace enbuild \
+  --service-account enbuild-ai \
+  --role-arn arn:aws:iam::123456789:role/enbuild-ai-bedrock
+```
+
+For complete setup instructions, see [Configuring EKS Pod Identity](../docs/how-to-guides/15_configuring-eks-pod-identity.md).

@@ -33,9 +33,11 @@ Create chart name and version as used by the chart label.
 {{/*
 Common labels
 */}}
-{{- define "enbuild-helm-chart.labels" -}}
-helm.sh/chart: {{ include "enbuild-helm-chart.chart" . }}
-{{ include "enbuild-helm-chart.selectorLabels" . }}
+{{- define "enbuild-helm-chart.labels" }}
+{{- $chart := include "enbuild-helm-chart.chart" . }}
+{{- $selector := include "enbuild-helm-chart.selectorLabels" . }}
+helm.sh/chart: {{ $chart }}
+{{ $selector | nindent 0 }}
 {{- if .Chart.AppVersion }}
 app.kubernetes.io/version: {{ .Chart.AppVersion | quote }}
 {{- end }}
@@ -45,8 +47,9 @@ app.kubernetes.io/managed-by: {{ .Release.Service }}
 {{/*
 Selector labels
 */}}
-{{- define "enbuild-helm-chart.selectorLabels" -}}
-app.kubernetes.io/name: {{ include "enbuild-helm-chart.name" . }}
+{{- define "enbuild-helm-chart.selectorLabels" }}
+{{- $name := include "enbuild-helm-chart.name" . }}
+app.kubernetes.io/name: {{ $name }}
 app.kubernetes.io/instance: {{ .Release.Name }}
 {{- end }}
 
