@@ -37,6 +37,8 @@ Iron Bank examples:
 - Iron Bank install with Headlamp enabled: `examples/enbuild/quick_install_ib_headlamp.yaml`
 - Headlamp example notes: `examples/enbuild/quick_install_ib_headlamp.md`
 
+The Iron Bank examples assume the Helm release name is `enbuild-ib`, which means the generated image pull secret is `enbuild-ib-image-pull-secret`. If you install with a different release name, update the RabbitMQ and Headlamp pull secret references in the example values accordingly.
+
 # Uninstalling the Chart
 
 To uninstall/delete the `enbuild` deployment:

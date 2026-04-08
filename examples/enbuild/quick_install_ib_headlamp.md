@@ -29,3 +29,9 @@ The Iron Bank MQ image required the example's explicit command/args override so 
 3. Headlamp images
 
 The example overrides both the main Headlamp image and the kubeconfig init container image to approved Iron Bank references.
+
+4. Image pull secret name
+
+The chart creates the image pull secret as `<release-name>-image-pull-secret`. This example assumes the Helm release name is `enbuild-ib`, so the subchart image pull secret references are set to `enbuild-ib-image-pull-secret`.
+
+If you install with a different release name, update the RabbitMQ and Headlamp pull secret references in the example values accordingly.

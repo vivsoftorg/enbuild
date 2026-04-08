@@ -24,7 +24,7 @@ rabbitmq:
     repository: ironbank/bitnami/rabbitmq
     tag: 3.12.14
     pullSecrets:
-      - enbuild-image-pull-secret
+      - enbuild-ib-image-pull-secret
 
 enbuildUi:
   image:

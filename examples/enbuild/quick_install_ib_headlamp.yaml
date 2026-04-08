@@ -28,7 +28,7 @@ rabbitmq:
     repository: ironbank/bitnami/rabbitmq
     tag: 3.12.14
     pullSecrets:
-      - enbuild-image-pull-secret
+      - enbuild-ib-image-pull-secret
 
 enbuildUi:
   image:
@@ -63,7 +63,7 @@ headlamp:
     tag: v0.36.0
     pullPolicy: Always
   imagePullSecrets:
-    - name: enbuild-image-pull-secret
+    - name: enbuild-ib-image-pull-secret
   initContainers:
     - command:
         - /bin/sh
