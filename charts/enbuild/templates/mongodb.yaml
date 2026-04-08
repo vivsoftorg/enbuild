@@ -66,6 +66,10 @@ spec:
     spec:
       accessModes:
       - ReadWriteOnce
+{{- $mongoStorageClass := .Values.mongodb.storageClassName | default .Values.global.storageClass }}
+{{- if $mongoStorageClass }}
+      storageClassName: {{ $mongoStorageClass }}
+{{- end }}
       resources:
         requests:
           storage: 10Gi

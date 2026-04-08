@@ -11,6 +11,7 @@
 ## @param global.istio.gateway Istio gateway to use for creating Virtual Service.
 ## @param global.image.registry [default: registry.gitlab.com]  Container registry to pull images from
 ## @param global.image.pullPolicy [default: Always]  Container imagePullPolicy
+## @param global.storageClass [nullable,string] Explicit StorageClass to use for stateful dependencies when the cluster has no default StorageClass
 ## @param global.image.registry_credentials [nullable,object] if the image.registry is private container registry, provide the credentials
 ## @param global.image.registry_credentials.username [nullable,string]  Container registry Username
 ## @param global.image.registry_credentials.password  [nullable,string] Container registry password
@@ -33,6 +34,7 @@ global:
     registry: registry.gitlab.com
     pullPolicy: Always
     registry_credentials: {}
+  storageClass: ""
     # username: registry_user_name
     # password: registry_password
 
@@ -97,11 +99,13 @@ rabbitmq:
 ## @param mongodb.mongo_server [nullable,string] If `mongodb.enabled` is false , provide the right cosmosDB/DocumentDB endpoint
 ## @param mongodb.image.repository Container repository for mongodb Container
 ## @param mongodb.image.tag Container tag for mongodb Container
+## @param mongodb.storageClassName [nullable,string] Explicit StorageClass for MongoDB PVCs. If empty, uses `global.storageClass`
 mongodb:
   enabled: true
   mongo_root_username: "enbuild"
   mongo_root_password: "mongo_root_password"
   mongo_server: "If you are using cosmosDB then set the right cosmosDB endpoint as mongo_server and set the enabled=false"
+  storageClassName: ""
   image:
     repository: enbuild-staging/vivsoft-platform-ui/mongodb
     tag: 4.4.5
@@ -157,10 +161,17 @@ enbuildUser:
 ## @param enbuildConsumer.image.repository  Container repository for enbuildConsumer
 ## @param enbuildConsumer.image.tag [nullable] Container image tag. Skip to use the HelmChart appVersion as Image Tag
 ## @param enbuildConsumer.replicas Container enbuildConsumer Replicas
+## @param enbuildConsumer.command Command override for the MQ consumer container
+## @param enbuildConsumer.args Args override for the MQ consumer container
 enbuildConsumer:
   image:
     repository: enbuild-staging/vivsoft-platform-ui/enbuild-mq-consumer
   replicas: 1
+  command:
+    - npm
+  args:
+    - run
+    - run:mq:all
 
 ## @section ENBUILD AI Services parameters
 ## @param enbuildAI.image.repository  Container repository for enbuildAI

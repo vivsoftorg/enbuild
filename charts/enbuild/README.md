@@ -31,6 +31,12 @@ vivsoft/enbuild	0.0.12        	1.0.10      	A Helm chart for ENBUILD
 ❯ helm upgrade --install  enbuild vivsoft/enbuild --namespace enbuild --create-namespace  --version 0.0.12
 ```
 
+Iron Bank examples:
+
+- Base Iron Bank install: `examples/enbuild/quick_install_ib.yaml`
+- Iron Bank install with Headlamp enabled: `examples/enbuild/quick_install_ib_headlamp.yaml`
+- Headlamp example notes: `examples/enbuild/quick_install_ib_headlamp.md`
+
 # Uninstalling the Chart
 
 To uninstall/delete the `enbuild` deployment:
@@ -57,6 +63,7 @@ To uninstall/delete the `enbuild` deployment:
 | `global.istio.gateway`                       | Istio gateway to use for creating Virtual Service.                                                                                                                                               | `istio-system/main`   |
 | `global.image.registry`                      | Container registry to pull images from                                                                                                                                                           | `registry.gitlab.com` |
 | `global.image.pullPolicy`                    | Container imagePullPolicy                                                                                                                                                                        | `Always`              |
+| `global.storageClass`                        | Explicit StorageClass to use for stateful dependencies when the cluster has no default StorageClass                                                                                              | `""`                  |
 | `global.image.registry_credentials`          | if the image.registry is private container registry, provide the credentials                                                                                                                     | `{}`                  |
 | `global.image.registry_credentials.username` | Container registry Username                                                                                                                                                                      | `""`                  |
 | `global.image.registry_credentials.password` | Container registry password                                                                                                                                                                      | `""`                  |
@@ -99,6 +106,7 @@ To uninstall/delete the `enbuild` deployment:
 | `mongodb.mongo_server`        | If `mongodb.enabled` is false , provide the right cosmosDB/DocumentDB endpoint                                                 | `""`                                          |
 | `mongodb.image.repository`    | Container repository for mongodb Container                                                                                     | `enbuild-staging/vivsoft-platform-ui/mongodb` |
 | `mongodb.image.tag`           | Container tag for mongodb Container                                                                                            | `4.4.5`                                       |
+| `mongodb.storageClassName`    | Explicit StorageClass for MongoDB PVCs. If empty, uses `global.storageClass`                                                   | `""`                                          |
 
 ### ENBUILD UI Services parameters
 
@@ -141,6 +149,8 @@ To uninstall/delete the `enbuild` deployment:
 | `enbuildConsumer.image.repository` | Container repository for enbuildConsumer                               | `enbuild-staging/vivsoft-platform-ui/enbuild-mq-consumer` |
 | `enbuildConsumer.image.tag`        | Container image tag. Skip to use the HelmChart appVersion as Image Tag | `undefined`                                               |
 | `enbuildConsumer.replicas`         | Container enbuildConsumer Replicas                                     | `1`                                                       |
+| `enbuildConsumer.command`          | Command override for the MQ consumer container                         | `["npm"]`                                                 |
+| `enbuildConsumer.args`             | Args override for the MQ consumer container                            | `["run","run:mq:all"]`                                    |
 
 ### ENBUILD AI Services parameters
 

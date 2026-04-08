@@ -1,11 +1,15 @@
 global:
   AppVersion: 1.0.30
+  # Set this explicitly when the cluster does not define a default StorageClass.
+  # The GovCloud EKS validation used gp2.
+  storageClass: gp2
   image:
     registry: registry1.dso.mil
     pullPolicy: Always
     registry_credentials:
       username: REGISTRY1_USER_NAME
       password: REGISTRY1_PASSWORD
+
 mongodb:
   enabled: true
   mongo_root_username: "enbuild"
@@ -13,6 +17,7 @@ mongodb:
   image:
     repository: ironbank/opensource/mongodb/mongodb
     tag: 4.4.5
+
 rabbitmq:
   image:
     registry: registry1.dso.mil
@@ -20,15 +25,29 @@ rabbitmq:
     tag: 3.12.14
     pullSecrets:
       - enbuild-image-pull-secret
+
 enbuildUi:
   image:
     repository: ironbank/vivsoft/enbuild/frontend
+    tag: 1.0.30-5101868
+
 enbuildBk:
   image:
     repository: ironbank/vivsoft/enbuild/backend
+    tag: 1.0.30-5101272
+
 enbuildUser:
   image:
     repository: ironbank/vivsoft/enbuild/enbuild-user
+    tag: 1.0.30-5098733
+
 enbuildConsumer:
   image:
     repository: ironbank/vivsoft/enbuild/enbuild-mq
+    tag: 1.0.30-5101532
+  # The Iron Bank MQ image works when npm resolves node from /usr/bin first.
+  command:
+    - /bin/sh
+    - -lc
+  args:
+    - export PATH=/usr/bin:/usr/sbin:/bin:/sbin:/usr/local/bin && exec /usr/bin/npm run run:mq:all

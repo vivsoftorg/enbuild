@@ -1,0 +1,110 @@
+global:
+  AppVersion: 1.0.30
+  # Set this explicitly when the cluster does not define a default StorageClass.
+  # The GovCloud EKS validation used gp2.
+  storageClass: gp2
+  image:
+    registry: registry1.dso.mil
+    pullPolicy: Always
+    registry_credentials:
+      username: REGISTRY1_USER_NAME
+      password: REGISTRY1_PASSWORD
+
+lightning_features:
+  operations_lightning:
+    headlamp: true
+
+mongodb:
+  enabled: true
+  mongo_root_username: "enbuild"
+  mongo_root_password: "SuperSecret"
+  image:
+    repository: ironbank/opensource/mongodb/mongodb
+    tag: 4.4.5
+
+rabbitmq:
+  image:
+    registry: registry1.dso.mil
+    repository: ironbank/bitnami/rabbitmq
+    tag: 3.12.14
+    pullSecrets:
+      - enbuild-image-pull-secret
+
+enbuildUi:
+  image:
+    repository: ironbank/vivsoft/enbuild/frontend
+    tag: 1.0.30-5101868
+
+enbuildBk:
+  image:
+    repository: ironbank/vivsoft/enbuild/backend
+    tag: 1.0.30-5101272
+
+enbuildUser:
+  image:
+    repository: ironbank/vivsoft/enbuild/enbuild-user
+    tag: 1.0.30-5098733
+
+enbuildConsumer:
+  image:
+    repository: ironbank/vivsoft/enbuild/enbuild-mq
+    tag: 1.0.30-5101532
+  # The Iron Bank MQ image works when npm resolves node from /usr/bin first.
+  command:
+    - /bin/sh
+    - -lc
+  args:
+    - export PATH=/usr/bin:/usr/sbin:/bin:/sbin:/usr/local/bin && exec /usr/bin/npm run run:mq:all
+
+headlamp:
+  image:
+    registry: registry1.dso.mil
+    repository: ironbank/opensource/headlamp-k8s/headlamp
+    tag: v0.36.0
+    pullPolicy: Always
+  imagePullSecrets:
+    - name: enbuild-image-pull-secret
+  initContainers:
+    - command:
+        - /bin/sh
+        - -c
+        - |
+          kubectl config set-cluster main --server=https://kubernetes.default.svc --certificate-authority=/var/run/secrets/kubernetes.io/serviceaccount/ca.crt
+          kubectl config set-credentials main --token=$(cat /var/run/secrets/kubernetes.io/serviceaccount/token)
+          kubectl config set-context main --cluster=main --user=main
+          kubectl config use-context main
+      env:
+        - name: KUBECONFIG
+          value: /home/headlamp/.config/Headlamp/kubeconfigs/config
+      image: registry1.dso.mil/ironbank/opensource/kubernetes/kubectl:v1.34.6
+      imagePullPolicy: Always
+      name: create-kubeconfig
+      securityContext:
+        capabilities:
+          drop:
+            - ALL
+        privileged: false
+        readOnlyRootFilesystem: true
+        runAsGroup: 101
+        runAsNonRoot: true
+        runAsUser: 100
+      volumeMounts:
+        - mountPath: /home/headlamp/.config/Headlamp/kubeconfigs
+          name: kubeconfig
+  config:
+    inCluster: true
+    baseURL: /headlamp
+    pluginsDir: ""
+    watchPlugins: false
+    extraArgs:
+      - -enable-dynamic-clusters
+  volumeMounts:
+    - mountPath: /home/headlamp/.config/Headlamp/kubeconfigs/config
+      name: kubeconfig
+      readOnly: true
+      subPath: config
+  volumes:
+    - name: kubeconfig
+      emptyDir: {}
+  persistentVolumeClaim:
+    enabled: false
