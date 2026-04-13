@@ -52,11 +52,14 @@ spec:
         #     - node
         #     - src/queue/testConnection.js
         name: enbuild-mq
+{{- with .Values.enbuildConsumer.args }}
         args:
-          - run
-          - run:mq:all
+{{ toYaml . | indent 10 }}
+{{- end }}
+{{- with .Values.enbuildConsumer.command }}
         command:
-          - npm
+{{ toYaml . | indent 10 }}
+{{- end }}
         # ports:
         # - containerPort: 8080
         resources: {{- toYaml .Values.enbuildConsumer.resources | nindent 10 }}
