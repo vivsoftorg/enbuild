@@ -18,7 +18,12 @@ data:
 
     server {
       listen 8080 default_server;
-      server_name _;
+      # Claim "localhost" too so this server block wins over the base image's
+      # default localhost server when accessed via kubectl port-forward.
+      # Without this, port-forwarded requests with Host: localhost match the
+      # base image's server block (no /enbuild-bk/ /enbuild-user/ /headlamp/
+      # location blocks) and proxy paths return 404, breaking the UI.
+      server_name localhost _;
 
       include override.conf;
 
