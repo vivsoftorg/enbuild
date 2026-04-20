@@ -1,0 +1,168 @@
+# ENBUILD Helm values for the P1 CCM vendor13-ib cluster.
+#
+# This file extends examples/enbuild/quick_install_ib_headlamp.yaml with
+# vendor13-ib-specific settings. The baseline pulls ENBUILD + Headlamp from
+# Iron Bank (registry1.dso.mil) and was validated on a disposable GovCloud
+# EKS cluster.
+#
+# Install as Helm release "enbuild-ib" so the chart's generated image pull
+# secret lines up with the sub-chart pullSecrets references:
+#
+#   helm install enbuild-ib ./charts/enbuild \
+#     --namespace enbuild --create-namespace \
+#     --values examples/enbuild/values-vendor13-ib.yaml \
+#     --kube-context vendor13-ib \
+#     --set global.image.registry_credentials.username=<registry1 username> \
+#     --set global.image.registry_credentials.password=<registry1 password>
+#
+# Open questions captured inline with TODO markers — resolve before final install.
+
+global:
+  AppVersion: 1.0.30
+
+  # vendor13-ib storage: node groups are on EBS-backed EC2s. The cluster's
+  # default StorageClass needs to be confirmed — if absent or not gp3-compatible,
+  # leave this as gp2 (matches the GovCloud validation baseline).
+  # TODO: confirm default SC via: kubectl get sc
+  storageClass: gp2
+
+  image:
+    registry: registry1.dso.mil
+    pullPolicy: Always
+    registry_credentials:
+      # Do NOT commit real credentials. Pass via --set on helm install:
+      #   --set global.image.registry_credentials.username=...
+      #   --set global.image.registry_credentials.password=...
+      username: REGISTRY1_USER_NAME
+      password: REGISTRY1_PASSWORD
+
+  # TODO: confirm the ingress/DNS hostname for ENBUILD on vendor13-ib.
+  # The existing public ingress gateway ELB is:
+  #   ib-vendor13-public-7cc82085da1ead0c.elb.us-gov-west-1.amazonaws.com
+  # A Route53 record or CNAME will need to point at that ELB.
+  # domain: enbuild.vendor13.<p1-domain>
+
+  # TODO: enable Istio integration once the DNS + VirtualService story is
+  # confirmed with Jeffrey. vendor13-ib has the public-ingressgateway at
+  # bigbang/public-ingressgateway ready to accept a VirtualService from
+  # the enbuild namespace.
+  # istio:
+  #   enabled: true
+  #   ingressGateway: bigbang/public-ingressgateway
+
+lightning_features:
+  operations_lightning:
+    headlamp: true
+
+mongodb:
+  enabled: true
+  mongo_root_username: "enbuild"
+  # TODO: rotate this to a cluster-generated secret before going to any
+  # shared environment. Left as placeholder for the disposable-cluster
+  # baseline.
+  mongo_root_password: "SuperSecret"
+  image:
+    repository: ironbank/opensource/mongodb/mongodb
+    tag: 4.4.5
+
+rabbitmq:
+  image:
+    registry: registry1.dso.mil
+    repository: ironbank/bitnami/rabbitmq
+    tag: 3.12.14
+    pullSecrets:
+      - enbuild-ib-image-pull-secret
+
+enbuildUi:
+  image:
+    repository: ironbank/vivsoft/enbuild/frontend
+    tag: 1.0.30-5101868
+
+enbuildBk:
+  image:
+    repository: ironbank/vivsoft/enbuild/backend
+    tag: 1.0.30-5101272
+
+enbuildUser:
+  image:
+    repository: ironbank/vivsoft/enbuild/enbuild-user
+    tag: 1.0.30-5098733
+
+enbuildConsumer:
+  image:
+    repository: ironbank/vivsoft/enbuild/enbuild-mq
+    tag: 1.0.30-5101532
+  # The Iron Bank MQ image works when npm resolves node from /usr/bin first.
+  command:
+    - /bin/sh
+    - -lc
+  args:
+    - export PATH=/usr/bin:/usr/sbin:/bin:/sbin:/usr/local/bin && exec /usr/bin/npm run run:mq:all
+
+headlamp:
+  image:
+    registry: registry1.dso.mil
+    repository: ironbank/opensource/headlamp-k8s/headlamp
+    tag: v0.36.0
+    pullPolicy: Always
+  imagePullSecrets:
+    - name: enbuild-ib-image-pull-secret
+  initContainers:
+    - command:
+        - /bin/sh
+        - -c
+        - |
+          kubectl config set-cluster main --server=https://kubernetes.default.svc --certificate-authority=/var/run/secrets/kubernetes.io/serviceaccount/ca.crt
+          kubectl config set-credentials main --token=$(cat /var/run/secrets/kubernetes.io/serviceaccount/token)
+          kubectl config set-context main --cluster=main --user=main
+          kubectl config use-context main
+      env:
+        - name: KUBECONFIG
+          value: /home/headlamp/.config/Headlamp/kubeconfigs/config
+      image: registry1.dso.mil/ironbank/opensource/kubernetes/kubectl:v1.34.6
+      imagePullPolicy: Always
+      name: create-kubeconfig
+      securityContext:
+        capabilities:
+          drop:
+            - ALL
+        privileged: false
+        readOnlyRootFilesystem: true
+        runAsGroup: 101
+        runAsNonRoot: true
+        runAsUser: 100
+      volumeMounts:
+        - mountPath: /home/headlamp/.config/Headlamp/kubeconfigs
+          name: kubeconfig
+  config:
+    inCluster: true
+    baseURL: /headlamp
+    pluginsDir: ""
+    watchPlugins: false
+    extraArgs:
+      - -enable-dynamic-clusters
+  volumeMounts:
+    - mountPath: /home/headlamp/.config/Headlamp/kubeconfigs/config
+      name: kubeconfig
+      readOnly: true
+      subPath: config
+  volumes:
+    - name: kubeconfig
+      emptyDir: {}
+  persistentVolumeClaim:
+    enabled: false
+
+# TODO: AWS credentials for the mq-consumer to call the AWS API when
+# provisioning downstream clusters. Options:
+#   1. Static keys from the ccm-vendor13-svc account stored in a
+#      Kubernetes Secret and mounted as env vars in enbuildConsumer.
+#   2. Pod Identity association on the enbuildConsumer ServiceAccount
+#      (requires eks:CreatePodIdentityAssociation — already in our
+#      ccm-vendor13-eks policy) with a role that has equivalent perms.
+# The second path is preferred for production; the first is the quickest
+# unblock. Revisit before the Phase 7 provisioning test.
+
+# TODO: GitLab token for ENBUILD to create/trigger repos. Interim: use
+# the in-cluster GitLab in the `gitlab` namespace on vendor13-ib.
+# Final: repo1.dso.mil once a P1 namespace is provisioned for us
+# (follow-up item with Jeffrey).
