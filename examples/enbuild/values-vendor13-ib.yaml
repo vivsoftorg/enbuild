@@ -8,6 +8,9 @@
 # Install as Helm release "enbuild-ib" so the chart's generated image pull
 # secret lines up with the sub-chart pullSecrets references:
 #
+#   # Operator must docker login first so creds aren't in shell history:
+#   docker login registry1.dso.mil -u <user>
+#
 #   helm install enbuild-ib ./charts/enbuild \
 #     --namespace enbuild --create-namespace \
 #     --values examples/enbuild/values-vendor13-ib.yaml \
@@ -15,7 +18,11 @@
 #     --set global.image.registry_credentials.username=<registry1 username> \
 #     --set global.image.registry_credentials.password=<registry1 password>
 #
-# Open questions captured inline with TODO markers — resolve before final install.
+# Phase-5 deployment scope intentionally minimal: no DNS hostname, no SSO,
+# no IRSA. Access via `kubectl port-forward` and ENBUILD local-admin login.
+# Follow-on phases add DNS, Istio VirtualService, SSO, and Pod Identity for
+# the mq-consumer (the cluster's OIDC provider is already registered in IAM
+# at arn:aws-us-gov:iam::219533807077:oidc-provider/oidc.eks.us-gov-west-1.amazonaws.com/id/48EA4C3B972522B4A77C3643EAFE1512).
 
 global:
   AppVersion: 1.0.30
