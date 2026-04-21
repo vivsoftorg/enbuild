@@ -31,6 +31,17 @@ spec:
             name: {{ .Release.Name }}-backend-secret
         image: {{ .Values.global.image.registry }}/{{ .Values.enbuildConsumer.image.repository }}:{{ default .Chart.AppVersion (default .Values.global.AppVersion .Values.enbuildConsumer.image.tag) }}
         imagePullPolicy: {{ .Values.global.image.pullPolicy }}
+        # WHY this default probe is shell-wrapped with PATH+/usr/bin/node:
+        # The Iron Bank enbuild-mq image (registry1.dso.mil/ironbank/vivsoft/enbuild/enbuild-mq)
+        # ships multiple `node` binaries; only /usr/bin/node loads libatomic.so.1 correctly.
+        # A naive `node src/queue/testConnection.js` probe resolves the wrong binary, the
+        # exec returns non-zero, and the kubelet kills the pod every minute. This was first
+        # observed on the vendor13-ib P1 GovCloud install (2026-04-20) where the pod
+        # restarted 45 times in ~4 hours before the workaround was applied.
+        # The shell wrapper + absolute /usr/bin/node also works on the GitLab-registry
+        # image (default node lives at the same path), so this is safe as a global default.
+        # Operators who want a different probe shape (httpGet, tcpSocket, longer timeouts,
+        # etc.) can override via .Values.enbuildConsumer.livenessProbe.
         livenessProbe:
           {{- with .Values.enbuildConsumer.livenessProbe }}
           {{- toYaml . | nindent 10 }}
@@ -38,8 +49,9 @@ spec:
           failureThreshold: 3
           exec:
             command:
-            - node
-            - src/queue/testConnection.js
+            - /bin/sh
+            - -c
+            - PATH=/usr/bin:/usr/sbin:/bin:/sbin:/usr/local/bin /usr/bin/node src/queue/testConnection.js
           initialDelaySeconds: 3
           periodSeconds: 60
           successThreshold: 1

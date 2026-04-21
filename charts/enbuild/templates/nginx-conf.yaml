@@ -18,11 +18,19 @@ data:
 
     server {
       listen 8080 default_server;
-      # Claim "localhost" too so this server block wins over the base image's
-      # default localhost server when accessed via kubectl port-forward.
-      # Without this, port-forwarded requests with Host: localhost match the
-      # base image's server block (no /enbuild-bk/ /enbuild-user/ /headlamp/
-      # location blocks) and proxy paths return 404, breaking the UI.
+      # WHY "localhost" is in server_name (DO NOT REMOVE):
+      # The Iron Bank (and stock) nginx base image ships a default server block
+      # in /etc/nginx/nginx.conf with `server_name localhost`, also listening on
+      # 8080. nginx selects server blocks by Host header before falling back to
+      # default_server, so any request with Host: localhost (i.e. every kubectl
+      # port-forward) matches the base block — which has NO /enbuild-bk/,
+      # /enbuild-user/, /headlamp/ location entries. The UI loads but every
+      # API call returns the React 404 HTML, the frontend tries to parse that
+      # as JSON, and crashes with "Unexpected token '<'". First observed on
+      # vendor13-ib (2026-04-20). Adding "localhost" here lets this block tie
+      # the base block on hostname match and win on `default_server`.
+      # Production access via Istio gateway uses a non-localhost Host header
+      # and is unaffected by this line.
       server_name localhost _;
 
       include override.conf;
