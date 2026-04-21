@@ -32,6 +32,9 @@ spec:
         image: {{ .Values.global.image.registry }}/{{ .Values.enbuildConsumer.image.repository }}:{{ default .Chart.AppVersion (default .Values.global.AppVersion .Values.enbuildConsumer.image.tag) }}
         imagePullPolicy: {{ .Values.global.image.pullPolicy }}
         livenessProbe:
+          {{- with .Values.enbuildConsumer.livenessProbe }}
+          {{- toYaml . | nindent 10 }}
+          {{- else }}
           failureThreshold: 3
           exec:
             command:
@@ -41,6 +44,7 @@ spec:
           periodSeconds: 60
           successThreshold: 1
           timeoutSeconds: 10
+          {{- end }}
         # readinessProbe:
         #   failureThreshold: 3
         #   initialDelaySeconds: 3

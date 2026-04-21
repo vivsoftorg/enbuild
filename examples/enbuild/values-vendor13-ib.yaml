@@ -105,6 +105,21 @@ enbuildConsumer:
     - -lc
   args:
     - export PATH=/usr/bin:/usr/sbin:/bin:/sbin:/usr/local/bin && exec /usr/bin/npm run run:mq:all
+  # The default chart liveness probe runs `node src/queue/testConnection.js`
+  # without setting PATH first, so the IB image's plain `node` resolves to a
+  # broken binary that fails to load libatomic.so.1 — causing a restart loop.
+  # Override to use a shell wrapper that pins PATH and uses /usr/bin/node.
+  livenessProbe:
+    failureThreshold: 3
+    exec:
+      command:
+        - /bin/sh
+        - -c
+        - PATH=/usr/bin:/usr/sbin:/bin:/sbin:/usr/local/bin /usr/bin/node src/queue/testConnection.js
+    initialDelaySeconds: 3
+    periodSeconds: 60
+    successThreshold: 1
+    timeoutSeconds: 10
 
 headlamp:
   image:
