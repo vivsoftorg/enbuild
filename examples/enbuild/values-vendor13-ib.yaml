@@ -64,10 +64,21 @@ lightning_features:
 mongodb:
   enabled: true
   mongo_root_username: "enbuild"
-  # TODO: rotate this to a cluster-generated secret before going to any
-  # shared environment. Left as placeholder for the disposable-cluster
-  # baseline.
-  mongo_root_password: "SuperSecret"
+  # WHY this is a sentinel string (DO NOT install with this value):
+  # The previous version of this file shipped mongo_root_password: "SuperSecret"
+  # as a placeholder. That placeholder was getting propagated into real
+  # installs (vendor13-ib initially shipped with it) because nothing made
+  # the operator aware they had to change it. The sentinel <REPLACE_BEFORE_INSTALL>
+  # is invalid for MongoDB and forces the install to fail loudly if the
+  # operator forgets to override it.
+  #
+  # Required at install time:
+  #   --set mongodb.mongo_root_password='<your secret>'
+  #
+  # For a longer-lived install, prefer wiring this to an externally-managed
+  # Kubernetes Secret (the chart's mongodb subchart supports existingSecret
+  # via additional values overrides; not enabled by default in this example).
+  mongo_root_password: "<REPLACE_BEFORE_INSTALL>"
   image:
     repository: ironbank/opensource/mongodb/mongodb
     tag: 4.4.5
