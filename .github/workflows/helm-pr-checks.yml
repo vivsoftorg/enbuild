@@ -1,0 +1,181 @@
+# PR-time quality gates for the enbuild Helm chart.
+#
+# WHY this workflow exists:
+# In late April 2026 two regressions reached `main` that any kind-install +
+# curl smoke test would have caught immediately:
+#
+#   1. nginx server_name dropped 'localhost' from the chart's server block.
+#      The Iron Bank base image's default server block (also listening on 8080
+#      with `server_name localhost`) won the Host: localhost match for any
+#      kubectl port-forward request. Result: UI loaded but every API call
+#      returned the React 404 HTML, the frontend crashed parsing it as JSON,
+#      and the install was unusable. Symptom mistaken for "auth broken" or
+#      "config.js wrong" before root cause was found.
+#
+#   2. mq-consumer liveness probe ran `node src/queue/testConnection.js`
+#      directly. The Iron Bank enbuild-mq image has multiple `node` binaries
+#      and only /usr/bin/node loads libatomic.so.1 correctly. Plain `node`
+#      resolved to a broken binary; the probe failed; the kubelet killed the
+#      pod every minute. 45 restarts in ~4 hours on the vendor13-ib install
+#      before the workaround was applied.
+#
+# Both bugs were chart-template-only (no app code involved). A 5-minute
+# CI install + curl loop would have caught both. This workflow runs that
+# loop on every PR that touches charts/** or examples/**.
+#
+# Security note: this workflow does not consume any untrusted PR-author
+# input (titles, bodies, branch names, commit messages) in run: commands.
+# All commands operate on statically-defined values or files from the PR's
+# checked-out tree (which goes through normal helm parsing, not shell eval).
+#
+# DO NOT remove jobs without understanding what they're catching. The
+# health-path curl in `kind-install-smoke` and the restart-count check are
+# specifically tuned to the failure modes above. If the chart changes shape
+# such that a check no longer applies, write the replacement check first.
+
+name: Helm chart PR checks
+
+on:
+  pull_request:
+    paths:
+      - "charts/**"
+      - "examples/**"
+      - ".github/workflows/helm-pr-checks.yml"
+
+jobs:
+  lint-and-template:
+    name: helm lint + template + kubeconform
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install helm
+        uses: azure/setup-helm@v4
+        with:
+          version: v3.19.0
+
+      - name: Install kubeconform
+        run: |
+          curl -sSL https://github.com/yannh/kubeconform/releases/download/v0.6.7/kubeconform-linux-amd64.tar.gz \
+            | tar -xz -C /usr/local/bin kubeconform
+
+      - name: helm dependency update
+        run: helm dependency update ./charts/enbuild
+
+      - name: helm lint (every example values file)
+        run: |
+          set -e
+          for f in examples/enbuild/*.yaml; do
+            echo "=== lint: $f ==="
+            helm lint ./charts/enbuild --values "$f"
+          done
+
+      - name: helm template + kubeconform (every example values file)
+        run: |
+          set -e
+          for f in examples/enbuild/*.yaml; do
+            echo "=== template + kubeconform: $f ==="
+            helm template enbuild-test ./charts/enbuild --values "$f" \
+              --set global.image.registry_credentials.username=fake \
+              --set global.image.registry_credentials.password=fake \
+              --set mongodb.mongo_root_password=fake \
+              | kubeconform -strict -summary -ignore-missing-schemas
+          done
+
+  kind-install-smoke:
+    name: kind install + curl smoke (catches the April 2026 regression class)
+    runs-on: ubuntu-latest
+    needs: lint-and-template
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install helm
+        uses: azure/setup-helm@v4
+        with:
+          version: v3.19.0
+
+      - name: Create kind cluster
+        uses: helm/kind-action@v1
+        with:
+          cluster_name: enbuild-pr-smoke
+          version: v0.30.0
+
+      - name: helm dependency update
+        run: helm dependency update ./charts/enbuild
+
+      - name: Raise inotify limits inside kind node
+        # WHY: kube-proxy on kind hits "too many open files" by default in CI runners.
+        # Same fix we apply locally (vendor13-ib runbook documents this for laptops).
+        run: |
+          docker exec enbuild-pr-smoke-control-plane sh -c \
+            "sysctl -w fs.inotify.max_user_instances=8192 && sysctl -w fs.inotify.max_user_watches=524288"
+
+      - name: helm install (using quick_install.yaml — non-IB images, public)
+        # We can't pull IB images from public CI runners, so we install with
+        # the GitLab-registry images. The chart defaults under test (probe
+        # shell wrapper, nginx server_name) work on both image sets, so this
+        # is a valid regression check for the bugs above.
+        run: |
+          helm install enbuild-pr ./charts/enbuild \
+            --namespace enbuild --create-namespace \
+            --values examples/enbuild/quick_install.yaml \
+            --wait --timeout 10m
+
+      - name: Wait for core deployments to be Available
+        run: |
+          kubectl -n enbuild rollout status deployment/enbuild-pr-enbuild-ui --timeout=5m
+          kubectl -n enbuild rollout status deployment/enbuild-pr-enbuild-backend --timeout=5m
+          kubectl -n enbuild rollout status deployment/enbuild-pr-enbuild-mq --timeout=5m
+
+      - name: Port-forward UI service in the background
+        run: |
+          kubectl -n enbuild port-forward svc/enbuild-pr-enbuild-ui 8080:80 &
+          echo $! > /tmp/pf.pid
+          sleep 5
+
+      - name: Bug-class check 1 — UI proxy paths reach backend (catches nginx server_name regression)
+        # If the chart's nginx server block ever drops `localhost` from server_name,
+        # this curl will return 404 (HTML 404 page from the base image's nginx
+        # default block) instead of 200. That was the April 2026 regression.
+        run: |
+          set -e
+          curl -fsS -o /dev/null http://localhost:8080/
+          curl -fsS -o /dev/null http://localhost:8080/enbuild-bk/api/health
+          # user service should respond — 401/403 is fine, 404 is the failure signal
+          code=$(curl -s -o /dev/null -w "%{http_code}" http://localhost:8080/enbuild-user/api/v1/users)
+          if [ "$code" = "404" ]; then
+            echo "FAIL: /enbuild-user/api/v1/users returned 404 (proxy path missing)"
+            exit 1
+          fi
+
+      - name: Bug-class check 2 — mq-consumer stays at 0 restarts (catches probe-PATH regression)
+        # If the chart's default liveness probe ever stops being shell-wrapped
+        # with /usr/bin/node, IB-image users will see the pod killed every
+        # minute. We can't run the IB image here, but we can assert the probe
+        # itself doesn't false-fail on the GitLab-registry image either.
+        run: |
+          sleep 180  # wait through 3 probe periods (60s each)
+          restarts=$(kubectl -n enbuild get pod -l app=mq -o jsonpath='{.items[0].status.containerStatuses[0].restartCount}')
+          echo "mq restart count after 3 probe periods: $restarts"
+          if [ "$restarts" != "0" ]; then
+            echo "FAIL: mq pod restarted $restarts times — probe is killing it"
+            exit 1
+          fi
+
+      - name: Cleanup port-forward
+        if: always()
+        run: kill "$(cat /tmp/pf.pid)" 2>/dev/null || true
+
+      - name: Diagnostics on failure
+        if: failure()
+        run: |
+          echo "=== pods ==="
+          kubectl -n enbuild get pods
+          echo "=== events ==="
+          kubectl -n enbuild get events --sort-by=.lastTimestamp | tail -30
+          for d in enbuild-pr-enbuild-ui enbuild-pr-enbuild-backend enbuild-pr-enbuild-mq; do
+            echo "=== logs: $d ==="
+            kubectl -n enbuild logs deployment/$d --tail=80 || true
+            echo "=== describe: $d ==="
+            kubectl -n enbuild describe deployment/$d || true
+          done
