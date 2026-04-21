@@ -1,0 +1,71 @@
+# Helm test for ENBUILD: validates the UI nginx proxy chain end-to-end after install.
+#
+# Run with:  helm test <release> -n <namespace>
+#
+# WHY we hit /enbuild-bk/... and /enbuild-user/... through the UI service
+# instead of the backend service directly:
+# These paths exercise the nginx reverse-proxy in the UI pod, which is the
+# component that broke in the April 2026 regression (chart's nginx server
+# block dropped 'localhost' from server_name and lost the Host: localhost
+# match to the IB base image's default server block, which has no proxy
+# location entries — every API call returned the React 404 HTML).
+#
+# Hitting the backend service directly would NOT have caught that regression
+# because the backend itself was healthy. The bug was in the nginx routing
+# layer, which only the UI-service request path exercises.
+#
+# This test must continue to use the UI service's path-prefixed URLs even
+# if it looks redundant with health checks elsewhere — that redundancy is
+# the point.
+apiVersion: v1
+kind: Pod
+metadata:
+  name: "{{ .Release.Name }}-test-ui-proxy"
+  labels:
+    {{- include "enbuild-helm-chart.labels" . | nindent 4 }}
+  annotations:
+    "helm.sh/hook": test
+    "helm.sh/hook-delete-policy": before-hook-creation,hook-succeeded
+spec:
+  restartPolicy: Never
+  containers:
+    - name: curl
+      image: curlimages/curl:8.10.1
+      command:
+        - /bin/sh
+        - -ec
+        - |
+          UI="http://{{ .Release.Name }}-enbuild-ui"
+          echo "Test 1: UI root returns 200"
+          curl -fsS -o /dev/null "$UI/"
+          echo "  PASS"
+
+          echo "Test 2: UI -> backend proxy /enbuild-bk/api/health returns 200"
+          # This is the specific failure path of the April 2026 nginx server_name regression.
+          # If the chart's nginx server block ever stops claiming 'localhost', this
+          # request gets the IB base image's nginx 404 HTML page instead.
+          curl -fsS -o /dev/null "$UI/enbuild-bk/api/health"
+          echo "  PASS"
+
+          echo "Test 3: UI -> user-service proxy /enbuild-user/api/v1/users is reachable"
+          # Status 200, 401 or 403 all indicate the proxy delivered the request to
+          # the user service. Status 404 means the proxy failed and we got the
+          # base image's default 404 page back — that's the regression signal.
+          code=$(curl -s -o /dev/null -w "%{http_code}" "$UI/enbuild-user/api/v1/users")
+          if [ "$code" = "404" ]; then
+            echo "  FAIL: HTTP 404 means the nginx proxy is broken (regression)"
+            exit 1
+          fi
+          echo "  PASS (HTTP $code)"
+
+          echo ""
+          echo "All UI proxy paths reachable. Chart nginx routing is healthy."
+      imagePullPolicy: IfNotPresent
+      securityContext:
+        allowPrivilegeEscalation: false
+        capabilities:
+          drop:
+            - ALL
+        runAsNonRoot: true
+        runAsUser: 100
+        runAsGroup: 101
