@@ -1,0 +1,3 @@
+[submodule "cli/enbuild-sdk-go"]
+	path = cli/enbuild-sdk-go
+	url = https://github.com/vivsoftorg/enbuild-sdk-go.git

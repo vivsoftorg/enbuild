@@ -38,6 +38,7 @@ The following key value pairs are used to configure ENBUILD.
 | `global.istio.gateway`                       | Istio gateway to use for creating Virtual Service.                                                                                                                                               | `istio-system/main`   |
 | `global.image.registry`                      | Container registry to pull images from                                                                                                                                                           | `registry.gitlab.com` |
 | `global.image.pullPolicy`                    | Container imagePullPolicy                                                                                                                                                                        | `Always`              |
+| `global.storageClass`                        | Explicit StorageClass to use for stateful dependencies when the cluster has no default StorageClass                                                                                              | `""`                  |
 | `global.image.registry_credentials`          | if the image.registry is private container registry, provide the credentials                                                                                                                     | `{}`                  |
 | `global.image.registry_credentials.username` | Container registry Username                                                                                                                                                                      | `""`                  |
 | `global.image.registry_credentials.password` | Container registry password                                                                                                                                                                      | `""`                  |
@@ -80,6 +81,7 @@ The following key value pairs are used to configure ENBUILD.
 | `mongodb.mongo_server`        | If `mongodb.enabled` is false , provide the right cosmosDB/DocumentDB endpoint                                                 | `""`                                          |
 | `mongodb.image.repository`    | Container repository for mongodb Container                                                                                     | `enbuild-staging/vivsoft-platform-ui/mongodb` |
 | `mongodb.image.tag`           | Container tag for mongodb Container                                                                                            | `4.4.5`                                       |
+| `mongodb.storageClassName`    | Explicit StorageClass for MongoDB PVCs. If empty, uses `global.storageClass`                                                   | `""`                                          |
 
 ### ENBUILD UI Services parameters
 
@@ -122,6 +124,8 @@ The following key value pairs are used to configure ENBUILD.
 | `enbuildConsumer.image.repository` | Container repository for enbuildConsumer                               | `enbuild-staging/vivsoft-platform-ui/enbuild-mq-consumer` |
 | `enbuildConsumer.image.tag`        | Container image tag. Skip to use the HelmChart appVersion as Image Tag | `undefined`                                               |
 | `enbuildConsumer.replicas`         | Container enbuildConsumer Replicas                                     | `1`                                                       |
+| `enbuildConsumer.command`          | Command override for the MQ consumer container                         | `["npm"]`                                                 |
+| `enbuildConsumer.args`             | Args override for the MQ consumer container                            | `["run","run:mq:all"]`                                    |
 
 ### ENBUILD AI Services parameters
 
