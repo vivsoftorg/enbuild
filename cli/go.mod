@@ -13,8 +13,6 @@ require (
 	gopkg.in/yaml.v3 v3.0.1
 )
 
-replace github.com/vivsoftorg/enbuild-sdk-go => ./enbuild-sdk-go
-
 require (
 	github.com/fatih/color v1.18.0 // indirect
 	github.com/inconshreveable/mousetrap v1.1.0 // indirect
