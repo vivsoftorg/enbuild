@@ -78,11 +78,11 @@ func listStacks(client *enbuild.Client) {
 func printStackTable(stacks []*enbuild.Stack) {
 	fmt.Printf("Found %d stack(s):\n", len(stacks))
 	table := tablewriter.NewWriter(os.Stdout)
-	table.Header([]string{"ID", "Name", "Type", "Status"})
+	table.Header([]string{"ID", "Name", "Type", "Status", "CreatedBy"})
 
 	for _, c := range stacks {
 		id := fmt.Sprintf("%v", c.ID)
-		table.Append([]string{id, c.Name, c.Type, c.Status})
+		table.Append([]string{id, c.Name, c.Type, c.Status, c.CreatedBy})
 	}
 	table.Render()
 }
