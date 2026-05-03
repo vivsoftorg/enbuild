@@ -82,6 +82,18 @@ rabbitmq:
     username: admin
     password: SuperSecret
     erlangCookie: lamba
+    # T1.2 fix — bitnami's default `securePassword: true` causes the chart to
+    # generate a random admin password and IGNORE auth.password. After a PVC
+    # wipe the freshly created admin user has a NEW random password while the
+    # backend still connects with `amqp://admin:SuperSecret@...` (sourced from
+    # RABBIT_MQ_CONNECTION_STRING in enbuild-ib-backend-secret). Result:
+    # PLAIN login refused -> backend + mq-consumer crashloop until someone
+    # runs `rabbitmqctl change_password admin SuperSecret` manually
+    # (we hit this on vendor13-ib 2026-04-30, ~3h outage).
+    # Setting securePassword: false makes the chart honour auth.password, so a
+    # PVC wipe re-creates the admin user with `SuperSecret` and backend
+    # reconnects without intervention. See plan T1.2.
+    securePassword: false
   clustering:
     forceBoot: true
   host: rabbitmq.rabbitmq # Needed only rabbitmq.enabled is false
@@ -139,12 +151,22 @@ enbuildUi:
 ## @param enbuildBk.replicas Container enbuildBk Replicas
 ## @param enbuildBk.service_type  enbuildBk service_type
 ## @param enbuildBk.encryption_key  encryption_key to be used by Backend
+## @param enbuildBk.gitlabPat.existingSecret  Name of an operator-managed Secret carrying GITLAB_TOKEN (and optionally GITLAB_HOST). When set, the deployment adds an envFrom for that secret; the inline GITLAB_TOKEN from enbuildConsumer.gitlab.token is omitted to avoid duplicate envvars. Use this in P1 environments where the PAT is provisioned out-of-band and rotated separately. Backwards-compatible default: empty (uses inline values).
+## @param enbuildBk.exportSigning.existingSecret  Name of an operator-managed Secret carrying SIEM_SIGNING_KEY (PEM-encoded ECDSA P-256 private key) for the CCM-32 audit export bundle (EN-1237). Strongly preferred over privateKeyPem for production. Backwards-compatible default: empty.
+## @param enbuildBk.exportSigning.privateKeyPem  Inline PEM private key used to sign /audit/export-bundle responses. Dev/test only; production should use existingSecret. Multiline string. Backwards-compatible default: empty (signing disabled; bundle returns signed=false).
 enbuildBk:
   image:
     repository: enbuild-staging/vivsoft-platform-ui/enbuild-backend
   replicas: 1
   service_type: ClusterIP
   encryption_key: "encryption_key"
+  ## P1 CCM Console — operator-managed secret support (backwards-compatible).
+  ## See template comments in backend-secret.yaml + enbuild-bk.yaml.
+  gitlabPat:
+    existingSecret: ""
+  exportSigning:
+    existingSecret: ""
+    privateKeyPem: ""
 
 ## @section ENBUILD USER Services parameters
 ## @param enbuildUser.image.repository  Container repository for enbuildUser
