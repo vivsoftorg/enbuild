@@ -182,6 +182,38 @@ For installs where the mq-consumer needs to call AWS APIs directly (e.g., to dis
 
 ---
 
+### Backend pod can't reach Big Bang services (Loki, Grafana, Prometheus): ECONNRESET / Connection reset by peer
+
+**Symptom:** ENBUILD backend logs show `ECONNRESET` / `Connection reset by peer` / `wget: error getting response: Connection reset by peer` when calling `http://logging-loki-gateway.logging.svc.cluster.local/loki/api/v1/labels` (or any other Big Bang in-cluster service in a STRICT-mTLS namespace).
+
+**Cause:** Big Bang's package namespaces (`logging`, `monitoring`, `gitlab`, etc.) are deployed with PeerAuthentication mode `STRICT` — the Istio sidecar in those namespaces refuses any non-mTLS inbound connection. The default `enbuild` namespace has no `istio-injection=enabled` label, so the ENBUILD backend pod has no Istio sidecar and talks plain HTTP. Big Bang's receiving sidecar resets the connection.
+
+**Fix (cluster-side, durable):**
+
+```
+kubectl label namespace enbuild istio-injection=enabled --overwrite
+kubectl rollout restart deployment/<release>-enbuild-backend -n enbuild
+kubectl rollout restart deployment/<release>-enbuild-mq -n enbuild
+kubectl rollout restart deployment/<release>-enbuild-ui -n enbuild
+```
+
+After rollout, every ENBUILD pod gains an `istio-proxy` sidecar (`READY: 2/2` in `kubectl get pods`). mTLS is automatically negotiated between ENBUILD and Big Bang services, ECONNRESET goes away, in-cluster service-to-service calls succeed.
+
+Verify:
+```
+BACKEND=$(kubectl get pod -n enbuild -l app.kubernetes.io/component=enbuild-backend -o name | head -1)
+kubectl exec -n enbuild $BACKEND -c <main-container> -- wget -q -T 5 -O - \
+  'http://logging-loki-gateway.logging.svc.cluster.local/loki/api/v1/labels' \
+  --header 'X-Scope-OrgID: enbuild'
+# expect: {"status":"success"...}
+```
+
+**When this matters:** EN-1254 Loki proxy (`GET /api/v1/clusters/:slug/pods/:pod/logs`) and any future feature that targets a Big Bang in-namespace service. Without the label, those features all surface as `source: 'synthetic'` with a deferred reason; with the label, `source: 'loki'` (or whichever upstream) and a real response.
+
+**Captured 2026-05-04** during EN-1254 end-to-end smoke on vendor13-ib.
+
+---
+
 ## When in doubt
 
 1. Run `helm test <release> -n <namespace>` — it specifically exercises the nginx proxy chain and would catch the most common regression class.
