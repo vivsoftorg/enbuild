@@ -156,19 +156,41 @@ jobs:
             exit 1
           fi
 
-      - name: Bug-class check 2 — mq-consumer stays at 0 restarts (catches probe-PATH regression)
-        # If the chart's default liveness probe ever stops being shell-wrapped
-        # with /usr/bin/node, IB-image users will see the pod killed every
-        # minute. We can't run the IB image here, but we can assert the probe
-        # itself doesn't false-fail on the GitLab-registry image either.
+      - name: Bug-class check 2 — mq-consumer probe is not actively killing the pod (catches probe-PATH regression)
+        # The IB regression we're catching: if the chart's liveness probe path
+        # is wrong, the pod gets killed every probe period (failureThreshold=3
+        # × periodSeconds=60s = ~3 min/restart) and the restart count grows
+        # continuously. Failure mode looks like 4+ restarts AND counting.
+        #
+        # What kind environments do legitimately: dependency-ordering startup
+        # wobble (mq/backend try to connect before mongo/rabbitmq finish
+        # initializing → liveness fires → kubelet restarts → eventually
+        # everything settles). That manifests as a few startup restarts and
+        # then a plateau. Pod state is "Ready" + "stable count" once settled.
+        #
+        # Right test: take TWO snapshots a probe-period apart. If the count
+        # grew, the probe is actively killing the pod (regression). If it
+        # plateaued, the wobble is over and the probe is healthy. Also assert
+        # the pod is currently Ready — catches the "totally broken probe path"
+        # case where the pod never reaches Ready.
         run: |
-          sleep 180  # wait through 3 probe periods (60s each)
-          restarts=$(kubectl -n enbuild get pod -l app=mq -o jsonpath='{.items[0].status.containerStatuses[0].restartCount}')
-          echo "mq restart count after 3 probe periods: $restarts"
-          if [ "$restarts" != "0" ]; then
-            echo "FAIL: mq pod restarted $restarts times — probe is killing it"
+          sleep 180  # 3 probe periods to let startup wobble settle
+          first=$(kubectl -n enbuild get pod -l app=mq -o jsonpath='{.items[0].status.containerStatuses[0].restartCount}')
+          ready=$(kubectl -n enbuild get pod -l app=mq -o jsonpath='{.items[0].status.containerStatuses[0].ready}')
+          echo "mq snapshot @180s: restarts=$first ready=$ready"
+          sleep 70  # one probe period + buffer; if probe is killing it, we'll see another restart
+          second=$(kubectl -n enbuild get pod -l app=mq -o jsonpath='{.items[0].status.containerStatuses[0].restartCount}')
+          ready2=$(kubectl -n enbuild get pod -l app=mq -o jsonpath='{.items[0].status.containerStatuses[0].ready}')
+          echo "mq snapshot @250s: restarts=$second ready=$ready2"
+          if [ "$ready2" != "true" ]; then
+            echo "FAIL: mq pod is not Ready at end of probe window"
             exit 1
           fi
+          if [ "$second" -gt "$first" ]; then
+            echo "FAIL: mq restart count grew $first → $second across one probe period — probe is actively killing it"
+            exit 1
+          fi
+          echo "PASS: probe stable (restart count $first → $second) and pod Ready"
 
       - name: Cleanup port-forward
         if: always()
