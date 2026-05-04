@@ -29,6 +29,27 @@ spec:
             name: {{ .Release.Name }}-mongo-secrets
         - secretRef:
             name: {{ .Release.Name }}-backend-secret
+        {{- /*
+          P1 CCM Console — operator-managed secret support. When the
+          operator pre-creates a Secret carrying GITLAB_TOKEN (and
+          optionally GITLAB_HOST) and sets `gitlabPat.existingSecret`,
+          its keys override the inline values from backend-secret. Lets
+          P1 environments rotate the GitLab PAT without touching values.
+        */ -}}
+        {{- with .Values.enbuildBk.gitlabPat.existingSecret }}
+        - secretRef:
+            name: {{ . }}
+        {{- end }}
+        {{- /*
+          P1 CCM Console — cosign export signing key (EN-1237). Operator
+          pre-creates a Secret with key SIEM_SIGNING_KEY (PEM-encoded
+          ECDSA P-256 private key). Strongly preferred over the inline
+          `privateKeyPem` path for production.
+        */ -}}
+        {{- with .Values.enbuildBk.exportSigning.existingSecret }}
+        - secretRef:
+            name: {{ . }}
+        {{- end }}
         image: {{ .Values.global.image.registry }}/{{ .Values.enbuildBk.image.repository }}:{{ default .Chart.AppVersion (default .Values.global.AppVersion .Values.enbuildBk.image.tag) }}
         imagePullPolicy: {{ .Values.global.image.pullPolicy }}
         livenessProbe:

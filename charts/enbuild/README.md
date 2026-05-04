@@ -2,6 +2,10 @@
 
 This helm chart installs the [ENBUILD application](https://gitlab.com/enbuild-staging/vivsoft-platform-ui).
 
+> **Hitting a problem?** See [TROUBLESHOOTING.md](TROUBLESHOOTING.md) — covers the most common install issues (UI proxy returning HTML 404 to API calls, mq-consumer restart loop, ImagePullBackOff, MongoDB password sentinel, etc.) and which of them are chart-side vs cluster-side.
+>
+> **Verify a fresh install:** after `helm install`, run `helm test <release> -n <namespace>` to exercise the nginx reverse-proxy chain end to end.
+
 # Installing the Chart
 
 This Helm chart repository enables you to install a ENBUILD
