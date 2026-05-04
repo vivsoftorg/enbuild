@@ -82,12 +82,11 @@ metadata:
   labels:
   {{- include "enbuild-helm-chart.labels" . | nindent 4 }}
 spec:
-  type: {{ .Values.mongodb.type }}
+  type: {{ .Values.mongodb.type | default "ClusterIP" }}
   selector:
     app: mongo
   {{- include "enbuild-helm-chart.selectorLabels" . | nindent 4 }}
   ports:
   - port: 27017
     targetPort: 27017
-  type: ClusterIP
 {{- end }}

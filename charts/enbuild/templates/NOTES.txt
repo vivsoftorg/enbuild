@@ -8,7 +8,7 @@
      NOTE: It may take a few minutes for the LoadBalancer IP to be available.
            You can watch the status of by running 'kubectl get --namespace {{ .Release.Namespace }} svc -w {{ include "enbuild-helm-chart.fullname" . }}'
   export SERVICE_IP=$(kubectl get svc --namespace {{ .Release.Namespace }} {{ include "enbuild-helm-chart.fullname" . }} --template "{{"{{ range (index .status.loadBalancer.ingress 0) }}{{.}}{{ end }}"}}")
-  echo http://$SERVICE_IP:{{ .Values.frontend_service.port }}
+  echo http://$SERVICE_IP:80
 {{- else if contains "ClusterIP" .Values.enbuildUi.service_type }}
   echo "Visit http://127.0.0.1:3000 to use your application after starting the port forward"
   kubectl --namespace {{ .Release.Namespace }} port-forward svc/{{ .Release.Name }}-enbuild-ui 3000:80
