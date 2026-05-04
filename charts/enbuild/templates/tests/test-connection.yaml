@@ -51,12 +51,22 @@ spec:
           # Status 200, 401 or 403 all indicate the proxy delivered the request to
           # the user service. Status 404 means the proxy failed and we got the
           # base image's default 404 page back — that's the regression signal.
+          # Anything else (5xx, 000 connection error, etc.) is also a real failure;
+          # accepting any non-404 would let 502s and timeouts slip past as PASS.
           code=$(curl -s -o /dev/null -w "%{http_code}" "$UI/enbuild-user/api/v1/users")
-          if [ "$code" = "404" ]; then
-            echo "  FAIL: HTTP 404 means the nginx proxy is broken (regression)"
-            exit 1
-          fi
-          echo "  PASS (HTTP $code)"
+          case "$code" in
+            200|401|403)
+              echo "  PASS (HTTP $code)"
+              ;;
+            404)
+              echo "  FAIL: HTTP 404 means the nginx proxy is broken (regression)"
+              exit 1
+              ;;
+            *)
+              echo "  FAIL: unexpected HTTP $code from user-service proxy path"
+              exit 1
+              ;;
+          esac
 
           echo ""
           echo "All UI proxy paths reachable. Chart nginx routing is healthy."

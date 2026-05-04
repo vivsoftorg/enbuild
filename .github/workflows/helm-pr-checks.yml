@@ -47,17 +47,25 @@ jobs:
     name: helm lint + template + kubeconform
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
 
       - name: Install helm
-        uses: azure/setup-helm@v4
+        uses: azure/setup-helm@1a275c3b69536ee54be43f2070a358922e12c8d4 # v4.3.1
         with:
           version: v3.19.0
 
       - name: Install kubeconform
+        # Pin both the version (URL) AND the binary checksum so a re-released
+        # tarball with a new payload would fail this step. Checksum sourced
+        # from the upstream release CHECKSUMS file at:
+        # https://github.com/yannh/kubeconform/releases/download/v0.6.7/CHECKSUMS
         run: |
-          curl -sSL https://github.com/yannh/kubeconform/releases/download/v0.6.7/kubeconform-linux-amd64.tar.gz \
-            | tar -xz -C /usr/local/bin kubeconform
+          set -e
+          curl -fsSL -o /tmp/kubeconform.tar.gz \
+            https://github.com/yannh/kubeconform/releases/download/v0.6.7/kubeconform-linux-amd64.tar.gz
+          echo "95f14e87aa28c09d5941f11bd024c1d02fdc0303ccaa23f61cef67bc92619d73  /tmp/kubeconform.tar.gz" | sha256sum -c -
+          tar -xz -C /usr/local/bin -f /tmp/kubeconform.tar.gz kubeconform
+          rm /tmp/kubeconform.tar.gz
 
       - name: helm dependency update
         run: helm dependency update ./charts/enbuild
@@ -87,15 +95,15 @@ jobs:
     runs-on: ubuntu-latest
     needs: lint-and-template
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
 
       - name: Install helm
-        uses: azure/setup-helm@v4
+        uses: azure/setup-helm@1a275c3b69536ee54be43f2070a358922e12c8d4 # v4.3.1
         with:
           version: v3.19.0
 
       - name: Create kind cluster
-        uses: helm/kind-action@v1
+        uses: helm/kind-action@ef37e7f390d99f746eb8b610417061a60e82a6cc # v1
         with:
           cluster_name: enbuild-pr-smoke
           version: v0.30.0
