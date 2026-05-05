@@ -64,6 +64,10 @@ spec:
         name: enbuild-bk
         ports:
         - containerPort: 8080
+        {{- if .Values.enbuildBk.grpcEnabled }}
+        - containerPort: 8443
+          name: grpc
+        {{- end }}
         readinessProbe:
           failureThreshold: 3
           httpGet:
@@ -83,10 +87,22 @@ spec:
           runAsGroup: 1000
           runAsNonRoot: true
           runAsUser: 1000
+        {{- if .Values.enbuildBk.mtls.caSecretRef }}
+        volumeMounts:
+        - name: agent-mtls-ca
+          mountPath: /etc/enbuild-bk/mtls/ca
+          readOnly: true
+        {{- end }}
 {{- if .Values.global.image.registry_credentials }}
       imagePullSecrets:
         - name: {{ .Release.Name }}-image-pull-secret
 {{- end }}
+      {{- if .Values.enbuildBk.mtls.caSecretRef }}
+      volumes:
+      - name: agent-mtls-ca
+        secret:
+          secretName: {{ .Values.enbuildBk.mtls.caSecretRef }}
+      {{- end }}
 ---
 apiVersion: v1
 kind: Service

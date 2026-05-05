@@ -1,0 +1,26 @@
+{{- if .Values.enbuildBk.grpcEnabled -}}
+# P1 CCM Console — hub-side gRPC AgentGateway Service.
+# Separate Service (not a port added to the existing enbuild-backend
+# Service) so type/visibility can flip independently. Default ClusterIP
+# (in-cluster only); operator overrides to LoadBalancer or wires Ingress
+# when external agents need to reach the hub.
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ .Release.Name }}-enbuild-bk-grpc
+  labels:
+    app: bk
+    app.kubernetes.io/component: backend
+  {{- include "enbuild-helm-chart.labels" . | nindent 4 }}
+spec:
+  type: {{ .Values.enbuildBk.grpcServiceType | default "ClusterIP" }}
+  selector:
+    app: bk
+    app.kubernetes.io/component: backend
+  {{- include "enbuild-helm-chart.selectorLabels" . | nindent 4 }}
+  ports:
+  - name: grpc
+    port: {{ .Values.enbuildBk.grpcPort | default 8443 }}
+    targetPort: 8443
+    protocol: TCP
+{{- end -}}

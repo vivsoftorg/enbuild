@@ -160,6 +160,16 @@ enbuildBk:
   replicas: 1
   service_type: ClusterIP
   encryption_key: "encryption_key"
+  ## P1 CCM Console — hub-side gRPC AgentGateway. Opt-in. When grpcEnabled
+  ## is true, the chart renders a separate Service (<release>-enbuild-bk-grpc)
+  ## targeting port 8443 on the bk pods, and adds a `grpc` containerPort to
+  ## the bk Deployment. mTLS CA bundle mount is gated separately on
+  ## mtls.caSecretRef being non-empty (operator pre-creates the Secret).
+  grpcEnabled: false
+  grpcPort: 8443
+  grpcServiceType: ClusterIP   # ClusterIP | NodePort | LoadBalancer
+  mtls:
+    caSecretRef: ""            # K8s Secret name (in this namespace) holding the mTLS CA bundle; empty = mTLS not enforced
   ## P1 CCM Console — operator-managed secret support (backwards-compatible).
   ## See template comments in backend-secret.yaml + enbuild-bk.yaml.
   gitlabPat:
