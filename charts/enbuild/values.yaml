@@ -236,6 +236,17 @@ pki:
       - enbuild-ib-vendor13.staging.dso.mil
       - enbuild-bk-grpc.enbuild.svc.cluster.local
 
+  ## BE 029 (Path B per ADR-0005): Istio AuthorizationPolicy + XFCC.
+  ## When enabled (production path), Istio's public-ingressgateway
+  ## terminates client TLS at the edge, validates the cert against the
+  ## CA bundle, and forwards the cert details to bk via the
+  ## X-Forwarded-Client-Cert header. bk's `extractPeerCertCNFromXfcc`
+  ## parses this with two trust defenses (SANITIZE_SET via EnvoyFilter +
+  ## internal-source marker check). Set `false` for kind-smoke + dev
+  ## paths where bk's :8443 listener handles mTLS directly (BE 016/017).
+  istioAuthorizationPolicy:
+    enabled: false
+
 ## @section ENBUILD USER Services parameters
 ## @param enbuildUser.image.repository  Container repository for enbuildUser
 ## @param enbuildUser.image.tag [nullable] Container image tag. Skip to use the HelmChart appVersion as Image Tag

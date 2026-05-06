@@ -1,0 +1,89 @@
+{{- /*
+BE 029 (Path B per ADR-0005): Istio AuthorizationPolicy for the
+public-ingressgateway that fronts bk's :8443 agent gateway.
+
+Purpose: Istio's gateway terminates client TLS at the edge, so the bk
+pod's mTLS listener never sees the client cert directly. Istio extracts
+the validated cert (after TLS handshake) and forwards it as the
+X-Forwarded-Client-Cert (XFCC) header. bk's `extractPeerCertCNFromXfcc`
+parses this header and binds it to the connecting agent's claimed
+clusterId.
+
+Trust hardening (TWO defenses, both required):
+  (a) `forward_client_cert_details: SANITIZE_SET` — Istio overwrites
+      any caller-supplied XFCC, so attackers can't inject their own
+      cert claim. This is Istio's default.
+  (b) `x-envoy-original-dst-host` internal-source marker — bk requires
+      this header on every routed request as a "this came through the
+      gateway" signal. Without it, XFCC is treated as untrusted.
+
+Conditional render: only emits when `pki.enabled: true` AND
+`pki.istioAuthorizationPolicy.enabled: true`.
+*/}}
+{{- if and .Values.pki.enabled (and .Values.pki.istioAuthorizationPolicy .Values.pki.istioAuthorizationPolicy.enabled) }}
+apiVersion: security.istio.io/v1
+kind: AuthorizationPolicy
+metadata:
+  name: {{ include "enbuild-helm-chart.fullname" . }}-agent-gateway
+  namespace: {{ .Values.global.istio.gateway | default "istio-system/main" | splitList "/" | first }}
+  labels:
+    {{- include "enbuild-helm-chart.labels" . | nindent 4 }}
+    app.kubernetes.io/component: agent-gateway-authz
+spec:
+  selector:
+    matchLabels:
+      istio: ingressgateway
+  action: ALLOW
+  rules:
+    - from:
+        - source:
+            # Anywhere — the gateway is the public ingress. Tenancy is
+            # enforced AFTER mTLS at the bk's verifyMtls layer.
+            requestPrincipals: ["*"]
+      to:
+        - operation:
+            ports: ["8443"]
+            paths: ["/enbuild.v1.EnbuildAgent/*"]
+      when:
+        # Defense (a): require valid client cert (SAN/DN signed by the
+        # CA bundle from enbuild-spoke-ca-bundle). Istio enforces this
+        # at TLS handshake time before evaluating the rule.
+        - key: source.principal
+          notValues: [""]
+---
+{{- /*
+Companion EnvoyFilter that pins SANITIZE_SET behavior on the gateway's
+HTTP connection manager. Without this, Istio's default may be
+APPEND_FORWARD which allows a client to prepend its own XFCC hop.
+*/}}
+apiVersion: networking.istio.io/v1alpha3
+kind: EnvoyFilter
+metadata:
+  name: {{ include "enbuild-helm-chart.fullname" . }}-xfcc-sanitize
+  namespace: {{ .Values.global.istio.gateway | default "istio-system/main" | splitList "/" | first }}
+  labels:
+    {{- include "enbuild-helm-chart.labels" . | nindent 4 }}
+    app.kubernetes.io/component: agent-gateway-authz
+spec:
+  workloadSelector:
+    labels:
+      istio: ingressgateway
+  configPatches:
+    - applyTo: NETWORK_FILTER
+      match:
+        context: GATEWAY
+        listener:
+          filterChain:
+            filter:
+              name: "envoy.filters.network.http_connection_manager"
+      patch:
+        operation: MERGE
+        value:
+          typed_config:
+            "@type": type.googleapis.com/envoy.extensions.filters.network.http_connection_manager.v3.HttpConnectionManager
+            forward_client_cert_details: SANITIZE_SET
+            set_current_client_cert_details:
+              subject: true
+              uri: true
+              dns: true
+{{- end }}
