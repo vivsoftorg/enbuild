@@ -184,6 +184,22 @@ enbuildBk:
   exportSigning:
     existingSecret: ""
     privateKeyPem: ""
+  ## BE 031 (production hardening per ADR-0001 risks-accepted): bk
+  ## replicas + Redis-backed agent registry. When `agentGateway.replicas`
+  ## is >1, the bk Deployment runs multiple replicas; agents register
+  ## with whichever replica accepts their gRPC stream, and the registry
+  ## must be Redis-backed so RPC dispatch works across replicas. The
+  ## chart deliberately does NOT vendor a Redis subchart — operators
+  ## point `agentGateway.redisUrl` at an existing Redis (Bitnami chart
+  ## pre-installed alongside, or a managed Redis). Single-replica
+  ## prototype path stays unchanged when `agentGateway.replicas: 1`
+  ## (default) — registry stays in-process per BE 002.
+  agentGateway:
+    replicas: 1
+    redisUrl: ""                 # e.g. redis://redis-master.enbuild.svc.cluster.local:6379. Required when replicas>1.
+    ## Log format selector. 'json' for production SIEM ingestion (CCM-11);
+    ## 'pretty' for dev. Bk reads ENBUILD_LOG_FORMAT env at boot.
+    logFormat: pretty            # 'pretty' | 'json'
 
 ## @section PKI — hub-side cert-manager-native CA chain for spoke mTLS
 ## Stage 2 of the 3-stage P1 CCM PKI rollout. Default OFF; vendor13-ib values
