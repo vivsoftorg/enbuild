@@ -35,21 +35,17 @@ spec:
       istio: ingressgateway
   action: ALLOW
   rules:
+    # Require an mTLS-authenticated source (source.principal is set from
+    # the validated client cert's SPIFFE URI / SAN). `principals: ["*"]`
+    # matches any non-empty principal — Istio rejects a `notValues: [""]`
+    # check on source.principal at validation time.
     - from:
         - source:
-            # Anywhere — the gateway is the public ingress. Tenancy is
-            # enforced AFTER mTLS at the bk's verifyMtls layer.
-            requestPrincipals: ["*"]
+            principals: ["*"]
       to:
         - operation:
             ports: ["8443"]
             paths: ["/enbuild.v1.EnbuildAgent/*"]
-      when:
-        # Defense (a): require valid client cert (SAN/DN signed by the
-        # CA bundle from enbuild-spoke-ca-bundle). Istio enforces this
-        # at TLS handshake time before evaluating the rule.
-        - key: source.principal
-          notValues: [""]
 ---
 {{- /*
 Companion EnvoyFilter that pins SANITIZE_SET behavior on the gateway's
