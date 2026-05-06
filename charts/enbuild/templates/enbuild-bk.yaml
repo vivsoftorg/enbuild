@@ -87,21 +87,39 @@ spec:
           runAsGroup: 1000
           runAsNonRoot: true
           runAsUser: 1000
-        {{- if .Values.enbuildBk.mtls.caSecretRef }}
+        {{- if or .Values.enbuildBk.mtls.caSecretRef .Values.pki.enabled }}
         volumeMounts:
+        {{- if .Values.enbuildBk.mtls.caSecretRef }}
         - name: agent-mtls-ca
           mountPath: /etc/enbuild-bk/mtls/ca
           readOnly: true
+        {{- end }}
+        {{- if .Values.pki.enabled }}
+        # Stage 2 PKI hub server cert (cert-manager-issued, step-ca-rooted).
+        # Mount-only here — BE 016 (Stage 3) un-stubs gRPC server-side mTLS to
+        # actually consume tls.crt / tls.key from this path. Until then the
+        # mount is a no-op for the running container.
+        - name: hub-grpc-tls
+          mountPath: /etc/enbuild/hub-tls
+          readOnly: true
+        {{- end }}
         {{- end }}
 {{- if .Values.global.image.registry_credentials }}
       imagePullSecrets:
         - name: {{ .Release.Name }}-image-pull-secret
 {{- end }}
-      {{- if .Values.enbuildBk.mtls.caSecretRef }}
+      {{- if or .Values.enbuildBk.mtls.caSecretRef .Values.pki.enabled }}
       volumes:
+      {{- if .Values.enbuildBk.mtls.caSecretRef }}
       - name: agent-mtls-ca
         secret:
           secretName: {{ .Values.enbuildBk.mtls.caSecretRef }}
+      {{- end }}
+      {{- if .Values.pki.enabled }}
+      - name: hub-grpc-tls
+        secret:
+          secretName: {{ .Values.pki.hubServerCert.secretName }}
+      {{- end }}
       {{- end }}
 ---
 apiVersion: v1

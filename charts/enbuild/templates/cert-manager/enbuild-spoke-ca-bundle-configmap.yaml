@@ -1,0 +1,33 @@
+{{- if .Values.pki.enabled -}}
+{{- /*
+ConfigMap holding the step-ca CA bundle. Spokes consume this via the agent
+chart's MTLSCAPath mount (catalog 009 Stage 3 wires this in).
+
+For Phase 1-3 catalog 008 prep, we emit an EMPTY ConfigMap as a placeholder.
+The actual CA cert lands here by one of:
+  - cert-manager's "trust" controller copying the step-ca root into this CM
+    (preferred, automated; requires cert-manager-trust addon — not yet on BB)
+  - A small Job that runs `step ca root` against the in-cluster step-ca
+    Service and writes the result into this CM (catalog 008 Phase 4 deploy
+    or catalog 009 Stage 3, depending on whether cert-manager-trust ships)
+  - Operator-applied `kubectl create cm enbuild-spoke-ca-bundle --from-file=ca.crt=...`
+*/ -}}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ .Values.pki.caBundleConfigMap }}
+  namespace: {{ .Release.Namespace }}
+  labels:
+    app.kubernetes.io/name: enbuild
+    app.kubernetes.io/component: pki
+    app.kubernetes.io/part-of: enbuild
+    {{- include "enbuild-helm-chart.labels" . | nindent 4 }}
+  annotations:
+    meta.dso.mil/note: |
+      P1 CCM Console spoke CA bundle — placeholder for catalog 008 Stage 2.
+      Phase 4 deploy or Stage 3 (catalog 009) populates this with the step-ca
+      root cert. Until then, agents continue trusting the system CA pool
+      (BE 013 default, no hub mTLS).
+data:
+  ca.crt: ""
+{{- end }}

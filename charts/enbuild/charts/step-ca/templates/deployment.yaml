@@ -1,0 +1,79 @@
+{{- if .Values.enabled }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ .Release.Name }}-step-ca
+  labels: {{- include "step-ca.labels" . | nindent 4 }}
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate    # PVC RWO; avoid two pods racing on the CA db
+  selector:
+    matchLabels: {{- include "step-ca.selectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      labels: {{- include "step-ca.selectorLabels" . | nindent 8 }}
+    spec:
+      securityContext: {{- toYaml .Values.securityContext | nindent 8 }}
+      containers:
+        - name: step-ca
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          securityContext: {{- toYaml .Values.containerSecurityContext | nindent 12 }}
+          ports:
+            - name: https
+              containerPort: 9000
+              protocol: TCP
+          env:
+            - name: DOCKER_STEPCA_INIT_NAME
+              value: {{ .Values.ca.name | quote }}
+            - name: DOCKER_STEPCA_INIT_DNS_NAMES
+              value: {{ .Values.ca.dnsName | quote }}
+            - name: DOCKER_STEPCA_INIT_PROVISIONER_NAME
+              value: {{ .Values.ca.provisioner.name | quote }}
+            - name: DOCKER_STEPCA_INIT_PASSWORD_FILE
+              value: /home/step/secrets/passwords/provisioner-password
+          volumeMounts:
+            - name: data
+              mountPath: /home/step
+            - name: provisioner-password
+              mountPath: /home/step/secrets/passwords
+              readOnly: true
+            - name: tmp
+              mountPath: /tmp
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: https
+              scheme: HTTPS
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: https
+              scheme: HTTPS
+            initialDelaySeconds: 30
+            periodSeconds: 30
+          resources: {{- toYaml .Values.resources | nindent 12 }}
+      volumes:
+        - name: data
+          {{- if .Values.persistence.enabled }}
+          persistentVolumeClaim:
+            claimName: {{ .Release.Name }}-step-ca
+          {{- else }}
+          emptyDir: {}
+          {{- end }}
+        - name: provisioner-password
+          secret:
+            {{- if .Values.ca.provisioner.passwordSecret.name }}
+            secretName: {{ .Values.ca.provisioner.passwordSecret.name }}
+            {{- else }}
+            secretName: {{ .Release.Name }}-step-ca-provisioner-password
+            {{- end }}
+            items:
+              - key: {{ .Values.ca.provisioner.passwordSecret.key }}
+                path: provisioner-password
+        - name: tmp
+          emptyDir: {}
+{{- end }}

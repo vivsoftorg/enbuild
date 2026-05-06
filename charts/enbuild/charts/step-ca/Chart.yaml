@@ -1,0 +1,17 @@
+apiVersion: v2
+name: step-ca
+description: |
+  Minimal in-cluster step-ca deployment for ENBUILD's hub-side PKI (catalog 008
+  Stage 2). Provisions a single-replica step-ca Deployment + headless Service +
+  small PVC. Used as the cert-manager Issuer's backing CA.
+
+  Future: swap to upstream Smallstep `step-certificates` chart once we move
+  past prototype (HA replicas + automated provisioner rotation). This minimal
+  scaffold is enough for the catalog 008 prep + dry-run + Phase 4 first install;
+  catalog 009 (Stage 3) can replace it with the upstream chart in-place.
+type: application
+version: 0.1.0-pkiprep-stage2.0
+appVersion: "0.27.5"
+keywords: [pki, certificate-authority, step-ca, smallstep]
+maintainers:
+  - name: VivSoft P1 CCM Console

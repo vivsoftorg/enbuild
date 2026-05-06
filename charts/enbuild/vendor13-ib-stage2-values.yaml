@@ -1,0 +1,57 @@
+# vendor13-ib Stage 2 (catalog 008 PKI prep) values overlay.
+# Layered ON TOP of the existing vendor13-ib values that are already in the
+# helm release (from catalog 007 Phase 2 helm-upgrade). Use with:
+#   helm upgrade enbuild-ib ./charts/enbuild --reuse-values \
+#     -f vendor13-ib-stage2-values.yaml --atomic
+#
+# Stage 2 acceptance: cert-manager Issuer (selfSigned) renders, hub gRPC
+# Certificate renders, in-cluster step-ca Deployment + Service + PVC render,
+# bk Deployment mounts /etc/enbuild/hub-tls (mount-only — BE 016 will consume).
+
+pki:
+  enabled: true
+  provider: step-ca
+  issuerName: enbuild-hub-issuer
+  caBundleConfigMap: enbuild-spoke-ca-bundle
+  hubServerCert:
+    secretName: enbuild-hub-grpc-tls
+    duration: 2160h    # 90d
+    renewBefore: 360h  # 15d
+    dnsNames:
+      - enbuild-ib-vendor13.staging.dso.mil
+      - enbuild-bk-grpc.enbuild.svc.cluster.local
+
+stepCa:
+  enabled: true
+  image:
+    repository: smallstep/step-ca
+    tag: "0.27.5"
+    pullPolicy: IfNotPresent
+  ca:
+    name: enbuild-hub-ca
+    dnsName: step-ca.enbuild.svc.cluster.local
+    provisioner:
+      name: enbuild-hub-cert-manager
+      passwordSecret:
+        # First install: leave name empty so the chart auto-generates the
+        # provisioner password Secret. Subsequent helm upgrades: the lookup
+        # in provisioner-password-secret.yaml preserves the existing password
+        # so the persisted CA database remains decryptable.
+        name: ""
+        key: provisioner-password
+  defaultCertDuration: 2160h
+  maxCertDuration: 8760h
+  service:
+    type: ClusterIP
+    port: 9000
+  persistence:
+    enabled: true
+    size: 1Gi
+    storageClassName: ""    # use vendor13-ib default StorageClass
+  resources:
+    requests:
+      cpu: 50m
+      memory: 64Mi
+    limits:
+      cpu: 250m
+      memory: 256Mi

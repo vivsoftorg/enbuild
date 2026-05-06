@@ -1,0 +1,32 @@
+{{- if .Values.pki.enabled -}}
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: {{ .Release.Name }}-enbuild-hub-grpc
+  namespace: {{ .Release.Namespace }}
+  labels:
+    app.kubernetes.io/name: enbuild
+    app.kubernetes.io/component: pki
+    app.kubernetes.io/part-of: enbuild
+    {{- include "enbuild-helm-chart.labels" . | nindent 4 }}
+  annotations:
+    meta.dso.mil/note: "P1 CCM Console hub gRPC server cert — Stage 2 catalog 008"
+spec:
+  secretName: {{ .Values.pki.hubServerCert.secretName }}
+  duration: {{ .Values.pki.hubServerCert.duration }}
+  renewBefore: {{ .Values.pki.hubServerCert.renewBefore }}
+  commonName: {{ index .Values.pki.hubServerCert.dnsNames 0 | quote }}
+  dnsNames: {{- toYaml .Values.pki.hubServerCert.dnsNames | nindent 4 }}
+  issuerRef:
+    name: {{ .Values.pki.issuerName }}
+    kind: Issuer
+    group: cert-manager.io
+  privateKey:
+    algorithm: RSA
+    size: 2048
+    rotationPolicy: Always
+  usages:
+    - server auth
+    - digital signature
+    - key encipherment
+{{- end }}

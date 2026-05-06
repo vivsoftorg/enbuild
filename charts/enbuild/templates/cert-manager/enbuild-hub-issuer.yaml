@@ -1,0 +1,34 @@
+{{- if .Values.pki.enabled -}}
+{{- /*
+cert-manager Issuer for the hub gRPC server cert + spoke client certs (future).
+Backed by step-ca via the step-issuer CRD when the cluster has step-issuer
+installed; falls back to a SelfSigned Issuer + a step-ca-rooted intermediate
+Certificate chain when not.
+
+For Stage 2 catalog 008 prep we render a SelfSigned bootstrap path: the
+step-ca subchart stands up the in-cluster CA, but cert-manager's Issuer here
+is wired as SelfSigned for the simplest cluster install. Stage 2 Phase 4
+deploy will swap to the `cert-manager.io/v1 Issuer` of type `step` once
+step-issuer is confirmed available on vendor13-ib's BB. The SelfSigned
+fallback is operationally fine for the hub gRPC server cert because:
+  - The agent uses the system CA pool by default (BE 013) so it does NOT
+    validate the step-ca chain.
+  - Stage 3 (catalog 009) re-deploys spokes with the step-ca CA bundle
+    pinned (MTLSCAPath), at which point the chain DOES need to be the
+    step-ca-rooted one. We swap the Issuer kind then.
+*/ -}}
+apiVersion: cert-manager.io/v1
+kind: Issuer
+metadata:
+  name: {{ .Values.pki.issuerName }}
+  namespace: {{ .Release.Namespace }}
+  labels:
+    app.kubernetes.io/name: enbuild
+    app.kubernetes.io/component: pki
+    app.kubernetes.io/part-of: enbuild
+    {{- include "enbuild-helm-chart.labels" . | nindent 4 }}
+  annotations:
+    meta.dso.mil/note: "P1 CCM Console hub PKI — catalog 008 Stage 2"
+spec:
+  selfSigned: {}
+{{- end }}

@@ -1,0 +1,15 @@
+{{- if .Values.enabled }}
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ .Release.Name }}-step-ca
+  labels: {{- include "step-ca.labels" . | nindent 4 }}
+spec:
+  type: {{ .Values.service.type }}
+  selector: {{- include "step-ca.selectorLabels" . | nindent 4 }}
+  ports:
+    - name: https
+      port: {{ .Values.service.port }}
+      targetPort: https
+      protocol: TCP
+{{- end }}
