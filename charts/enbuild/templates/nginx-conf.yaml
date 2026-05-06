@@ -112,4 +112,15 @@ data:
           sub_filter_once off;
       }
 {{- end }}
+
+      # P1 CCM Console SPA deep-link fallback (B4 nginx fix).
+      # Without this block, hard-refreshes / direct URL hits to client-side
+      # React Router routes under /p1-ccm-console/* return 404. The in-cluster
+      # ConfigMap on vendor13-ib has carried this patch since the prototype's
+      # Phase 6; folded into the chart at 0.0.44-pkiprep.0 so helm-upgrade
+      # doesn't wipe the operator-applied patch. See playbook.md
+      # "ConfigMap patch (rare)" section for the carryover history.
+      location /p1-ccm-console/ {
+        try_files $uri $uri/ /p1-ccm-console/index.html;
+      }
     } # end of server block
