@@ -1,18 +1,30 @@
-# vendor13-ib Stage 2 (catalog 008 PKI prep) values overlay.
+# vendor13-ib Stage 2 (catalog 011 PKI prep — pivoted from step-ca to cert-manager-native).
 # Layered ON TOP of the existing vendor13-ib values that are already in the
 # helm release (from catalog 007 Phase 2 helm-upgrade). Use with:
 #   helm upgrade enbuild-ib ./charts/enbuild --reuse-values \
 #     -f vendor13-ib-stage2-values.yaml --atomic
 #
-# Stage 2 acceptance: cert-manager Issuer (selfSigned) renders, hub gRPC
-# Certificate renders, in-cluster step-ca Deployment + Service + PVC render,
-# bk Deployment mounts /etc/enbuild/hub-tls (mount-only — BE 016 will consume).
+# Stage 2 acceptance after Phase 4 GO + cert-manager prereq:
+#   - SelfSigned ClusterIssuer renders
+#   - CA Certificate renders + reaches Ready=True (Secret enbuild-ca-tls in cert-manager ns)
+#   - CA ClusterIssuer renders + Ready=True
+#   - Hub gRPC server Certificate (CN=enbuild-ib-vendor13.staging.dso.mil) renders
+#     + Secret enbuild-hub-grpc-tls populated with tls.crt/tls.key/ca.crt
+#   - bk Deployment mounts /etc/enbuild/hub-tls (mount-only — BE 016 consumes when env=true)
+#
+# Catalog 011 dropped the step-ca subchart due to a TTY init bug in
+# smallstep/step-ca:0.27.5 (catalog 010 findings.md Issue 1). The
+# cert-manager-native chain matches what catalog 010 kind smoke proved.
 
 pki:
   enabled: true
-  provider: step-ca
   issuerName: enbuild-hub-issuer
   caBundleConfigMap: enbuild-spoke-ca-bundle
+  caCert:
+    secretName: enbuild-ca-tls
+    namespace: cert-manager
+    duration: 8760h    # 1y
+    renewBefore: 720h  # 30d
   hubServerCert:
     secretName: enbuild-hub-grpc-tls
     duration: 2160h    # 90d
@@ -20,38 +32,3 @@ pki:
     dnsNames:
       - enbuild-ib-vendor13.staging.dso.mil
       - enbuild-bk-grpc.enbuild.svc.cluster.local
-
-stepCa:
-  enabled: true
-  image:
-    repository: smallstep/step-ca
-    tag: "0.27.5"
-    pullPolicy: IfNotPresent
-  ca:
-    name: enbuild-hub-ca
-    dnsName: step-ca.enbuild.svc.cluster.local
-    provisioner:
-      name: enbuild-hub-cert-manager
-      passwordSecret:
-        # First install: leave name empty so the chart auto-generates the
-        # provisioner password Secret. Subsequent helm upgrades: the lookup
-        # in provisioner-password-secret.yaml preserves the existing password
-        # so the persisted CA database remains decryptable.
-        name: ""
-        key: provisioner-password
-  defaultCertDuration: 2160h
-  maxCertDuration: 8760h
-  service:
-    type: ClusterIP
-    port: 9000
-  persistence:
-    enabled: true
-    size: 1Gi
-    storageClassName: ""    # use vendor13-ib default StorageClass
-  resources:
-    requests:
-      cpu: 50m
-      memory: 64Mi
-    limits:
-      cpu: 250m
-      memory: 256Mi

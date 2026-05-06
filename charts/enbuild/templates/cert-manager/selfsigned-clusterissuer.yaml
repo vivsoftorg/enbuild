@@ -1,0 +1,26 @@
+{{- if .Values.pki.enabled -}}
+{{- /*
+Bootstrap SelfSigned ClusterIssuer. Used once to issue the in-cluster CA
+Certificate that backs the actual `enbuild-stage3-ca` ClusterIssuer below.
+Catalog 010 kind smoke proved this 3-step chain (SelfSigned ClusterIssuer →
+CA Cert → CA ClusterIssuer → leaf certs); catalog 011 ports it into the
+shipping chart.
+
+Cluster-scoped on purpose so the CA cert lives in the cert-manager
+controller namespace (cert-manager's --cluster-resource-namespace default)
+and is reachable by the downstream CA ClusterIssuer.
+*/ -}}
+apiVersion: cert-manager.io/v1
+kind: ClusterIssuer
+metadata:
+  name: {{ .Release.Name }}-selfsigned-bootstrap
+  labels:
+    app.kubernetes.io/name: enbuild
+    app.kubernetes.io/component: pki
+    app.kubernetes.io/part-of: enbuild
+    {{- include "enbuild-helm-chart.labels" . | nindent 4 }}
+  annotations:
+    meta.dso.mil/note: "P1 CCM Console hub PKI — catalog 011 Stage 2 (cert-manager-native)"
+spec:
+  selfSigned: {}
+{{- end }}

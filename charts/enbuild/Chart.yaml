@@ -7,7 +7,7 @@ home: https://www.vivsoft.io/
 sources: [https://github.com/jupyterhub/zero-to-jupyterhub-k8s]
 icon: https://enbuild-docs.vivplatform.io/images/emma/enbuild-logo.png
 kubeVersion: '>=1.25.0-0'
-version: 0.0.45-pkiprep-stage2.0
+version: 0.0.45-pkiprep-stage2.1
 appVersion: 1.0.30
 maintainers:
   - name: Juned Memon
@@ -33,8 +33,3 @@ dependencies:
     version: 0.36.0
     repository: https://kubernetes-sigs.github.io/headlamp/
     condition: lightning_features.operations_lightning.headlamp
-  - name: step-ca
-    alias: stepCa
-    version: 0.1.0-pkiprep-stage2.0
-    repository: "file://charts/step-ca"
-    condition: stepCa.enabled

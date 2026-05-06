@@ -185,25 +185,49 @@ enbuildBk:
     existingSecret: ""
     privateKeyPem: ""
 
-## @section PKI — hub-side cert-manager + step-ca for spoke mTLS
-## Stage 2 of the 3-stage P1 CCM PKI rollout (catalog 008). Default OFF.
-## When enabled:
-##   - The step-ca subchart (charts/enbuild/charts/step-ca/) is rendered to
-##     stand up an in-cluster CA.
-##   - A cert-manager Issuer of type 'step' (or selfSigned fallback) issues a
-##     hub gRPC server Certificate (CN = pki.hubServerCert.dnsNames[0]).
-##     The Certificate writes a TLS Secret named pki.hubServerCert.secretName,
-##     which the bk Deployment mounts at /etc/enbuild/hub-tls (mount-only —
-##     consumption happens in BE 016 / Stage 3).
-##   - A ConfigMap holding the step-ca CA bundle is rendered for spokes to
-##     consume via the agent chart's MTLSCAPath mount.
-## Stage 3 (catalog 009) re-deploys spokes trusting the new CA + un-stubs BE
-## mTLS verification.
+## @section PKI — hub-side cert-manager-native CA chain for spoke mTLS
+## Stage 2 of the 3-stage P1 CCM PKI rollout. Default OFF; vendor13-ib values
+## overlay flips on. **Catalog 011 pivot**: dropped the in-cluster step-ca
+## subchart in favor of a cert-manager-native 3-step chain (matches what
+## catalog 010 kind smoke proved end-to-end):
+##
+##   1. SelfSigned ClusterIssuer  (`<release>-selfsigned-bootstrap`)
+##         ↓ issues
+##   2. CA Certificate            (`<release>-enbuild-ca`, isCA: true)
+##                                stored in `enbuild-ca-tls` Secret in cert-manager ns
+##         ↓ backs
+##   3. CA ClusterIssuer          (`enbuild-hub-issuer` by default)
+##         ↓ issues
+##   4. Hub gRPC server Certificate stored in `enbuild-hub-grpc-tls` Secret
+##         ↓ mounted at /etc/enbuild/hub-tls/
+##   5. bk Deployment with ENBUILD_HUB_MTLS_ENABLED=true reads tls.crt/tls.key/ca.crt
+##      and validates spoke client certs against ca.crt (BE 016 + 017).
+##
+## Spoke client certs (Stage 3, catalog 009 chart) are issued by either:
+##   - the same enbuild-hub-issuer (Design A), or
+##   - per-spoke selfSigned issuers whose CAs are appended to the bundle (Design B).
+## See evidence/catalog-009-stage3-prep/findings.md for the design tradeoff.
 pki:
   enabled: false
-  provider: step-ca
+  ## Logical name for the issuer the bk Deployment / spoke charts reference.
   issuerName: enbuild-hub-issuer
+
+  ## ConfigMap holding the spoke-side CA bundle. Default name matches catalog 009's
+  ## chart default. Populated post-deploy with the CA cert (Phase 4 init job or
+  ## operator) so spokes trust the hub's chain.
   caBundleConfigMap: enbuild-spoke-ca-bundle
+
+  ## CA Certificate that backs the CA ClusterIssuer.
+  ## Lives in cert-manager's --cluster-resource-namespace (default `cert-manager`)
+  ## so the CA ClusterIssuer can reference it cluster-wide.
+  caCert:
+    secretName: enbuild-ca-tls
+    namespace: cert-manager
+    duration: 8760h    # 1 year — CA refreshes annually; downstream certs refresh quarterly
+    renewBefore: 720h  # 30d
+
+  ## Hub gRPC server cert issued by the CA ClusterIssuer. Mounted by bk
+  ## at /etc/enbuild/hub-tls/.
   hubServerCert:
     secretName: enbuild-hub-grpc-tls
     duration: 2160h    # 90d
@@ -211,14 +235,6 @@ pki:
     dnsNames:
       - enbuild-ib-vendor13.staging.dso.mil
       - enbuild-bk-grpc.enbuild.svc.cluster.local
-
-## @section step-ca subchart parameters (passed through to charts/step-ca/)
-## @description Default OFF. Vendor13-ib values overlay flips this on alongside pki.enabled.
-##   The subchart provisions a tiny step-ca Deployment + Service + PVC. cert-manager
-##   talks to step-ca via the cluster-internal Service (no external exposure).
-stepCa:
-  enabled: false
-  ## Subchart-internal values are passed verbatim. See charts/enbuild/charts/step-ca/values.yaml.
 
 ## @section ENBUILD USER Services parameters
 ## @param enbuildUser.image.repository  Container repository for enbuildUser

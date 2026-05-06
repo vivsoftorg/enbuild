@@ -14,8 +14,5 @@ dependencies:
 - name: headlamp
   repository: https://kubernetes-sigs.github.io/headlamp/
   version: 0.36.0
-- name: step-ca
-  repository: file://charts/step-ca
-  version: 0.1.0-pkiprep-stage2.0
-digest: sha256:9be7b35ddaf239a76eee7612e1b13b373e5786249bcf5af30d6c1c0b6d8660c5
-generated: "2026-05-06T13:08:35.155705-04:00"
+digest: sha256:01a9142f1bbbd1267a417891882955bfe853f1a3836535e381858e0687a7c7ea
+generated: "2026-05-06T15:11:24.789389-04:00"

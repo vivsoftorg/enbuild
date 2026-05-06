@@ -1,0 +1,24 @@
+{{- if .Values.pki.enabled -}}
+{{- /*
+CA ClusterIssuer — references the `enbuild-ca-tls` Secret produced by the
+CA Certificate above. Issues the hub gRPC server cert + (optionally) any
+spoke client certs that opt to cross-sign through the hub CA (Design A in
+catalog 009 findings.md). For Design B (each spoke runs its own selfSigned
+issuer + CA appended to bundle), this ClusterIssuer is unused on the spoke
+side; only the hub's own server cert flows through here.
+*/ -}}
+apiVersion: cert-manager.io/v1
+kind: ClusterIssuer
+metadata:
+  name: {{ .Values.pki.issuerName }}
+  labels:
+    app.kubernetes.io/name: enbuild
+    app.kubernetes.io/component: pki
+    app.kubernetes.io/part-of: enbuild
+    {{- include "enbuild-helm-chart.labels" . | nindent 4 }}
+  annotations:
+    meta.dso.mil/note: "P1 CCM Console hub CA ClusterIssuer — references enbuild-ca-tls in cert-manager ns"
+spec:
+  ca:
+    secretName: {{ .Values.pki.caCert.secretName }}
+{{- end }}

@@ -1,0 +1,37 @@
+{{- if .Values.pki.enabled -}}
+{{- /*
+Self-signed CA Certificate. Issued ONCE by selfsigned-bootstrap above.
+Stores the CA cert + private key in `enbuild-ca-tls` Secret in the
+cert-manager controller namespace, so the downstream CA ClusterIssuer can
+reference it (cluster-resource-namespace lookup).
+
+Lifetime 90 days, rotationPolicy=Always — production-grade for a prototype
+PKI; rotate via the existing cert-manager Certificate refresh path.
+*/ -}}
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: {{ .Release.Name }}-enbuild-ca
+  namespace: {{ .Values.pki.caCert.namespace }}
+  labels:
+    app.kubernetes.io/name: enbuild
+    app.kubernetes.io/component: pki
+    app.kubernetes.io/part-of: enbuild
+    {{- include "enbuild-helm-chart.labels" . | nindent 4 }}
+  annotations:
+    meta.dso.mil/note: "P1 CCM Console enbuild CA cert — issued once by selfsigned-bootstrap; backs the CA ClusterIssuer"
+spec:
+  isCA: true
+  commonName: {{ index .Values.pki.hubServerCert.dnsNames 0 | quote }}
+  secretName: {{ .Values.pki.caCert.secretName }}
+  duration: {{ .Values.pki.caCert.duration }}
+  renewBefore: {{ .Values.pki.caCert.renewBefore }}
+  privateKey:
+    algorithm: RSA
+    size: 4096
+    rotationPolicy: Always
+  issuerRef:
+    name: {{ .Release.Name }}-selfsigned-bootstrap
+    kind: ClusterIssuer
+    group: cert-manager.io
+{{- end }}
