@@ -1,0 +1,24 @@
+{{- if .Values.enbuildBk.agentGateway.observability.grafanaDashboard.enabled }}
+{{- /*
+BE 032 — Grafana dashboard ConfigMap. The Grafana sidecar (BB Grafana
+default config) auto-discovers ConfigMaps with the configured label
+pair (default `grafana_dashboard: "1"`) and imports the embedded JSON
+at startup.
+
+Source-of-truth dashboard JSON lives at
+  charts/enbuild/files/observability/grafana-hub-dashboard.json
+which is the same content as
+  ~/code/p1-cluster-mgmt/docs/observability/grafana-hub-dashboard.json
+*/}}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "enbuild-helm-chart.fullname" . }}-hub-grpc-dashboard
+  labels:
+    {{- include "enbuild-helm-chart.labels" . | nindent 4 }}
+    app.kubernetes.io/component: bk-metrics-dashboard
+    {{ .Values.enbuildBk.agentGateway.observability.grafanaDashboard.sidecarLabel }}: {{ .Values.enbuildBk.agentGateway.observability.grafanaDashboard.sidecarLabelValue | quote }}
+data:
+  enbuild-hub-grpc.json: |-
+{{ .Files.Get "files/observability/grafana-hub-dashboard.json" | indent 4 }}
+{{- end }}

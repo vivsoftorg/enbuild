@@ -1,0 +1,39 @@
+{{- if .Values.enbuildBk.agentGateway.observability.serviceMonitor.enabled }}
+{{- /*
+BE 032 — Prometheus Operator ServiceMonitor for the bk REST listener
+that hosts the /api/metrics endpoint. Bk's MetricsService instance
+emits the eight hub gRPC observability metrics + the four lifecycle/
+audit/rabbit metrics + the six RUM histograms + default process
+metrics, all on a single per-process prom-client Registry.
+
+Renders only when:
+  enbuildBk.agentGateway.observability.serviceMonitor.enabled = true
+
+The selector targets the existing <release>-enbuild-bk Service (port
+'http', the bk REST port). No new Service is needed — the metrics
+endpoint is colocated with the REST API. Don't co-route this through
+the gRPC port (8443); the gRPC port enforces mTLS in production and
+Prometheus doesn't speak the agent's wire protocol.
+*/}}
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: {{ include "enbuild-helm-chart.fullname" . }}-bk-metrics
+  labels:
+    {{- include "enbuild-helm-chart.labels" . | nindent 4 }}
+    app.kubernetes.io/component: bk-metrics
+    {{- with .Values.enbuildBk.agentGateway.observability.serviceMonitor.labels }}
+    {{- toYaml . | nindent 4 }}
+    {{- end }}
+spec:
+  selector:
+    matchLabels:
+      {{- include "enbuild-helm-chart.selectorLabels" . | nindent 6 }}
+      app.kubernetes.io/component: bk
+  endpoints:
+    - port: http
+      path: {{ .Values.enbuildBk.agentGateway.observability.serviceMonitor.path | quote }}
+      interval: {{ .Values.enbuildBk.agentGateway.observability.serviceMonitor.interval | quote }}
+      scrapeTimeout: {{ .Values.enbuildBk.agentGateway.observability.serviceMonitor.scrapeTimeout | quote }}
+      honorLabels: true
+{{- end }}

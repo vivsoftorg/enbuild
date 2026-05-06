@@ -200,6 +200,28 @@ enbuildBk:
     ## Log format selector. 'json' for production SIEM ingestion (CCM-11);
     ## 'pretty' for dev. Bk reads ENBUILD_LOG_FORMAT env at boot.
     logFormat: pretty            # 'pretty' | 'json'
+    ## BE 032 — observability surface (Prometheus + Grafana + AlertManager).
+    ## ServiceMonitor + PrometheusRule + Grafana ConfigMap render only when
+    ## the corresponding sub-flag is on; operators flip them once the
+    ## Prometheus Operator + Grafana sidecar are installed in the cluster.
+    ## Bk's /api/metrics endpoint is always available; the ServiceMonitor
+    ## just gives Prometheus the scrape config.
+    observability:
+      serviceMonitor:
+        enabled: false           # requires Prometheus Operator CRDs
+        interval: 30s
+        scrapeTimeout: 10s
+        path: /api/metrics
+        labels: {}               # operator-overridable Prometheus selector labels
+      prometheusRule:
+        enabled: false           # requires Prometheus Operator CRDs
+        labels: {}
+      grafanaDashboard:
+        enabled: false           # requires Grafana sidecar with dashboard discovery
+        ## Grafana dashboard sidecar discovers ConfigMaps with this label;
+        ## defaults to the BB Grafana convention. Override per environment.
+        sidecarLabel: grafana_dashboard
+        sidecarLabelValue: "1"
 
 ## @section PKI — hub-side cert-manager-native CA chain for spoke mTLS
 ## Stage 2 of the 3-stage P1 CCM PKI rollout. Default OFF; vendor13-ib values

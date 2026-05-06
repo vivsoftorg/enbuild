@@ -1,0 +1,96 @@
+{{- if .Values.enbuildBk.agentGateway.observability.prometheusRule.enabled }}
+{{- /*
+BE 032 — Prometheus Operator PrometheusRule for the hub gRPC observability
+surface. Five alerts paired with the eight new metrics:
+
+  - EnbuildHubHighErrorRate (page) — sustained error rate > 10%
+  - EnbuildHubAgentDisconnectCascade (page) — 50% agents dropped in 1h
+  - EnbuildHubLatencySLOBreach (ticket) — p95 RPC latency > 2s
+  - EnbuildHubAuditEventRateDrop (ticket) — audit emit < 0.1/sec for 15m
+  - EnbuildHubProtoTranslationErrors (page) — BE 025-class regression
+
+Source-of-truth alert YAML lives at
+  ~/code/p1-cluster-mgmt/docs/observability/prometheus-alerts.yaml
+
+This template embeds the same expressions inline so the chart is
+self-contained — operators don't have to also apply a separate manifest.
+*/}}
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: {{ include "enbuild-helm-chart.fullname" . }}-hub-grpc
+  labels:
+    {{- include "enbuild-helm-chart.labels" . | nindent 4 }}
+    app.kubernetes.io/component: bk-metrics-rules
+    {{- with .Values.enbuildBk.agentGateway.observability.prometheusRule.labels }}
+    {{- toYaml . | nindent 4 }}
+    {{- end }}
+spec:
+  groups:
+    - name: enbuild-hub-grpc
+      interval: 30s
+      rules:
+        - alert: EnbuildHubHighErrorRate
+          expr: |
+            sum(rate(enbuild_rpc_dispatch_total{decision!="allow"}[5m]))
+              /
+            sum(rate(enbuild_rpc_dispatch_total[5m]))
+              > 0.10
+          for: 10m
+          labels:
+            severity: page
+            context: ClusterRpcService
+            rtm: CCM-12
+          annotations:
+            summary: "ENBUILD hub RPC error rate > 10% for 10m"
+            description: "{{`{{ $value | humanizePercentage }}`}} of hub→agent RPCs failing."
+        - alert: EnbuildHubAgentDisconnectCascade
+          expr: |
+            enbuild_agent_connections_active
+              <
+            (max_over_time(enbuild_agent_connections_active[1h]) * 0.5)
+          for: 5m
+          labels:
+            severity: page
+            context: AgentRegistryService
+            rtm: CCM-12
+          annotations:
+            summary: "ENBUILD hub agent connections dropped > 50% in 1h"
+            description: "{{`{{ $value }}`}} agents currently connected; cascade failure suspected."
+        - alert: EnbuildHubLatencySLOBreach
+          expr: |
+            histogram_quantile(
+              0.95,
+              sum by (le, action) (rate(enbuild_rpc_dispatch_duration_seconds_bucket[5m]))
+            ) > 2.0
+          for: 5m
+          labels:
+            severity: ticket
+            context: ClusterRpcService
+            rtm: CCM-15
+          annotations:
+            summary: "ENBUILD hub p95 RPC latency > 2s (action={{`{{ $labels.action }}`}})"
+            description: "Action {{`{{ $labels.action }}`}} p95 = {{`{{ $value }}`}}s."
+        - alert: EnbuildHubAuditEventRateDrop
+          expr: |
+            sum(rate(enbuild_audit_events_emitted_total[5m])) < 0.1
+          for: 15m
+          labels:
+            severity: ticket
+            context: AuditPipeline
+            rtm: CCM-32
+          annotations:
+            summary: "ENBUILD audit emit rate dropped below 0.1 events/sec for 15m"
+            description: "Audit pipeline appears broken — RabbitMQ broker offline or audit emit failing."
+        - alert: EnbuildHubProtoTranslationErrors
+          expr: |
+            sum(rate(enbuild_proto_translation_errors_total[5m])) > 0
+          for: 5m
+          labels:
+            severity: page
+            context: ClusterRpcService
+            rtm: CCM-08a
+          annotations:
+            summary: "ENBUILD hub proto-loader body translation regressed (BE 025-class)"
+            description: "buildHubMessageBody returned an empty wireBody for a known action — proto-loader will silently drop the message. Roll back the most recent backend image."
+{{- end }}
