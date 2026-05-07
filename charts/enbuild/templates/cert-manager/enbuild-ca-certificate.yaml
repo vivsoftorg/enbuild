@@ -22,7 +22,12 @@ metadata:
     meta.dso.mil/note: "P1 CCM Console enbuild CA cert — issued once by selfsigned-bootstrap; backs the CA ClusterIssuer"
 spec:
   isCA: true
-  commonName: {{ index .Values.pki.hubServerCert.dnsNames 0 | quote }}
+  # Catalog 020 (chart bug-3 fix): CA's CN MUST differ from the leaf cert's CN.
+  # Previously both used `index .Values.pki.hubServerCert.dnsNames 0` which made
+  # CA CN == leaf CN — OpenSSL/BoringSSL chain validation rejected with
+  # "self signed certificate in certificate chain" because the validator can't
+  # distinguish CA from leaf when their subjects match.
+  commonName: {{ .Values.pki.caCert.commonName | default "enbuild-hub-ca" | quote }}
   secretName: {{ .Values.pki.caCert.secretName }}
   duration: {{ .Values.pki.caCert.duration }}
   renewBefore: {{ .Values.pki.caCert.renewBefore }}

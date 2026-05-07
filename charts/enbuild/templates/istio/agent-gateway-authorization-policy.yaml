@@ -19,20 +19,24 @@ Trust hardening (TWO defenses, both required):
 
 Conditional render: only emits when `pki.enabled: true` AND
 `pki.istioAuthorizationPolicy.enabled: true`.
+
+Catalog 020 (chart bug-2 fix): namespace + selector parameterized so
+operators target the actual gateway pod set in their environment. BB
+deployments live in `istio-gateway` ns with selector `app: <gateway-name>`,
+not the istioctl-default `istio-system` + `istio: ingressgateway`.
 */}}
 {{- if and .Values.pki.enabled (and .Values.pki.istioAuthorizationPolicy .Values.pki.istioAuthorizationPolicy.enabled) }}
 apiVersion: security.istio.io/v1
 kind: AuthorizationPolicy
 metadata:
   name: {{ include "enbuild-helm-chart.fullname" . }}-agent-gateway
-  namespace: {{ .Values.global.istio.gateway | default "istio-system/main" | splitList "/" | first }}
+  namespace: {{ .Values.pki.istioAuthorizationPolicy.namespace | default "istio-system" }}
   labels:
     {{- include "enbuild-helm-chart.labels" . | nindent 4 }}
     app.kubernetes.io/component: agent-gateway-authz
 spec:
   selector:
-    matchLabels:
-      istio: ingressgateway
+    matchLabels: {{- toYaml (.Values.pki.istioAuthorizationPolicy.selectorMatchLabels | default (dict "istio" "ingressgateway")) | nindent 6 }}
   action: ALLOW
   rules:
     # Require an mTLS-authenticated source (source.principal is set from
@@ -51,19 +55,21 @@ spec:
 Companion EnvoyFilter that pins SANITIZE_SET behavior on the gateway's
 HTTP connection manager. Without this, Istio's default may be
 APPEND_FORWARD which allows a client to prepend its own XFCC hop.
+
+Catalog 020: namespace + workloadSelector parameterized to match the
+AuthorizationPolicy above (must target the same gateway pods).
 */}}
 apiVersion: networking.istio.io/v1alpha3
 kind: EnvoyFilter
 metadata:
   name: {{ include "enbuild-helm-chart.fullname" . }}-xfcc-sanitize
-  namespace: {{ .Values.global.istio.gateway | default "istio-system/main" | splitList "/" | first }}
+  namespace: {{ .Values.pki.istioAuthorizationPolicy.namespace | default "istio-system" }}
   labels:
     {{- include "enbuild-helm-chart.labels" . | nindent 4 }}
     app.kubernetes.io/component: agent-gateway-authz
 spec:
   workloadSelector:
-    labels:
-      istio: ingressgateway
+    labels: {{- toYaml (.Values.pki.istioAuthorizationPolicy.selectorMatchLabels | default (dict "istio" "ingressgateway")) | nindent 6 }}
   configPatches:
     - applyTo: NETWORK_FILTER
       match:

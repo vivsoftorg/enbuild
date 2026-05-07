@@ -263,6 +263,11 @@ pki:
     namespace: cert-manager
     duration: 8760h    # 1 year — CA refreshes annually; downstream certs refresh quarterly
     renewBefore: 720h  # 30d
+    ## Catalog 020 (chart bug-3 fix): CA's CN MUST differ from the leaf cert's
+    ## CN, otherwise OpenSSL/BoringSSL chain validation rejects with
+    ## "self signed certificate in chain". Default `enbuild-hub-ca`; operator
+    ## overlay may rename per environment.
+    commonName: enbuild-hub-ca
 
   ## Hub gRPC server cert issued by the CA ClusterIssuer. Mounted by bk
   ## at /etc/enbuild/hub-tls/.
@@ -284,6 +289,18 @@ pki:
   ## paths where bk's :8443 listener handles mTLS directly (BE 016/017).
   istioAuthorizationPolicy:
     enabled: false
+    ## Catalog 020 (chart bug-2 fix): namespace + selector parameterized so
+    ## operators can target the actual gateway pod set in their environment.
+    ## Defaults (when overlay omits) match istioctl-default install:
+    ##   namespace: istio-system
+    ##   selectorMatchLabels: {istio: ingressgateway}
+    ## vendor13-ib's BB-managed gateway is in `istio-gateway` ns with selector
+    ## `app: public-ingressgateway` — overlay sets both per environment.
+    ## NOTE: defaults are applied at TEMPLATE TIME (via `default`), NOT here in
+    ## values.yaml — Helm `--values` overlays deep-merge maps, so a default
+    ## here would merge with the overlay (not replace), producing wrong selectors.
+    namespace: ""
+    selectorMatchLabels: {}
 
 ## @section ENBUILD USER Services parameters
 ## @param enbuildUser.image.repository  Container repository for enbuildUser

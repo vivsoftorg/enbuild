@@ -25,6 +25,8 @@ pki:
     namespace: cert-manager
     duration: 8760h    # 1y
     renewBefore: 720h  # 30d
+    # Catalog 020 (chart bug-3 fix): CA's CN MUST differ from leaf CN.
+    commonName: enbuild-hub-ca
   hubServerCert:
     secretName: enbuild-hub-grpc-tls
     duration: 2160h    # 90d
@@ -32,3 +34,11 @@ pki:
     dnsNames:
       - enbuild-ib-vendor13.staging.dso.mil
       - enbuild-bk-grpc.enbuild.svc.cluster.local
+  # Catalog 020 (chart bug-2 fix): vendor13-ib's BB-managed gateway lives
+  # in `istio-gateway` ns with selector `app: public-ingressgateway` (NOT
+  # the istioctl-default `istio-system` + `istio: ingressgateway`).
+  istioAuthorizationPolicy:
+    enabled: false   # operator flips on at PHASE 4 GO retry (catalog 021 / future)
+    namespace: istio-gateway
+    selectorMatchLabels:
+      app: public-ingressgateway
