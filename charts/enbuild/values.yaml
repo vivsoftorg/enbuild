@@ -289,6 +289,45 @@ pki:
   ## paths where bk's :8443 listener handles mTLS directly (BE 016/017).
   istioAuthorizationPolicy:
     enabled: false
+## (BE 047 / ADR-0019) Vault PKI integration — Design C alternative trust
+## chain. Off by default; opt-in deploys point cert-manager at a Vault
+## PKI mount instead of the Design A hub CA ClusterIssuer. Operator-grade
+## key custody + central CRL revocation + audit log.
+##
+## Production rollout gated on user authorization per
+## `feedback_supervisor_phase4_authority.md`.
+vaultPki:
+  enabled: false
+  ## Vault server URL — typically the BB stack's Vault svc address.
+  vaultAddr: https://vault.bigbang.svc:8200
+  ## PKI engine mount path inside Vault.
+  mountPath: enbuild-pki
+  ## cert-manager Issuer name (referenced by hub + spoke Certificates
+  ## via `issuerRef.name` once Design C is enabled).
+  issuerName: enbuild-vault-issuer
+  ## Optional CA bundle Secret cert-manager trusts when calling Vault.
+  ## Omit for Vault deployments served by a public CA / cluster-trusted
+  ## intermediate.
+  caBundleSecret: {}
+    # name: vault-ca-bundle
+    # key: ca.crt
+  role:
+    name: enbuild-spoke
+    defaultTtl: 720h    # 30d default — auto-renewal at 25% TTL remaining
+    maxTtl: 2160h       # 90d max — guards against role drift
+    allowedCommonNames: "*.spoke.enbuild.local"
+  ## Vault Kubernetes auth — cert-manager + bk both auth this way.
+  k8sAuth:
+    role: enbuild-pki-issuer
+    mountPath: /v1/auth/kubernetes
+    tokenSecretName: ""   # defaults to <release>-vault-token at template time
+  ## Optional one-time bootstrap Job that mounts the PKI engine + writes
+  ## the role. Disable when operators run the Vault CLI flow manually.
+  bootstrapJob:
+    enabled: false
+    image: hashicorp/vault:1.15
+    tokenSecret: vault-bootstrap-token
+
     ## Catalog 020 (chart bug-2 fix): namespace + selector parameterized so
     ## operators can target the actual gateway pod set in their environment.
     ## Defaults (when overlay omits) match istioctl-default install:

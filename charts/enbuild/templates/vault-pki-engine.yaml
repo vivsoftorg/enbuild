@@ -1,0 +1,126 @@
+{{- if .Values.vaultPki.enabled -}}
+{{- /*
+BE 047 / ADR-0019 — Vault PKI engine bootstrap manifests for Design C.
+
+Off by default; opt-in via `vaultPki.enabled=true`. When enabled this
+expects a Vault deployment that the chart can reach (the BB stack's
+Vault by default, addressable at https://vault.bigbang.svc:8200).
+
+This template is intentionally a ConfigMap+Job pair rather than direct
+API calls — Vault PKI bootstrap (mount engine + tune TTL + write role)
+is one-time per cluster, idempotent, and benefits from being recorded
+in cluster state for audit. Production operators may prefer to run the
+equivalent CLI flow manually and disable this Job; that's why the
+`vaultPki.bootstrapJob.enabled` sub-flag exists.
+
+Mount layout:
+  - Mount path: enbuild-pki/  (override via vaultPki.mountPath)
+  - Role:       enbuild-spoke (override via vaultPki.role.name)
+  - Default TTL: 720h (30d), max 2160h (90d)
+  - allowed_common_names: <clusterId>.spoke.enbuild.local + enbuild-bk.<ns>
+  - allow_subdomains: true
+*/ -}}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "enbuild-helm-chart.fullname" . }}-vault-pki-bootstrap
+  labels:
+    app.kubernetes.io/name: enbuild
+    app.kubernetes.io/component: vault-pki
+    {{- include "enbuild-helm-chart.labels" . | nindent 4 }}
+data:
+  bootstrap.sh: |
+    #!/bin/sh
+    set -e
+    : "${VAULT_ADDR:?VAULT_ADDR required}"
+    : "${VAULT_TOKEN:?VAULT_TOKEN required (Job uses bootstrap token)}"
+    MOUNT="{{ .Values.vaultPki.mountPath | default "enbuild-pki" }}"
+    ROLE="{{ .Values.vaultPki.role.name | default "enbuild-spoke" }}"
+    DEFAULT_TTL="{{ .Values.vaultPki.role.defaultTtl | default "720h" }}"
+    MAX_TTL="{{ .Values.vaultPki.role.maxTtl | default "2160h" }}"
+    ALLOWED_CN="{{ .Values.vaultPki.role.allowedCommonNames | default "*.spoke.enbuild.local" }}"
+
+    # Mount the PKI secrets engine (idempotent; existing mount is a no-op).
+    if ! vault secrets list -format=json | grep -q "\"$MOUNT/\""; then
+      vault secrets enable -path="$MOUNT" -max-lease-ttl="$MAX_TTL" pki
+    fi
+    vault secrets tune -max-lease-ttl="$MAX_TTL" "$MOUNT"
+
+    # Generate root CA if absent. For production operators may prefer
+    # to import an existing root + issue an intermediate; that's a
+    # post-bootstrap workflow, not in scope here.
+    if ! vault read "$MOUNT/cert/ca" >/dev/null 2>&1; then
+      vault write -field=certificate "$MOUNT/root/generate/internal" \
+        common_name="enbuild PKI Root" \
+        ttl=87600h > /dev/null
+    fi
+
+    # Configure URLs (CRL + issuing) — Vault publishes both at the
+    # mount path. cert-manager's Vault Issuer will fetch CRL from here.
+    vault write "$MOUNT/config/urls" \
+      issuing_certificates="${VAULT_ADDR}/v1/${MOUNT}/ca" \
+      crl_distribution_points="${VAULT_ADDR}/v1/${MOUNT}/crl"
+
+    # Write the role. allow_subdomains lets <clusterId>.spoke.enbuild.local
+    # match against allowed_domains: spoke.enbuild.local (single-source).
+    vault write "$MOUNT/roles/$ROLE" \
+      allowed_domains="spoke.enbuild.local,enbuild.local" \
+      allow_subdomains=true \
+      allow_bare_domains=false \
+      max_ttl="$MAX_TTL" \
+      ttl="$DEFAULT_TTL" \
+      key_type=ec key_bits=256
+
+    echo "vault-pki bootstrap complete: mount=$MOUNT role=$ROLE default_ttl=$DEFAULT_TTL max_ttl=$MAX_TTL"
+{{- if .Values.vaultPki.bootstrapJob.enabled }}
+---
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: {{ include "enbuild-helm-chart.fullname" . }}-vault-pki-bootstrap
+  labels:
+    app.kubernetes.io/name: enbuild
+    app.kubernetes.io/component: vault-pki
+    {{- include "enbuild-helm-chart.labels" . | nindent 4 }}
+  annotations:
+    "helm.sh/hook": post-install,post-upgrade
+    "helm.sh/hook-weight": "5"
+    "helm.sh/hook-delete-policy": before-hook-creation
+spec:
+  ttlSecondsAfterFinished: 300
+  backoffLimit: 2
+  template:
+    spec:
+      restartPolicy: OnFailure
+      serviceAccountName: {{ include "enbuild-helm-chart.fullname" . }}-vault-pki-bootstrap
+      containers:
+        - name: bootstrap
+          image: {{ .Values.vaultPki.bootstrapJob.image | default "hashicorp/vault:1.15" | quote }}
+          env:
+            - name: VAULT_ADDR
+              value: {{ .Values.vaultPki.vaultAddr | quote }}
+            - name: VAULT_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.vaultPki.bootstrapJob.tokenSecret | quote }}
+                  key: token
+          command: ["/bin/sh", "/scripts/bootstrap.sh"]
+          volumeMounts:
+            - name: scripts
+              mountPath: /scripts
+      volumes:
+        - name: scripts
+          configMap:
+            name: {{ include "enbuild-helm-chart.fullname" . }}-vault-pki-bootstrap
+            defaultMode: 0755
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: {{ include "enbuild-helm-chart.fullname" . }}-vault-pki-bootstrap
+  labels:
+    app.kubernetes.io/name: enbuild
+    app.kubernetes.io/component: vault-pki
+    {{- include "enbuild-helm-chart.labels" . | nindent 4 }}
+{{- end }}
+{{- end }}

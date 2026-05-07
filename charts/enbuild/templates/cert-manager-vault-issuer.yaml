@@ -1,0 +1,44 @@
+{{- if .Values.vaultPki.enabled -}}
+{{- /*
+BE 047 / ADR-0019 — cert-manager Issuer that points at Vault PKI for
+trust chain Design C. Off by default; gated on vaultPki.enabled.
+
+Auth: Vault Kubernetes auth method. The chart's bound ServiceAccount
+(see `serviceAccount` block below) is referenced by a Vault role that
+allows the SA token to authenticate against Vault and pull the
+configured PKI role. The role name is the existing BB pattern
+(`enbuild-pki-issuer`) override-able via .Values.vaultPki.k8sAuth.role.
+
+When this Issuer is enabled, the hub + spoke Certificates flip their
+issuerRef from the legacy CA ClusterIssuer (Design A) to this Issuer.
+That swap is operator-driven via the per-Certificate `issuerRef`
+override (see ADR-0019 migration section).
+*/ -}}
+apiVersion: cert-manager.io/v1
+kind: Issuer
+metadata:
+  name: {{ .Values.vaultPki.issuerName | default "enbuild-vault-issuer" }}
+  labels:
+    app.kubernetes.io/name: enbuild
+    app.kubernetes.io/component: pki
+    app.kubernetes.io/part-of: enbuild
+    {{- include "enbuild-helm-chart.labels" . | nindent 4 }}
+  annotations:
+    meta.dso.mil/note: "BE 047 ADR-0019 Design C — Vault PKI Issuer (sign + revoke via centralized Vault CA + CRL)"
+spec:
+  vault:
+    server: {{ .Values.vaultPki.vaultAddr | quote }}
+    path: {{ printf "%s/sign/%s" (.Values.vaultPki.mountPath | default "enbuild-pki") (.Values.vaultPki.role.name | default "enbuild-spoke") | quote }}
+    {{- with .Values.vaultPki.caBundleSecret }}
+    caBundleSecretRef:
+      name: {{ .name | quote }}
+      key: {{ .key | default "ca.crt" | quote }}
+    {{- end }}
+    auth:
+      kubernetes:
+        role: {{ .Values.vaultPki.k8sAuth.role | default "enbuild-pki-issuer" | quote }}
+        mountPath: {{ .Values.vaultPki.k8sAuth.mountPath | default "/v1/auth/kubernetes" | quote }}
+        secretRef:
+          name: {{ .Values.vaultPki.k8sAuth.tokenSecretName | default (printf "%s-vault-token" (include "enbuild-helm-chart.fullname" .)) | quote }}
+          key: token
+{{- end }}
