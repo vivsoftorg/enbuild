@@ -93,4 +93,16 @@ spec:
           annotations:
             summary: "ENBUILD hub proto-loader body translation regressed (BE 025-class)"
             description: "buildHubMessageBody returned an empty wireBody for a known action — proto-loader will silently drop the message. Roll back the most recent backend image."
+        - alert: EnbuildHubHighCertVerifyFailures
+          expr: |
+            sum by (cluster_id) (rate(enbuild_cert_verify_failures_total[5m])) > 0.0833
+          for: 5m
+          labels:
+            severity: high
+            context: AgentGatewayService
+            rtm: CCM-12
+          annotations:
+            summary: "Cluster {{`{{ $labels.cluster_id }}`}} cert verify failures > 5/min (BE 040)"
+            description: "mTLS handshake denies (cn_mismatch / no_cert) sustained at >5/min. Likely expired/invalid client cert; check spoke cert-manager Certificate state."
+            runbook_url: "~/code/p1-cluster-mgmt/docs/runbooks/dr-03-spoke-cert-expired-recover.md"
 {{- end }}
