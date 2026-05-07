@@ -327,6 +327,18 @@ vaultPki:
     enabled: false
     image: hashicorp/vault:1.15
     tokenSecret: vault-bootstrap-token
+  ## (BE 048) Optional Vault Transit engine for cosign-style image
+  ## signing. Off by default; opt-in via transitEngine.enabled.
+  ## Backs the catalog 027/028 IB submission Phase B (Vault-backed
+  ## cosign key) flow + admin POST /api/v1/admin/cosign-sign endpoint.
+  transitEngine:
+    enabled: false
+    mountPath: enbuild-cosign
+    ## One ed25519 key per IB submission image. Operators may add more.
+    cosignKeys:
+      - agent
+      - audit-tail
+      - bk
 
     ## Catalog 020 (chart bug-2 fix): namespace + selector parameterized so
     ## operators can target the actual gateway pod set in their environment.

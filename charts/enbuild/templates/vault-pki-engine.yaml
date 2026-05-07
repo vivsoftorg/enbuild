@@ -72,6 +72,23 @@ data:
       key_type=ec key_bits=256
 
     echo "vault-pki bootstrap complete: mount=$MOUNT role=$ROLE default_ttl=$DEFAULT_TTL max_ttl=$MAX_TTL"
+
+    # BE 048: optional Vault Transit engine for cosign keys. Off by
+    # default; opt-in via vaultPki.transitEngine.enabled. One named
+    # ed25519 key per IB submission image (agent / audit-tail / bk).
+    {{- if .Values.vaultPki.transitEngine.enabled }}
+    TRANSIT_MOUNT="{{ .Values.vaultPki.transitEngine.mountPath | default "enbuild-cosign" }}"
+    if ! vault secrets list -format=json | grep -q "\"$TRANSIT_MOUNT/\""; then
+      vault secrets enable -path="$TRANSIT_MOUNT" transit
+    fi
+    for KEY in {{ range .Values.vaultPki.transitEngine.cosignKeys }}{{ . | quote }} {{ end }}; do
+      KEY=$(echo "$KEY" | tr -d '"')
+      if ! vault read "$TRANSIT_MOUNT/keys/$KEY" >/dev/null 2>&1; then
+        vault write "$TRANSIT_MOUNT/keys/$KEY" type=ed25519 exportable=false allow_plaintext_backup=false
+      fi
+    done
+    echo "vault-cosign bootstrap complete: mount=$TRANSIT_MOUNT keys={{ join "," .Values.vaultPki.transitEngine.cosignKeys }}"
+    {{- end }}
 {{- if .Values.vaultPki.bootstrapJob.enabled }}
 ---
 apiVersion: batch/v1
