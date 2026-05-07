@@ -314,6 +314,67 @@
         "graphMode": "area",
         "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false }
       }
+    },
+    {
+      "type": "timeseries",
+      "title": "Audit-tail throughput (BE 047/049)",
+      "datasource": { "type": "prometheus", "uid": "Prometheus" },
+      "id": 12,
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 48 },
+      "targets": [
+        { "expr": "sum by (cluster_id) (rate(enbuild_audit_tail_events_total[5m]))", "legendFormat": "{{cluster_id}} events/s", "refId": "A" },
+        { "expr": "max by (cluster_id) (enbuild_agent_audit_tail_lag_seconds)", "legendFormat": "{{cluster_id}} lag (s)", "refId": "B" }
+      ],
+      "fieldConfig": {
+        "defaults": { "color": { "mode": "palette-classic" }, "unit": "short", "custom": { "lineWidth": 1 } },
+        "overrides": [
+          { "matcher": { "id": "byRegexp", "options": ".*lag \\(s\\)" }, "properties": [{ "id": "custom.axisPlacement", "value": "right" }, { "id": "unit", "value": "s" }] }
+        ]
+      },
+      "options": { "legend": { "calcs": ["mean"], "displayMode": "table", "placement": "right" } }
+    },
+    {
+      "type": "timeseries",
+      "title": "Audit-tail dropped events by reason (BE 047/049)",
+      "datasource": { "type": "prometheus", "uid": "Prometheus" },
+      "id": 13,
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 48 },
+      "targets": [
+        { "expr": "sum by (cluster_id, reason) (rate(enbuild_audit_tail_dropped_total[5m]))", "legendFormat": "{{cluster_id}} {{reason}}", "refId": "A" }
+      ],
+      "fieldConfig": {
+        "defaults": { "color": { "mode": "palette-classic" }, "unit": "reqps" }
+      },
+      "options": { "legend": { "calcs": ["mean", "max"], "displayMode": "table", "placement": "right" } }
+    },
+    {
+      "type": "stat",
+      "title": "Agents with crash dumps awaiting collection (BE 048/049)",
+      "datasource": { "type": "prometheus", "uid": "Prometheus" },
+      "id": 14,
+      "gridPos": { "h": 4, "w": 24, "x": 0, "y": 56 },
+      "targets": [
+        { "expr": "count(enbuild_crash_dump_path == 1)", "refId": "A" }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "thresholds" },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "green", "value": null },
+              { "color": "yellow", "value": 1 },
+              { "color": "red", "value": 5 }
+            ]
+          },
+          "unit": "short"
+        }
+      },
+      "options": {
+        "colorMode": "background",
+        "graphMode": "none",
+        "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false }
+      }
     }
   ],
   "refresh": "30s",
