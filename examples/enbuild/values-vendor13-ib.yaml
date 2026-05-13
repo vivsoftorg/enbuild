@@ -111,11 +111,18 @@ enbuildConsumer:
     repository: ironbank/vivsoft/enbuild/enbuild-mq
     tag: 1.0.30-5101532
   # The Iron Bank MQ image works when npm resolves node from /usr/bin first.
+  # /opt/bitnami/git/bin must stay on PATH so createStack.js's shelled-out
+  # `git init && git push` (used to seed each new GitLab deployment project)
+  # resolves the git binary. Without it, every GitLab-flavored stack create
+  # fails with `/bin/sh: line 2: git: command not found` and
+  # `Gitlab couln't initialize project after 100 tries`. Surfaced 2026-05-11
+  # during CCM-05c RKE2 verification; see
+  # p1-cluster-mgmt/evidence/ccm-05c/06-enbuild-bugs-discovered-2026-05-11.md.
   command:
     - /bin/sh
     - -lc
   args:
-    - export PATH=/usr/bin:/usr/sbin:/bin:/sbin:/usr/local/bin && exec /usr/bin/npm run run:mq:all
+    - export PATH=/opt/bitnami/git/bin:/usr/bin:/usr/sbin:/bin:/sbin:/usr/local/bin && exec /usr/bin/npm run run:mq:all
   # NOTE: no livenessProbe override needed — chart's default is now IB-safe
   # (uses shell wrapper + /usr/bin/node). See enbuild-mq.yaml template comment
   # for the full WHY. Set livenessProbe here only if you want a different
