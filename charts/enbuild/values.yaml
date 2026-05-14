@@ -180,6 +180,7 @@ enbuildUser:
   service_type: ClusterIP
 
 ## @section ENBUILD Consumer Services parameters
+## @param enbuildConsumer.image.registry [nullable,string] Per-service registry override. Unset → falls back to `global.image.registry`. Use to consume an mq-consumer image from a non-default registry (e.g. GitLab staging while waiting for an Iron Bank rebuild). Leave unset for normal deployments.
 ## @param enbuildConsumer.image.repository  Container repository for enbuildConsumer
 ## @param enbuildConsumer.image.tag [nullable] Container image tag. Skip to use the HelmChart appVersion as Image Tag
 ## @param enbuildConsumer.replicas Container enbuildConsumer Replicas
