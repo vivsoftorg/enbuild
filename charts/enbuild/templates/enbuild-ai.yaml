@@ -49,7 +49,10 @@ spec:
         - secretRef:
             name: {{ .Release.Name }}-backend-secret
         imagePullPolicy: {{ .Values.global.image.pullPolicy }}
-        image: {{ .Values.global.image.registry }}/{{ .Values.enbuildAI.image.repository }}:{{ default .Chart.AppVersion (default .Values.global.AppVersion .Values.enbuildAI.image.tag) }}
+        # Image registry: per-service `enbuildAI.image.registry` override
+        # wins over the chart-wide `global.image.registry`. Unset by default →
+        # falls back to global. See enbuild-mq.yaml for the use-case writeup.
+        image: {{ default .Values.global.image.registry .Values.enbuildAI.image.registry }}/{{ .Values.enbuildAI.image.repository }}:{{ default .Chart.AppVersion (default .Values.global.AppVersion .Values.enbuildAI.image.tag) }}
         name: enbuild-ai
         ports:
         - containerPort: 8000
