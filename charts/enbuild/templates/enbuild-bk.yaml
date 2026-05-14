@@ -50,7 +50,14 @@ spec:
         - secretRef:
             name: {{ . }}
         {{- end }}
-        image: {{ .Values.global.image.registry }}/{{ .Values.enbuildBk.image.repository }}:{{ default .Chart.AppVersion (default .Values.global.AppVersion .Values.enbuildBk.image.tag) }}
+        # Image registry: per-service `enbuildBk.image.registry` override
+        # wins over the chart-wide `global.image.registry`. Unset by default →
+        # falls back to global, preserving every existing deploy's behavior.
+        # Use case: vendor13-ib temporarily points at the GitLab staging
+        # registry to consume a fix while waiting for the Iron Bank rebuild to
+        # ship the same change. See examples/enbuild/values-vendor13-ib.yaml
+        # for the override shape + intended temporary lifecycle.
+        image: {{ default .Values.global.image.registry .Values.enbuildBk.image.registry }}/{{ .Values.enbuildBk.image.repository }}:{{ default .Chart.AppVersion (default .Values.global.AppVersion .Values.enbuildBk.image.tag) }}
         imagePullPolicy: {{ .Values.global.image.pullPolicy }}
         livenessProbe:
           failureThreshold: 3

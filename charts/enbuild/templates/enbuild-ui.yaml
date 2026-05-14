@@ -35,7 +35,10 @@ spec:
           value: {{ .Values.enbuildUi.grafana_url }}
         - name: COST_UTILIZATION_KUBECOST_IFRAME_URL
           value: {{ .Values.enbuildUi.kubecost_url }}
-        image: {{ .Values.global.image.registry }}/{{ .Values.enbuildUi.image.repository }}:{{ default .Chart.AppVersion (default .Values.global.AppVersion .Values.enbuildUi.image.tag) }}
+        # Image registry: per-service `enbuildUi.image.registry` override
+        # wins over the chart-wide `global.image.registry`. Unset by default →
+        # falls back to global. See enbuild-mq.yaml for the use-case writeup.
+        image: {{ default .Values.global.image.registry .Values.enbuildUi.image.registry }}/{{ .Values.enbuildUi.image.repository }}:{{ default .Chart.AppVersion (default .Values.global.AppVersion .Values.enbuildUi.image.tag) }}
         imagePullPolicy: {{ .Values.global.image.pullPolicy }}
         name: enbuild-ui
         resources: {}
