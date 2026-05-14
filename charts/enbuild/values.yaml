@@ -34,9 +34,18 @@ global:
     registry: registry.gitlab.com
     pullPolicy: Always
     registry_credentials: {}
-  storageClass: ""
     # username: registry_user_name
     # password: registry_password
+
+  ## @param global.gitlabRegistryCredentials.username [nullable,string] Optional GitLab Container Registry username (or "oauth2" when password is a PAT). Leave unset on normal deploys; supply via --set at install time when an environment needs to pull images from registry.gitlab.com in addition to the primary `global.image.registry`. Pairs with `password` below.
+    ## @param global.gitlabRegistryCredentials.password [nullable,string] GitLab Container Registry password / PAT (with read_registry scope). NEVER commit a real value; provide via --set or an untracked secrets values file at install time.
+    ## @param global.gitlabRegistryCredentials.registry [default: "registry.gitlab.com"] GitLab Container Registry host. Overridable for self-hosted GitLab instances (rare).
+  gitlabRegistryCredentials: {}
+    # registry: registry.gitlab.com
+    # username: GITLAB_USER_NAME
+    # password: GITLAB_PASSWORD_OR_PAT
+
+  storageClass: ""
 
 ## @section ENBUILD Lightning Features to be enabled
 ## @param lightning_features.develop_lightning.application [default: false] Enable Bolt deployment
@@ -365,6 +374,7 @@ enbuildUser:
   service_type: ClusterIP
 
 ## @section ENBUILD Consumer Services parameters
+## @param enbuildConsumer.image.registry [nullable,string] Per-service registry override. Unset → falls back to `global.image.registry`. Use to consume an mq-consumer image from a non-default registry (e.g. GitLab staging while waiting for an Iron Bank rebuild). Leave unset for normal deployments.
 ## @param enbuildConsumer.image.repository  Container repository for enbuildConsumer
 ## @param enbuildConsumer.image.tag [nullable] Container image tag. Skip to use the HelmChart appVersion as Image Tag
 ## @param enbuildConsumer.replicas Container enbuildConsumer Replicas
