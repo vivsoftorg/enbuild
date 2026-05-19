@@ -60,7 +60,10 @@ spec:
           the bk pod (creds live in the twistlock/anchore namespaces).
           Same operator-managed-secret idiom as gitlabPat/exportSigning.
         */ -}}
-        {{- with .Values.enbuildBk.securityTooling.existingSecret }}
+        {{- /* nil-safe: under `helm upgrade --reuse-values` the prior release's
+           values predate this key, so .Values.enbuildBk.securityTooling is nil.
+           default (dict) guards the dereference (every existing release). */ -}}
+        {{- with (default (dict) .Values.enbuildBk.securityTooling).existingSecret }}
         - secretRef:
             name: {{ . }}
         {{- end }}
