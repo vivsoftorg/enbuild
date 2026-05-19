@@ -169,6 +169,15 @@ enbuildBk:
   replicas: 1
   service_type: ClusterIP
   encryption_key: "encryption_key"
+  ## P1 CCM Console — Headlamp K8sApiProxy fallback actor (BE 099 demo-mode
+  ## hook, see backend/microservices/enbuild/src/kubeProxy/kubeProxy.controller.ts).
+  ## When Headlamp's HTTP requests carry no X-Actor-Email/JWT, the
+  ## KubeProxyController falls back to this value before applying tenancy
+  ## (project membership). Set to an email that's a member of the project
+  ## owning the demo cluster. Empty = hardcoded controller default
+  ## (`alice@example.com`). Keeps `kubectl set env` patches from getting
+  ## reverted on the next helm-upgrade / auto-reconcile.
+  kubeProxyFallbackActor: ""
   ## P1 CCM Console — hub-side gRPC AgentGateway. Opt-in. When grpcEnabled
   ## is true, the chart renders a separate Service (<release>-enbuild-bk-grpc)
   ## targeting port 8443 on the bk pods, and adds a `grpc` containerPort to
@@ -577,6 +586,24 @@ headlamp:
     # -- Container image tag, If "" uses appVersion in Chart.yaml
     tag: ""
 
+  # -- ENBUILD spoke clusters Headlamp should be able to view. Each entry is
+  # the cluster id used in the BE K8sApiProxy URL path
+  # (/api/v1/clusters/<id>/k8s-api). The chart renders one cluster+context
+  # per entry into the chart-managed `headlamp-kubeconfigs` ConfigMap, all
+  # sharing the `anon` user (tenancy enforced downstream by BE
+  # KubeProxyController + agent stream). Default empty (only `main`).
+  #
+  # Example (set via values override or --set):
+  #   headlamp:
+  #     spokes:
+  #       - ccm-vendor13-eks-final
+  #       - ccm-vendor13-demo3
+  #
+  # For multi-tenant scale (hundreds of spokes), this manual values list
+  # is replaced by a BE projector endpoint that renders the kubeconfig
+  # dynamically from the agent registry — see CODIFICATION.md "Unit 2".
+  spokes: []
+
   # -- An optional list of references to secrets in the same namespace to use for pulling any of the images used
   imagePullSecrets: []
   # -- Overrides the name of the chart
@@ -588,45 +615,23 @@ headlamp:
   namespaceOverride: ""
 
   # -- An optional list of init containers to be run before the main containers.
-  # NOTE: the prior `headlamp-plugins` init container (pulled the external
-  # ghcr.io/vivsoftorg/enbuild-headlamp-theme image and copied it into a PVC)
-  # was removed 2026-05-19. The ENBUILD theme plugin is now folded into THIS
-  # chart as the `headlamp-plugin-enbuild-theme` ConfigMap (see
-  # templates/headlamp-plugin-configmap.yaml) and mounted directly at
-  # /headlamp/plugins/enbuild-theme via the volumes/volumeMounts below — no
-  # external image dependency, no PVC, survives helm-upgrade.
-  initContainers:
-    - command:
-        - /bin/sh
-        - "-c"
-        - |
-          kubectl config set-cluster main --server=https://kubernetes.default.svc --certificate-authority=/var/run/secrets/kubernetes.io/serviceaccount/ca.crt
-          kubectl config set-credentials main --token=$(cat /var/run/secrets/kubernetes.io/serviceaccount/token)
-          kubectl config set-context main --cluster=main --user=main
-          kubectl config use-context main
-      env:
-        - name: KUBERNETES_SERVICE_HOST
-          valueFrom:
-            fieldRef:
-              fieldPath: status.hostIP
-        - name: KUBERNETES_SERVICE_PORT
-          value: "6443"
-        - name: KUBECONFIG
-          value: /home/headlamp/.config/Headlamp/kubeconfigs/config
-      image: bitnami/kubectl:latest
-      name: create-kubeconfig
-      securityContext:
-        capabilities:
-          drop:
-            - ALL
-        privileged: false
-        readOnlyRootFilesystem: true
-        runAsGroup: 101
-        runAsNonRoot: true
-        runAsUser: 100
-      volumeMounts:
-        - mountPath: /home/headlamp/.config/Headlamp/kubeconfigs
-          name: kubeconfig
+  # NOTE: BOTH prior init containers were removed 2026-05-19 in favor of
+  # chart-managed ConfigMaps that survive helm-upgrade / auto-reconcile:
+  #
+  #  - `headlamp-plugins` init container (pulled external
+  #    ghcr.io/vivsoftorg/enbuild-headlamp-theme image into a PVC) →
+  #    replaced by templates/headlamp-plugin-configmap.yaml
+  #    (`headlamp-plugin-enbuild-theme`), mounted at
+  #    /headlamp/plugins/enbuild-theme.
+  #  - `create-kubeconfig` init container (built only the `main` context
+  #    into an emptyDir) → replaced by
+  #    templates/headlamp-kubeconfigs-configmap.yaml (`headlamp-kubeconfigs`)
+  #    which holds `main` PLUS every spoke from .Values.headlamp.spokes,
+  #    mounted at /home/headlamp/.config/Headlamp/kubeconfigs/config.
+  #
+  # No external image dependency, no PVC, no init-container — operator
+  # patches stop getting reverted on the next BE/headlamp roll.
+  initContainers: []
   config:
     inCluster: true
     # -- base url path at which headlamp should run
@@ -800,8 +805,15 @@ headlamp:
     - name: headlamp-plugins
       configMap:
         name: headlamp-plugin-enbuild-theme
+    # Chart-managed kubeconfig CM (folded 2026-05-19). Holds `main` + every
+    # spoke listed in .Values.headlamp.spokes. Static CM name because
+    # subchart values can't template {{ .Release.Name }}.
     - name: kubeconfig
-      emptyDir: {}
+      configMap:
+        name: headlamp-kubeconfigs
+        items:
+          - key: config
+            path: config
 
   persistentVolumeClaim:
     # -- Enable Persistent Volume Claim

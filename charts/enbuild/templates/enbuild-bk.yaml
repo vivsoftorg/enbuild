@@ -24,6 +24,20 @@ spec:
       - env:
         - name: MONGODB_ENDPOINT
           value: mongodb://$(MONGO_INITDB_ROOT_USERNAME):$(MONGO_INITDB_ROOT_PASSWORD)@$(MONGO_SERVER)
+        {{- /*
+          BE 099 KubeProxyController demo-mode fallback actor. When
+          Headlamp's HTTP requests carry no X-Actor-Email/JWT the
+          controller falls back to this email before TenancyGuard
+          (project-membership) runs. Folded into the chart 2026-05-19
+          so the env survives helm-upgrade — prior `kubectl set env`
+          patches were getting auto-reverted on rollouts. Skipped when
+          empty so unset == hardcoded controller default
+          (`alice@example.com`).
+        */ -}}
+        {{- with .Values.enbuildBk.kubeProxyFallbackActor }}
+        - name: KUBE_PROXY_FALLBACK_ACTOR
+          value: {{ . | quote }}
+        {{- end }}
         envFrom:
         - secretRef:
             name: {{ .Release.Name }}-mongo-secrets
