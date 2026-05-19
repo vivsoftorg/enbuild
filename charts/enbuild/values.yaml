@@ -178,6 +178,16 @@ enbuildBk:
   ## (`alice@example.com`). Keeps `kubectl set env` patches from getting
   ## reverted on the next helm-upgrade / auto-reconcile.
   kubeProxyFallbackActor: ""
+  ## P1 CCM Console — ClusterRpcService timeout for hub→agent RPCs (ms).
+  ## Default in source (cluster-rpc.service.ts) is 10000 — too tight for
+  ## Headlamp browsing through the K8sApiProxy: a serial-dispatch agent
+  ## (agents/enbuild-agent/internal/stream/stream.go) processes Headlamp's
+  ## ~10 parallel requests one-at-a-time; the tail of the queue exhausts
+  ## the 10s budget before its handler even starts → "Lost connection to
+  ## the cluster" red banner. 30000 (30s) makes this rare. The proper
+  ## fix lives in the agent (concurrent Dispatch + serialized Send via
+  ## outbound channel); this is the env-var quick-win that ships first.
+  clusterRpcTimeoutMs: ""
   ## P1 CCM Console — hub-side gRPC AgentGateway. Opt-in. When grpcEnabled
   ## is true, the chart renders a separate Service (<release>-enbuild-bk-grpc)
   ## targeting port 8443 on the bk pods, and adds a `grpc` containerPort to

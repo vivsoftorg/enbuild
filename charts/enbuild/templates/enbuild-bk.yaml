@@ -38,6 +38,17 @@ spec:
         - name: KUBE_PROXY_FALLBACK_ACTOR
           value: {{ . | quote }}
         {{- end }}
+        {{- /*
+          ClusterRpcService timeout (ms) for hub→agent RPCs. Default in
+          source is 10000 — too tight for Headlamp browsing through BE 099
+          K8sApiProxy because the agent dispatches serially (see
+          agents/enbuild-agent/internal/stream/stream.go). Recommended:
+          30000. Empty = source default.
+        */ -}}
+        {{- with .Values.enbuildBk.clusterRpcTimeoutMs }}
+        - name: CLUSTER_RPC_TIMEOUT_MS
+          value: {{ . | quote }}
+        {{- end }}
         envFrom:
         - secretRef:
             name: {{ .Release.Name }}-mongo-secrets
