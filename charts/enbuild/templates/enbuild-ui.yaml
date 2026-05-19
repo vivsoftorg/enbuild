@@ -55,6 +55,13 @@ spec:
         - mountPath: /etc/nginx/override.conf
           name: nginx-conf
           subPath: override.conf
+{{- if .Values.lightning_features.operations_lightning.headlamp }}
+        # ENBUILD Headlamp white-label brand assets (favicon + injected
+        # whitelabel.css/js). Served by the nginx /headlamp-brand/ alias.
+        - mountPath: /usr/share/nginx/headlamp-brand
+          name: headlamp-brand
+          readOnly: true
+{{- end }}
 {{- if .Values.global.image.registry_credentials }}
       imagePullSecrets:
         - name: {{ .Release.Name }}-image-pull-secret
@@ -72,6 +79,11 @@ spec:
             path: override.conf
           name: {{ .Release.Name }}-nginx-conf
         name: nginx-conf
+{{- if .Values.lightning_features.operations_lightning.headlamp }}
+      - configMap:
+          name: {{ .Release.Name }}-headlamp-brand
+        name: headlamp-brand
+{{- end }}
 ---
 apiVersion: v1
 kind: Service

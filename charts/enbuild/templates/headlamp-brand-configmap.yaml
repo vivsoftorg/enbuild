@@ -1,0 +1,21 @@
+{{- if .Values.lightning_features.operations_lightning.headlamp }}
+# ENBUILD Headlamp white-label brand assets.
+# Mounted on the enbuild-ui (FE nginx) pod at /usr/share/nginx/headlamp-brand
+# and served by the nginx `location /headlamp-brand/` alias (templates/nginx-conf.yaml).
+# - favicon.ico: the ENBUILD elephant (binary → binaryData via .Files.Get|b64enc)
+# - whitelabel.css/js: page-context overlay that hides Headlamp's Drawer+AppBar
+#   and builds the ENBUILD top nav (the plugin SDK can't reach <head>/DOM — §8).
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ .Release.Name }}-headlamp-brand
+  labels:
+{{- include "enbuild-helm-chart.labels" . | nindent 4 }}
+binaryData:
+  favicon.ico: {{ .Files.Get "files/headlamp-brand/favicon.ico" | b64enc | quote }}
+data:
+  whitelabel.css: |-
+{{ .Files.Get "files/headlamp-brand/whitelabel.css" | indent 4 }}
+  whitelabel.js: |-
+{{ .Files.Get "files/headlamp-brand/whitelabel.js" | indent 4 }}
+{{- end }}

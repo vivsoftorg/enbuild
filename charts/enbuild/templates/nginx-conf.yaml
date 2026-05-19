@@ -56,8 +56,40 @@ data:
 {{- end }}
 
 {{- if .Values.lightning_features.operations_lightning.headlamp }}
+      # ENBUILD Headlamp white-label (folded into the chart so helm-upgrade
+      # doesn't wipe the operator-applied patch — same carryover discipline
+      # as the /p1-ccm-console/ block below; see OPERATIONS_GOTCHAS §8/§9).
+      # Headlamp's plugin SDK is bridged and CANNOT touch <head>/title/favicon
+      # from plugin code (§8) — so the brand erasure + sidebar→top-nav overlay
+      # is injected here at the FE nginx layer. Brand assets are served from
+      # the headlamp-brand ConfigMap mounted on the enbuild-ui pod
+      # (templates/enbuild-ui.yaml + templates/headlamp-brand-configmap.yaml).
+      # sub_filter match strings are verbatim from the served Headlamp
+      # index.html; re-capture + update if the Headlamp image bumps.
+      location /headlamp-brand/ {
+        alias /usr/share/nginx/headlamp-brand/;
+        access_log off;
+        add_header Cache-Control "public, max-age=300";
+      }
+
       location /headlamp/ {
         proxy_pass http://{{ .Release.Name }}-headlamp/headlamp/;
+
+        # sub_filter can't rewrite a gzipped upstream — force plain HTML.
+        proxy_set_header Accept-Encoding "";
+        sub_filter_once off;
+
+        sub_filter '<title>Headlamp</title>' '<title>ENBUILD Cluster Console</title>';
+        sub_filter '<meta name="description" content="Headlamp: Kubernetes Web UI" />' '<meta name="description" content="ENBUILD Cluster Console" />';
+
+        sub_filter '<link rel="icon" href="/headlamp/favicon.ico" />' '<link rel="icon" href="/headlamp-brand/favicon.ico" />';
+        sub_filter '<link rel="apple-touch-icon" sizes="180x180" href="/headlamp/apple-touch-icon.png" />' '<link rel="apple-touch-icon" sizes="180x180" href="/headlamp-brand/favicon.ico" />';
+        sub_filter '<link rel="icon" type="image/png" sizes="32x32" href="/headlamp/favicon-32x32.png" />' '<link rel="icon" href="/headlamp-brand/favicon.ico" />';
+        sub_filter '<link rel="icon" type="image/png" sizes="16x16" href="/headlamp/favicon-16x16.png" />' '';
+        sub_filter '<link rel="mask-icon" href="/headlamp/safari-pinned-tab.svg" color="#5bbad5" />' '';
+        sub_filter '<link rel="apple-touch-icon" href="logo192.png" />' '';
+
+        sub_filter '</head>' '<link rel="stylesheet" href="/headlamp-brand/whitelabel.css"><script src="/headlamp-brand/whitelabel.js"></script></head>';
       }
 
 {{- end }}

@@ -1,0 +1,119 @@
+/* ENBUILD white-label overlay for Headlamp.
+ *
+ * Hides Headlamp's native left Drawer + top AppBar and makes room for the
+ * fixed ENBUILD top nav that whitelabel.js injects (#enbuild-topnav).
+ * Styling mirrors frontend-p1ccm/src/components/Layout/Header.tsx:
+ *   height 48px, accent #05A2C2 / accent-ink #006C82, Montserrat wordmark,
+ *   Inter nav links, ENBUILD Dark surface #1A2230 (we seed ENBUILD Dark as
+ *   the default theme so the bar matches the app chrome).
+ *
+ * Selectors target MUI v5 structural classes (stable across Headlamp
+ * 0.42.x). whitelabel.js carries a runtime self-diagnostic if they miss.
+ */
+
+:root {
+  --eb-accent: #05A2C2;
+  --eb-accent-ink: #006C82;
+  --eb-bar-bg: #1A2230;
+  --eb-bar-fg: rgba(255, 255, 255, 0.92);
+  --eb-bar-muted: #9AA3AF;
+  --eb-bar-line: #2D3848;
+  --eb-bar-h: 48px;
+}
+
+/* Hide the native Headlamp sidebar Drawer (its <a> entries stay in the DOM
+ * for whitelabel.js to proxy-click — display:none keeps handlers alive). */
+html.enbuild-whitelabel .MuiDrawer-root,
+html.enbuild-whitelabel [class*="Sidebar"] nav,
+html.enbuild-whitelabel .MuiDrawer-docked {
+  display: none !important;
+}
+
+/* Hide the native top AppBar/Toolbar — replaced by #enbuild-topnav. */
+html.enbuild-whitelabel header.MuiAppBar-root {
+  display: none !important;
+}
+
+/* Reclaim the space the Drawer + AppBar used. Headlamp offsets its main
+ * scroll container by the drawer width and toolbar height; zero those and
+ * apply our own top offset for the fixed ENBUILD bar. Broad on purpose —
+ * Headlamp wraps content in a few generated containers. */
+html.enbuild-whitelabel body {
+  padding-top: var(--eb-bar-h) !important;
+}
+html.enbuild-whitelabel main,
+html.enbuild-whitelabel [role="main"],
+html.enbuild-whitelabel .MuiContainer-root {
+  margin-left: 0 !important;
+  max-width: 100% !important;
+}
+
+/* The ENBUILD top nav (built by whitelabel.js). */
+#enbuild-topnav {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: var(--eb-bar-h);
+  z-index: 2000;
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  padding: 0 20px;
+  background: var(--eb-bar-bg);
+  border-bottom: 1px solid var(--eb-bar-line);
+  font-family: Inter, "Helvetica Neue", Helvetica, Arial, sans-serif;
+  box-sizing: border-box;
+}
+
+#enbuild-topnav .eb-brand {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+#enbuild-topnav .eb-logo {
+  width: 28px;
+  height: 28px;
+  display: block;
+}
+#enbuild-topnav .eb-word {
+  font-family: Montserrat, Inter, sans-serif;
+  font-weight: 700;
+  font-size: 15px;
+  letter-spacing: 0.3px;
+  color: var(--eb-bar-fg);
+}
+#enbuild-topnav .eb-sub {
+  font-weight: 600;
+  font-size: 12px;
+  color: var(--eb-accent);
+}
+
+#enbuild-topnav .eb-links {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+#enbuild-topnav .eb-links::-webkit-scrollbar { display: none; }
+
+#enbuild-topnav .eb-link {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--eb-bar-muted);
+  text-decoration: none;
+  white-space: nowrap;
+  padding: 4px 2px;
+  border-bottom: 2px solid transparent;
+  cursor: pointer;
+}
+#enbuild-topnav .eb-link:hover {
+  color: var(--eb-bar-fg);
+}
+#enbuild-topnav .eb-link.eb-active {
+  color: var(--eb-bar-fg);
+  border-bottom-color: var(--eb-accent);
+}
+
+#enbuild-topnav .eb-spacer { margin-left: auto; }

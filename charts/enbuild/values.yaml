@@ -588,20 +588,14 @@ headlamp:
   namespaceOverride: ""
 
   # -- An optional list of init containers to be run before the main containers.
+  # NOTE: the prior `headlamp-plugins` init container (pulled the external
+  # ghcr.io/vivsoftorg/enbuild-headlamp-theme image and copied it into a PVC)
+  # was removed 2026-05-19. The ENBUILD theme plugin is now folded into THIS
+  # chart as the `headlamp-plugin-enbuild-theme` ConfigMap (see
+  # templates/headlamp-plugin-configmap.yaml) and mounted directly at
+  # /headlamp/plugins/enbuild-theme via the volumes/volumeMounts below — no
+  # external image dependency, no PVC, survives helm-upgrade.
   initContainers:
-    - command:
-        - /bin/sh
-        - -c
-        - mkdir -p /headlamp/plugins && cp -r /plugins/* /headlamp/plugins/
-      # image: knrt10/headlamp-plugins-test:latest # it has all the plugins
-      # image: ghcr.io/orange-cloudfoundry/headlamp-plugin:latest # no dynamic clusters plugin
-      image: ghcr.io/vivsoftorg/enbuild-headlamp-theme:0.0.1
-      imagePullPolicy: IfNotPresent
-      name: headlamp-plugins
-      volumeMounts:
-        - mountPath: /headlamp/plugins
-          name: headlamp-plugins
-
     - command:
         - /bin/sh
         - "-c"
@@ -787,8 +781,11 @@ headlamp:
 
   # -- Headlamp containers volume mounts
   volumeMounts:
-    - mountPath: /headlamp/plugins
+    # Plugin mounts as a subdir of pluginsDir (/headlamp/plugins) so Headlamp
+    # detects it as the `enbuild-theme` plugin (main.js + package.json).
+    - mountPath: /headlamp/plugins/enbuild-theme
       name: headlamp-plugins
+      readOnly: true
 
     - mountPath: /home/headlamp/.config/Headlamp/kubeconfigs/config
       name: kubeconfig
@@ -797,9 +794,12 @@ headlamp:
 
   # -- Headlamp pod's volumes
   volumes:
+    # ENBUILD theme plugin — chart-managed ConfigMap (folded in 2026-05-19,
+    # replacing the external-image init-container + PVC). Static CM name
+    # because subchart values can't template {{ .Release.Name }}.
     - name: headlamp-plugins
-      persistentVolumeClaim:
-        claimName: enbuild-headlamp
+      configMap:
+        name: headlamp-plugin-enbuild-theme
     - name: kubeconfig
       emptyDir: {}
 

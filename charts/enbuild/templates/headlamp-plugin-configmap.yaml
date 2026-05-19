@@ -1,0 +1,25 @@
+{{- if .Values.lightning_features.operations_lightning.headlamp }}
+# ENBUILD Headlamp theme plugin (elephant logo + ENBUILD MUI theme +
+# contract chip). Folded into the chart (decision 2026-05-19) so the
+# white-label ships self-contained — replaces the prior external
+# init-container image ghcr.io/vivsoftorg/enbuild-headlamp-theme:<tag>
+# (whose source is not in-repo). Mounted into the Headlamp pod at
+# /headlamp/plugins/enbuild-theme via the headlamp subchart values
+# (parent values.yaml `headlamp.*` block).
+# Static name (NOT release-prefixed): the headlamp subchart references this
+# CM by name from values.yaml, which can't template {{ .Release.Name }}.
+# Matches the name the prototype already used in-cluster
+# (headlamp-plugin-enbuild-theme). Headlamp is one-per-namespace so a
+# static name is safe.
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: headlamp-plugin-enbuild-theme
+  labels:
+{{- include "enbuild-helm-chart.labels" . | nindent 4 }}
+data:
+  main.js: |-
+{{ .Files.Get "files/headlamp-plugin/enbuild-theme/main.js" | indent 4 }}
+  package.json: |-
+{{ .Files.Get "files/headlamp-plugin/enbuild-theme/package.json" | indent 4 }}
+{{- end }}
