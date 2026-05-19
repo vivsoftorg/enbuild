@@ -193,6 +193,9 @@ enbuildBk:
   exportSigning:
     existingSecret: ""
     privateKeyPem: ""
+  securityTooling:
+    ## @param enbuildBk.securityTooling.existingSecret Name of an operator-managed Secret carrying hub-self CCM-13d security-tooling env (TWISTLOCK_API_URL/USERNAME/PASSWORD, ANCHORE_API_URL/USERNAME/PASSWORD, FALCO_CLUSTER_ID, FALCO_WEBHOOK_SECRET, OPA_GATEKEEPER_ENABLED, FALCO_AUDIT_LANE). Added as an envFrom on the bk container. Keeps Big Bang tool creds out of Helm values + rotatable out-of-band; bridges them cross-namespace into the bk pod. Backwards-compatible default: empty (hub-self reports those sources unavailable until set).
+    existingSecret: ""
   ## BE 031 (production hardening per ADR-0001 risks-accepted): bk
   ## replicas + Redis-backed agent registry. When `agentGateway.replicas`
   ## is >1, the bk Deployment runs multiple replicas; agents register
