@@ -187,7 +187,10 @@ enbuildBk:
   ## the cluster" red banner. 30000 (30s) makes this rare. The proper
   ## fix lives in the agent (concurrent Dispatch + serialized Send via
   ## outbound channel); this is the env-var quick-win that ships first.
-  clusterRpcTimeoutMs: ""
+  ## Default raised to 30000 (was "") on 2026-05-19 so every release ships
+  ## with the keepalive-safe value — prior empty default meant new deploys
+  ## inherited the 10s source default and re-hit the lost-connection bug.
+  clusterRpcTimeoutMs: "30000"
   ## P1 CCM Console — hub-side gRPC AgentGateway. Opt-in. When grpcEnabled
   ## is true, the chart renders a separate Service (<release>-enbuild-bk-grpc)
   ## targeting port 8443 on the bk pods, and adds a `grpc` containerPort to
