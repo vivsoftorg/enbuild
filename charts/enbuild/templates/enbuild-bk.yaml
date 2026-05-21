@@ -113,11 +113,19 @@ spec:
           operator disable the probes per environment. Default true to
           preserve existing chart posture; vendor13-ib values flip false.
         */ -}}
+        {{- /*
+          Probes hit dedicated /api/health/live (heap-only, no RSS) and
+          /api/health/ready (heap + mongo + disk) instead of the legacy
+          combined /api/health. The combined endpoint includes RSS which
+          climbs above threshold under normal K8sApiProxy buffering of
+          Headlamp /openapi/v2 (11 MB per call on Big Bang spokes). The
+          dedicated endpoints reflect the real K8s probe intent.
+        */ -}}
         {{- if (default (dict) .Values.enbuildBk.healthProbe).enabled | default true }}
         livenessProbe:
           failureThreshold: 3
           httpGet:
-            path: /api/health
+            path: /api/health/live
             port: 8080
           initialDelaySeconds: 3
           periodSeconds: 10
@@ -135,7 +143,7 @@ spec:
         readinessProbe:
           failureThreshold: 3
           httpGet:
-            path: /api/health
+            path: /api/health/ready
             port: 8080
           initialDelaySeconds: 3
           periodSeconds: 10
