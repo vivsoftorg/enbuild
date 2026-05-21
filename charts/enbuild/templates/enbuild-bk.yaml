@@ -101,6 +101,19 @@ spec:
         # for the override shape + intended temporary lifecycle.
         image: {{ default .Values.global.image.registry .Values.enbuildBk.image.registry }}/{{ .Values.enbuildBk.image.repository }}:{{ default .Chart.AppVersion (default .Values.global.AppVersion .Values.enbuildBk.image.tag) }}
         imagePullPolicy: {{ .Values.global.image.pullPolicy }}
+        {{- /*
+          BE 099 health-probe gate (2026-05-21). bk's NestJS health check has
+          a hardcoded `memory_rss` threshold (app.service.ts:30 — 250 MB at
+          time of writing). K8sApiProxy buffers Headlamp's /openapi/v2
+          responses (11 MB per call for Big Bang spokes), Node retains them
+          past GC, RSS climbs past 250 in normal operation, /api/health
+          returns 503, liveness kills the pod, gRPC streams to every spoke
+          agent break. Until the source threshold is raised to 1 GB (and/or
+          the K8sApiProxy gets streaming/caching), this gate lets the
+          operator disable the probes per environment. Default true to
+          preserve existing chart posture; vendor13-ib values flip false.
+        */ -}}
+        {{- if (default (dict) .Values.enbuildBk.healthProbe).enabled | default true }}
         livenessProbe:
           failureThreshold: 3
           httpGet:
@@ -110,6 +123,7 @@ spec:
           periodSeconds: 10
           successThreshold: 1
           timeoutSeconds: 2
+        {{- end }}
         name: enbuild-bk
         ports:
         - containerPort: 8080
@@ -117,6 +131,7 @@ spec:
         - containerPort: 8443
           name: grpc
         {{- end }}
+        {{- if (default (dict) .Values.enbuildBk.healthProbe).enabled | default true }}
         readinessProbe:
           failureThreshold: 3
           httpGet:
@@ -126,6 +141,7 @@ spec:
           periodSeconds: 10
           successThreshold: 1
           timeoutSeconds: 2
+        {{- end }}
         resources: {{- toYaml .Values.enbuildBk.resources | nindent 10 }}
         securityContext:
           allowPrivilegeEscalation: false

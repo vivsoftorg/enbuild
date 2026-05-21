@@ -109,6 +109,14 @@ enbuildBk:
   # clusterRpcTimeoutMs is set to "30000" by the chart default
   # (charts/enbuild/values.yaml). Override here only to change it for
   # this environment.
+  # bk probes off (2026-05-21) — until the BE RSS threshold bump
+  # (app.service.ts:30 250 MB -> 1 GB) ships in a new image, K8sApiProxy
+  # buffering of /openapi/v2 (11 MB Big Bang) climbs RSS past 250 MB and
+  # the probes fail, triggering a kubelet kill loop that breaks every
+  # spoke agent gRPC stream. Flip back to true once the source bump is
+  # live on this environment.
+  healthProbe:
+    enabled: false
 
 enbuildUser:
   image:

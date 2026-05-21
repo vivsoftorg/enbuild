@@ -191,6 +191,16 @@ enbuildBk:
   ## with the keepalive-safe value — prior empty default meant new deploys
   ## inherited the 10s source default and re-hit the lost-connection bug.
   clusterRpcTimeoutMs: "30000"
+  ## P1 CCM Console — bk health probe gate (2026-05-21). When false, the
+  ## chart skips rendering livenessProbe + readinessProbe on enbuild-bk.
+  ## Use case: bk's NestJS Terminus health check has a hardcoded
+  ## memory_rss threshold (app.service.ts:30) that K8sApiProxy buffering of
+  ## /openapi/v2 (11 MB per call on Big Bang spokes) can exceed in normal
+  ## operation, causing a death loop that breaks every spoke agent gRPC
+  ## stream. Default true keeps existing posture; flip to false on
+  ## environments where the source threshold hasn't been raised yet.
+  healthProbe:
+    enabled: true
   ## P1 CCM Console — hub-side gRPC AgentGateway. Opt-in. When grpcEnabled
   ## is true, the chart renders a separate Service (<release>-enbuild-bk-grpc)
   ## targeting port 8443 on the bk pods, and adds a `grpc` containerPort to
