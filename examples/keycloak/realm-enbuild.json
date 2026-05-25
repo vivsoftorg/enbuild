@@ -1,0 +1,166 @@
+{
+  "realm": "enbuild",
+  "enabled": true,
+  "sslRequired": "none",
+  "registrationAllowed": false,
+  "loginWithEmailAllowed": true,
+  "duplicateEmailsAllowed": false,
+  "resetPasswordAllowed": true,
+  "editUsernameAllowed": false,
+  "accessTokenLifespan": 1800,
+  "ssoSessionIdleTimeout": 7200,
+  "ssoSessionMaxLifespan": 36000,
+
+  "clients": [
+    {
+      "clientId": "enbuild-ui",
+      "name": "enbuild-ui",
+      "description": "P1 CCM Console SPA (public OIDC client, PKCE). ADR-0022.",
+      "enabled": true,
+      "publicClient": true,
+      "standardFlowEnabled": true,
+      "implicitFlowEnabled": false,
+      "directAccessGrantsEnabled": true,
+      "rootUrl": "http://localhost:3000",
+      "baseUrl": "/",
+      "redirectUris": ["http://localhost:3000/*", "http://127.0.0.1:3000/*"],
+      "webOrigins": ["http://localhost:3000", "http://127.0.0.1:3000", "+"],
+      "protocol": "openid-connect",
+      "attributes": {
+        "pkce.code.challenge.method": "S256",
+        "post.logout.redirect.uris": "http://localhost:3000/*"
+      },
+      "protocolMappers": [
+        {
+          "name": "groups",
+          "protocol": "openid-connect",
+          "protocolMapper": "oidc-group-membership-mapper",
+          "consentRequired": false,
+          "config": {
+            "full.path": "true",
+            "id.token.claim": "true",
+            "access.token.claim": "true",
+            "userinfo.token.claim": "true",
+            "claim.name": "groups"
+          }
+        }
+      ]
+    },
+    {
+      "clientId": "enbuild",
+      "name": "enbuild",
+      "description": "P1 CCM backend confidential client + service account (Keycloak Admin API). ADR-0022.",
+      "enabled": true,
+      "publicClient": false,
+      "secret": "enbuild-prototype-secret-CHANGE-ME",
+      "standardFlowEnabled": true,
+      "directAccessGrantsEnabled": true,
+      "serviceAccountsEnabled": true,
+      "redirectUris": ["http://localhost:3000/*", "http://127.0.0.1:3000/*"],
+      "webOrigins": ["+"],
+      "protocol": "openid-connect",
+      "protocolMappers": [
+        {
+          "name": "groups",
+          "protocol": "openid-connect",
+          "protocolMapper": "oidc-group-membership-mapper",
+          "consentRequired": false,
+          "config": {
+            "full.path": "true",
+            "id.token.claim": "true",
+            "access.token.claim": "true",
+            "userinfo.token.claim": "true",
+            "claim.name": "groups"
+          }
+        }
+      ]
+    }
+  ],
+
+  "groups": [
+    {
+      "name": "enbuild",
+      "path": "/enbuild",
+      "subGroups": [
+        { "name": "platform-admins", "path": "/enbuild/platform-admins", "subGroups": [] },
+        {
+          "name": "projects",
+          "path": "/enbuild/projects",
+          "subGroups": [
+            {
+              "name": "iron-bank",
+              "path": "/enbuild/projects/iron-bank",
+              "subGroups": [
+                { "name": "viewer", "path": "/enbuild/projects/iron-bank/viewer" },
+                { "name": "member", "path": "/enbuild/projects/iron-bank/member" },
+                { "name": "maintainer", "path": "/enbuild/projects/iron-bank/maintainer" },
+                { "name": "owner", "path": "/enbuild/projects/iron-bank/owner" }
+              ]
+            },
+            {
+              "name": "big-bang",
+              "path": "/enbuild/projects/big-bang",
+              "subGroups": [
+                { "name": "viewer", "path": "/enbuild/projects/big-bang/viewer" },
+                { "name": "member", "path": "/enbuild/projects/big-bang/member" },
+                { "name": "maintainer", "path": "/enbuild/projects/big-bang/maintainer" },
+                { "name": "owner", "path": "/enbuild/projects/big-bang/owner" }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ],
+
+  "users": [
+    {
+      "username": "admin@p1.mil",
+      "email": "admin@p1.mil",
+      "firstName": "Platform",
+      "lastName": "Admin",
+      "enabled": true,
+      "emailVerified": true,
+      "credentials": [{ "type": "password", "value": "ChangeMe123!", "temporary": false }],
+      "groups": ["/enbuild/platform-admins"]
+    },
+    {
+      "username": "owner-ib@p1.mil",
+      "email": "owner-ib@p1.mil",
+      "firstName": "Iron",
+      "lastName": "Owner",
+      "enabled": true,
+      "emailVerified": true,
+      "credentials": [{ "type": "password", "value": "ChangeMe123!", "temporary": false }],
+      "groups": ["/enbuild/projects/iron-bank/owner"]
+    },
+    {
+      "username": "viewer-ib@p1.mil",
+      "email": "viewer-ib@p1.mil",
+      "firstName": "Iron",
+      "lastName": "Viewer",
+      "enabled": true,
+      "emailVerified": true,
+      "credentials": [{ "type": "password", "value": "ChangeMe123!", "temporary": false }],
+      "groups": ["/enbuild/projects/iron-bank/viewer"]
+    },
+    {
+      "username": "owner-bb@p1.mil",
+      "email": "owner-bb@p1.mil",
+      "firstName": "BigBang",
+      "lastName": "Owner",
+      "enabled": true,
+      "emailVerified": true,
+      "credentials": [{ "type": "password", "value": "ChangeMe123!", "temporary": false }],
+      "groups": ["/enbuild/projects/big-bang/owner"]
+    },
+    {
+      "username": "service-account-enbuild",
+      "enabled": true,
+      "serviceAccountClientId": "enbuild",
+      "clientRoles": {
+        "realm-management": ["manage-users", "manage-clients", "view-users", "query-users", "query-groups"]
+      }
+    }
+  ]
+}

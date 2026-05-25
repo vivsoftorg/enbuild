@@ -49,6 +49,60 @@ spec:
         - name: CLUSTER_RPC_TIMEOUT_MS
           value: {{ . | quote }}
         {{- end }}
+        {{- /*
+          ADR-0022 — P1-native identity + tenancy. AUTH_MECHANISM selects the
+          auth strategy (local | keycloak | okta). When keycloak:
+            KEYCLOAK_BACKEND_URL    issuer the backend validates against (over
+                                    the tunnel this is the browser-facing URL,
+                                    e.g. http://localhost:8088 — NOT fetched).
+            KEYCLOAK_REALM/CLIENT_ID/CLIENT_SECRET  OIDC client config.
+            KEYCLOAK_REALM_PUBLIC_KEY  pinned signing key for OFFLINE JWT
+                                    verification (set during cutover after
+                                    reading /realms/<realm>; no key committed).
+            KEYCLOAK_ADMIN_BASE_URL  in-cluster reachable URL for the Admin
+                                    REST API (group/member management).
+            ADMIN_EMAILS            break-glass platform-admin allowlist
+                                    (group /enbuild/platform-admins is primary).
+          All empty = source defaults (local mode).
+        */ -}}
+        {{- with .Values.enbuildBk.authMechanism }}
+        - name: AUTH_MECHANISM
+          value: {{ . | quote }}
+        {{- end }}
+        {{- with .Values.enbuildBk.adminEmails }}
+        - name: ADMIN_EMAILS
+          value: {{ . | quote }}
+        {{- end }}
+        {{- with .Values.enbuildBk.keycloak }}
+        {{- with .backendUrl }}
+        - name: KEYCLOAK_BACKEND_URL
+          value: {{ . | quote }}
+        {{- end }}
+        {{- with .adminBaseUrl }}
+        - name: KEYCLOAK_ADMIN_BASE_URL
+          value: {{ . | quote }}
+        {{- end }}
+        {{- with .realm }}
+        - name: KEYCLOAK_REALM
+          value: {{ . | quote }}
+        {{- end }}
+        {{- with .clientId }}
+        - name: KEYCLOAK_CLIENT_ID
+          value: {{ . | quote }}
+        {{- end }}
+        {{- with .clientSecret }}
+        - name: KEYCLOAK_CLIENT_SECRET
+          value: {{ . | quote }}
+        {{- end }}
+        {{- with .realmPublicKey }}
+        - name: KEYCLOAK_REALM_PUBLIC_KEY
+          value: {{ . | quote }}
+        {{- end }}
+        {{- with .newUserPassword }}
+        - name: KEYCLOAK_NEW_USER_PASSWORD
+          value: {{ . | quote }}
+        {{- end }}
+        {{- end }}
         envFrom:
         - secretRef:
             name: {{ .Release.Name }}-mongo-secrets

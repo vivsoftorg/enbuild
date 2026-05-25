@@ -106,6 +106,25 @@ enbuildBk:
   # relying on the controller hardcoded default so the operator-visible
   # config matches the runtime behavior.
   kubeProxyFallbackActor: "alice@example.com"
+  # ADR-0022 — P1-native identity + tenancy via self-hosted Keycloak.
+  # Authorization flows from Keycloak group claims (/enbuild/platform-admins,
+  # /enbuild/projects/<slug>/<role>). admin@p1.mil is in the platform-admins
+  # group in the realm import; ADMIN_EMAILS is a break-glass fallback.
+  authMechanism: keycloak
+  adminEmails: "admin@p1.mil"
+  keycloak:
+    # Browser-facing issuer over the SSM tunnel (kubectl port-forward 8088).
+    # Token validation is OFFLINE (pinned key) so this is never fetched.
+    backendUrl: "http://localhost:8088"
+    # In-cluster Service for server-to-server Admin REST (group/member writes).
+    adminBaseUrl: "http://enbuild-ib-keycloak:8080"
+    realm: "enbuild"
+    clientId: "enbuild"
+    clientSecret: "enbuild-prototype-secret-CHANGE-ME"
+    # Set at cutover: KCURL=localhost:8088; curl $KCURL/realms/enbuild | jq -r .public_key
+    # then helm upgrade --set enbuildBk.keycloak.realmPublicKey=<key>
+    realmPublicKey: ""
+    newUserPassword: "ChangeMe123!"
   # clusterRpcTimeoutMs is set to "30000" by the chart default
   # (charts/enbuild/values.yaml). Override here only to change it for
   # this environment.
@@ -189,3 +208,20 @@ headlamp:
 # the in-cluster GitLab in the `gitlab` namespace on vendor13-ib.
 # Final: repo1.dso.mil once a P1 namespace is provisioned for us
 # (follow-up item with Jeffrey).
+
+# ADR-0022 — self-hosted Keycloak (prototype). Deploys an in-cluster Keycloak
+# that imports the `enbuild` realm (groups + clients + demo users). Reach it
+# over the tunnel:  kubectl -n enbuild port-forward svc/enbuild-ib-keycloak 8088:8080
+# Demo users (password ChangeMe123!): admin@p1.mil (platform-admin),
+# owner-ib@p1.mil, viewer-ib@p1.mil, owner-bb@p1.mil.
+# Production replaces this with federation to P1 SSO (login.dso.mil).
+keycloak:
+  enabled: true
+  image:
+    registry: registry1.dso.mil
+    repository: ironbank/opensource/keycloak/keycloak
+    tag: "25.0.6"   # TODO: confirm the tag mirrored into vendor13-ib's registry1
+    pullPolicy: Always
+  adminUser: "admin"
+  adminPassword: "admin"          # prototype-only — rotate before any shared use
+  hostnameUrl: "http://localhost:8088"

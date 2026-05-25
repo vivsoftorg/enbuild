@@ -1,0 +1,110 @@
+{{- /*
+  ADR-0022 — self-hosted Keycloak for the P1 CCM prototype (vendor13-ib).
+
+  Per the P1 value-streams research (Stage 0 #4): "ship a local Keycloak for
+  the prototype demo; federate to P1 SSO / login.dso.mil in real deployments."
+  This deploys a single in-cluster Keycloak that imports the `enbuild` realm
+  (group hierarchy + clients + demo users) on boot. It is reached over the
+  vendor13-ib SSM tunnel via `kubectl port-forward` to localhost:8088, so the
+  realm's hostname is set to that browser-facing URL.
+
+  Disabled by default (keycloak.enabled=false); turned on in
+  examples/enbuild/values-vendor13-ib.yaml. Ephemeral (no PVC) — the realm is
+  re-imported from the ConfigMap on every restart, which is exactly what we
+  want for a reproducible demo. Production replaces this entirely with
+  federation to P1 SSO.
+*/ -}}
+{{- if .Values.keycloak.enabled }}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ .Release.Name }}-keycloak-realm
+  labels:
+  {{- include "enbuild-helm-chart.labels" . | nindent 4 }}
+data:
+  realm-enbuild.json: |
+{{ .Files.Get "files/keycloak/realm-enbuild.json" | indent 4 }}
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ .Release.Name }}-keycloak
+  labels:
+  {{- include "enbuild-helm-chart.labels" . | nindent 4 }}
+    app.kubernetes.io/component: keycloak
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: {{ .Release.Name }}-keycloak
+  template:
+    metadata:
+      labels:
+        app: {{ .Release.Name }}-keycloak
+    spec:
+      {{- with .Values.global.image.registry_credentials }}
+      imagePullSecrets:
+        - name: {{ $.Release.Name }}-image-pull-secret
+      {{- end }}
+      containers:
+        - name: keycloak
+          image: "{{ .Values.keycloak.image.registry | default .Values.global.image.registry }}/{{ .Values.keycloak.image.repository }}:{{ .Values.keycloak.image.tag }}"
+          imagePullPolicy: {{ .Values.keycloak.image.pullPolicy | default "IfNotPresent" }}
+          args: ["start-dev", "--import-realm"]
+          env:
+            # KC <= 25 bootstrap admin
+            - name: KEYCLOAK_ADMIN
+              value: {{ .Values.keycloak.adminUser | quote }}
+            - name: KEYCLOAK_ADMIN_PASSWORD
+              value: {{ .Values.keycloak.adminPassword | quote }}
+            # KC 26+ bootstrap admin (harmless on older versions)
+            - name: KC_BOOTSTRAP_ADMIN_USERNAME
+              value: {{ .Values.keycloak.adminUser | quote }}
+            - name: KC_BOOTSTRAP_ADMIN_PASSWORD
+              value: {{ .Values.keycloak.adminPassword | quote }}
+            - name: KC_HTTP_ENABLED
+              value: "true"
+            - name: KC_HOSTNAME_STRICT
+              value: "false"
+            # Browser-facing URL (= token issuer). Over the tunnel this is the
+            # port-forward address; the backend's KEYCLOAK_BACKEND_URL must match.
+            - name: KC_HOSTNAME
+              value: {{ .Values.keycloak.hostnameUrl | quote }}
+            - name: KC_HOSTNAME_BACKCHANNEL_DYNAMIC
+              value: "true"
+            - name: KC_HEALTH_ENABLED
+              value: "true"
+            - name: KC_PROXY_HEADERS
+              value: "xforwarded"
+          ports:
+            - name: http
+              containerPort: 8080
+          volumeMounts:
+            - name: realm-import
+              mountPath: /opt/keycloak/data/import
+              readOnly: true
+          {{- with .Values.keycloak.resources }}
+          resources:
+          {{- toYaml . | nindent 12 }}
+          {{- end }}
+      volumes:
+        - name: realm-import
+          configMap:
+            name: {{ .Release.Name }}-keycloak-realm
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ .Release.Name }}-keycloak
+  labels:
+  {{- include "enbuild-helm-chart.labels" . | nindent 4 }}
+    app.kubernetes.io/component: keycloak
+spec:
+  type: ClusterIP
+  selector:
+    app: {{ .Release.Name }}-keycloak
+  ports:
+    - name: http
+      port: 8080
+      targetPort: 8080
+{{- end }}

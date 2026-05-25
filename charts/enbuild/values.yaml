@@ -191,6 +191,21 @@ enbuildBk:
   ## with the keepalive-safe value — prior empty default meant new deploys
   ## inherited the 10s source default and re-hit the lost-connection bug.
   clusterRpcTimeoutMs: "30000"
+  ## ADR-0022 — P1-native identity + tenancy. Empty = local mode (source
+  ## default). Set authMechanism=keycloak + the keycloak.* block to enable
+  ## real SSO. ADMIN_EMAILS is a break-glass platform-admin allowlist
+  ## (comma-separated); the Keycloak group /enbuild/platform-admins is the
+  ## primary admin source. See examples/enbuild/values-vendor13-ib.yaml.
+  authMechanism: ""        # "" | local | keycloak | okta
+  adminEmails: ""          # comma-separated break-glass platform admins
+  keycloak:
+    backendUrl: ""         # OIDC issuer the backend validates against (browser-facing URL over the tunnel)
+    adminBaseUrl: ""       # in-cluster reachable URL for the Keycloak Admin REST API (group/member writes)
+    realm: ""              # default "enbuild" in source when empty
+    clientId: ""           # default "enbuild" in source when empty
+    clientSecret: ""       # confidential client secret (also used by the Admin service account)
+    realmPublicKey: ""     # pinned RS256 public key (base64 SPKI body) for OFFLINE JWT verification; set during cutover
+    newUserPassword: ""    # prototype-only default password for auto-provisioned users (UI add-member)
   ## P1 CCM Console — bk health probe gate (2026-05-21). When false, the
   ## chart skips rendering livenessProbe + readinessProbe on enbuild-bk.
   ## Use case: bk's NestJS Terminus health check has a hardcoded
@@ -1050,3 +1065,26 @@ jupyterhub:
                     if [ ! -d demo ]; then
                       git clone https://github.com/vivsoftorg/iris-flower-classifier-demo-notebook.git demo
                     fi
+
+## ADR-0022 — self-hosted Keycloak for the P1 CCM prototype. Disabled by
+## default; enabled in examples/enbuild/values-vendor13-ib.yaml. Production
+## federates to P1 SSO (login.dso.mil) instead of running this. See
+## charts/enbuild/templates/keycloak.yaml + files/keycloak/realm-enbuild.json.
+keycloak:
+  enabled: false
+  image:
+    registry: ""                                   # defaults to global.image.registry when empty
+    repository: ironbank/opensource/keycloak/keycloak
+    tag: "25.0.6"                                   # TODO: confirm the Iron Bank tag available on vendor13-ib
+    pullPolicy: IfNotPresent
+  adminUser: "admin"
+  adminPassword: "admin"                            # prototype-only; rotate/override for any shared environment
+  ## Browser-facing base URL (= token issuer). Over the vendor13-ib tunnel this
+  ## is the kubectl port-forward address. MUST match enbuildBk.keycloak.backendUrl.
+  hostnameUrl: "http://localhost:8088"
+  resources:
+    requests:
+      cpu: 250m
+      memory: 512Mi
+    limits:
+      memory: 1Gi
