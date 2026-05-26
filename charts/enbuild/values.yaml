@@ -201,6 +201,32 @@ enbuildBk:
   ## environments where the source threshold hasn't been raised yet.
   healthProbe:
     enabled: true
+  ## P1 CCM Console — KubeProxyCacheService tuning (BE 100, 2026-05-26).
+  ## The hub BE caches K8sApiProxy GET responses to eliminate Headlamp's
+  ## "Failed to get authentication information: Request timed-out" on
+  ## Big Bang spokes. /openapi/v2 is ~11 MB and takes ~13 s through the
+  ## spoke gRPC stream — past Headlamp's ~10 s client-side fetch
+  ## timeout. First operator pays the cost; everyone else inside the
+  ## TTL window gets <50 ms.
+  ##
+  ## Two TTL tiers, env-tunable. Empty values fall back to source
+  ## defaults (300 / 10 / 50). Watch/exec/log/subresource/single-item
+  ## GETs and all non-GET verbs bypass the cache entirely. Stream
+  ## teardown invalidates the cluster's slice so reconnects never
+  ## serve stale schema.
+  kubeProxyCache:
+    ## Schema tier — /openapi/v2 + v3 + API/group/version discovery.
+    ## Content only changes when CRDs are added/removed; 5 min is
+    ## conservative. Empty = source default 300 s.
+    schemaTtlSeconds: "300"
+    ## List tier — resource lists (namespaced + cluster-scoped). Short
+    ## TTL matches Headlamp's auto-refresh cadence so dashboards still
+    ## feel current. Empty = source default 10 s.
+    listTtlSeconds: "10"
+    ## LRU cap per tier. Memory ceiling at 50 entries × ~11 MB schema +
+    ## 50 × ~1 MB list = ~600 MB worst case, well under the 1 GB RSS
+    ## threshold. Empty = source default 50.
+    maxEntries: "50"
   ## P1 CCM Console — hub-side gRPC AgentGateway. Opt-in. When grpcEnabled
   ## is true, the chart renders a separate Service (<release>-enbuild-bk-grpc)
   ## targeting port 8443 on the bk pods, and adds a `grpc` containerPort to

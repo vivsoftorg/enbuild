@@ -49,6 +49,26 @@ spec:
         - name: CLUSTER_RPC_TIMEOUT_MS
           value: {{ . | quote }}
         {{- end }}
+        {{- /*
+          BE 100 — KubeProxyCacheService tuning. Schema tier caches
+          /openapi/v2 + discovery endpoints (long TTL); list tier
+          caches resource lists (short TTL, matches Headlamp refresh
+          cadence). maxEntries caps each tier independently to bound
+          memory. Empty values fall back to source defaults
+          (300 s / 10 s / 50).
+        */ -}}
+        {{- with (default (dict) .Values.enbuildBk.kubeProxyCache).schemaTtlSeconds }}
+        - name: KUBE_PROXY_CACHE_SCHEMA_TTL_SECONDS
+          value: {{ . | quote }}
+        {{- end }}
+        {{- with (default (dict) .Values.enbuildBk.kubeProxyCache).listTtlSeconds }}
+        - name: KUBE_PROXY_CACHE_LIST_TTL_SECONDS
+          value: {{ . | quote }}
+        {{- end }}
+        {{- with (default (dict) .Values.enbuildBk.kubeProxyCache).maxEntries }}
+        - name: KUBE_PROXY_CACHE_MAX_ENTRIES
+          value: {{ . | quote }}
+        {{- end }}
         envFrom:
         - secretRef:
             name: {{ .Release.Name }}-mongo-secrets
