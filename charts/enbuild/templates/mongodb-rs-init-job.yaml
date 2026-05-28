@@ -1,0 +1,122 @@
+{{- $mongoReplicas := int (.Values.mongodb.replicaCount | default 1) -}}
+{{- if and .Values.mongodb.enabled (gt $mongoReplicas 1) }}
+{{- $rsName := .Values.mongodb.replicaSetName | default "rs0" -}}
+{{- $headlessSvc := printf "%s-mongo-headless" .Release.Name -}}
+{{- $mongoImageRegistry := .Values.mongodb.image.registry | default .Values.global.image.registry -}}
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: {{ .Release.Name }}-mongo-rs-init
+  labels:
+    app: mongo
+  {{- include "enbuild-helm-chart.labels" . | nindent 4 }}
+  # Re-run on helm upgrade so a re-init on a partially-failed RS is possible.
+  # The script itself is idempotent — exits 0 if rs.status() already returns a
+  # healthy set.
+  annotations:
+    "helm.sh/hook": post-install,post-upgrade
+    "helm.sh/hook-weight": "5"
+    "helm.sh/hook-delete-policy": before-hook-creation,hook-succeeded
+spec:
+  backoffLimit: 6
+  template:
+    metadata:
+      labels:
+        app: mongo-rs-init
+    spec:
+      restartPolicy: OnFailure
+{{- if .Values.global.image.registry_credentials }}
+      imagePullSecrets:
+        - name: {{ .Release.Name }}-image-pull-secret
+{{- end }}
+      containers:
+      - name: rs-init
+        image: {{ $mongoImageRegistry }}/{{ .Values.mongodb.image.repository }}:{{ .Values.mongodb.image.tag }}
+        imagePullPolicy: {{ .Values.global.image.pullPolicy }}
+        envFrom:
+        - secretRef:
+            name: {{ .Release.Name }}-mongo-secrets
+        env:
+        - name: RS_NAME
+          value: {{ $rsName | quote }}
+        - name: REPLICA_COUNT
+          value: {{ $mongoReplicas | quote }}
+        - name: HEADLESS_SVC
+          value: {{ $headlessSvc | quote }}
+        - name: NAMESPACE
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.namespace
+        command: ["/bin/bash", "-c"]
+        args:
+          - |
+            set -euo pipefail
+
+            # mongo 7.x uses `mongosh`; 4.4 used `mongo`. Detect which is on PATH.
+            if command -v mongosh >/dev/null 2>&1; then
+              MSH=mongosh
+            else
+              MSH=mongo
+            fi
+
+            # Build the member list once.
+            MEMBERS_JSON="["
+            for i in $(seq 0 $((REPLICA_COUNT - 1))); do
+              [ $i -gt 0 ] && MEMBERS_JSON+=","
+              MEMBERS_JSON+="{ _id: $i, host: \"{{ $.Release.Name }}-mongodb-${i}.${HEADLESS_SVC}.${NAMESPACE}.svc.cluster.local:27017\" }"
+            done
+            MEMBERS_JSON+="]"
+
+            PRIMARY_HOST="{{ $.Release.Name }}-mongodb-0.${HEADLESS_SVC}.${NAMESPACE}.svc.cluster.local"
+
+            # Wait for pod-0 to accept TCP on 27017 (it's the seed for rs.initiate()).
+            echo "[rs-init] waiting for ${PRIMARY_HOST}:27017 ..."
+            for i in $(seq 1 60); do
+              if $MSH --quiet --norc --host "${PRIMARY_HOST}:27017" --eval 'db.runCommand({ ping: 1 })' >/dev/null 2>&1; then
+                echo "[rs-init] pod-0 is up"
+                break
+              fi
+              sleep 5
+            done
+
+            # If rs.status() already reports a healthy set, exit 0 — idempotent.
+            STATUS_OK=$($MSH --quiet --norc --host "${PRIMARY_HOST}:27017" \
+              --eval 'try { rs.status().ok } catch (e) { 0 }' 2>/dev/null || echo "0")
+            if [ "$STATUS_OK" = "1" ]; then
+              echo "[rs-init] replica set already initialized; exiting 0"
+              exit 0
+            fi
+
+            echo "[rs-init] running rs.initiate() with members: ${MEMBERS_JSON}"
+            $MSH --quiet --norc --host "${PRIMARY_HOST}:27017" --eval "
+              rs.initiate({
+                _id: \"${RS_NAME}\",
+                members: ${MEMBERS_JSON}
+              });
+            "
+
+            echo "[rs-init] waiting for PRIMARY election ..."
+            for i in $(seq 1 60); do
+              PSTATE=$($MSH --quiet --norc --host "${PRIMARY_HOST}:27017" \
+                --eval 'try { rs.status().members.find(m => m.stateStr === "PRIMARY") ? "yes" : "no" } catch (e) { "no" }' 2>/dev/null || echo "no")
+              if [ "$PSTATE" = "yes" ]; then
+                echo "[rs-init] PRIMARY elected"
+                $MSH --quiet --norc --host "${PRIMARY_HOST}:27017" --eval 'rs.status().members.forEach(m => print(m.name, m.stateStr))'
+                exit 0
+              fi
+              sleep 3
+            done
+
+            echo "[rs-init] ERROR: PRIMARY not elected within 180s"
+            $MSH --quiet --norc --host "${PRIMARY_HOST}:27017" --eval 'rs.status()' || true
+            exit 1
+        securityContext:
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop:
+            - ALL
+          privileged: false
+          runAsGroup: 996
+          runAsNonRoot: true
+          runAsUser: 998
+{{- end }}
