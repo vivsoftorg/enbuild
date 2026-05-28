@@ -254,6 +254,31 @@ enbuildBk:
   securityTooling:
     ## @param enbuildBk.securityTooling.existingSecret Name of an operator-managed Secret carrying hub-self CCM-13d security-tooling env (TWISTLOCK_API_URL/USERNAME/PASSWORD, ANCHORE_API_URL/USERNAME/PASSWORD, FALCO_CLUSTER_ID, FALCO_WEBHOOK_SECRET, OPA_GATEKEEPER_ENABLED, FALCO_AUDIT_LANE). Added as an envFrom on the bk container. Keeps Big Bang tool creds out of Helm values + rotatable out-of-band; bridges them cross-namespace into the bk pod. Backwards-compatible default: empty (hub-self reports those sources unavailable until set).
     existingSecret: ""
+  ## CCM-08b install-agent endpoint configuration (ADR-0029 — chart-managed,
+  ## first-install-correct, survives every `helm upgrade --reuse-values`).
+  ##
+  ## Sensitive bits (GITLAB_TOKEN / ENBUILD_REPO1_USER / ENBUILD_REPO1_TOKEN)
+  ## ride an operator-pre-created Secret; non-secret config rides helm values.
+  ## Before this section existed, operators kubectl-set-env'd these post-install
+  ## and they were wiped by the next chart roll. Mirrors the operator-managed-
+  ## secret idiom from gitlabPat/exportSigning/securityTooling above.
+  installAgent:
+    ## @param enbuildBk.installAgent.existingSecret Name of an operator-managed Secret carrying the 3 sensitive install-agent env vars: GITLAB_TOKEN (gitlab.com PAT for cloning the agent chart repo), ENBUILD_REPO1_USER (registry1.dso.mil pull username), ENBUILD_REPO1_TOKEN (registry1.dso.mil pull token). When set, the deployment adds an envFrom for that secret. When empty (default), the install-agent endpoint 503s on use with a clear error AND NOTES.txt prints a warning at install time. Operator pre-creates via `kubectl -n enbuild create secret generic enbuild-install-agent-creds --from-literal=GITLAB_TOKEN=... --from-literal=ENBUILD_REPO1_USER=... --from-literal=ENBUILD_REPO1_TOKEN=...`. Rotation = kubectl recreate Secret + rollout restart BE.
+    existingSecret: ""
+    ## @param enbuildBk.installAgent.hubUrl Hub gRPC endpoint (host:port) the spoke agent dials outbound. Default is the legacy vendor13-ib NLB DNS; override per environment via examples/enbuild/values-<env>.yaml.
+    hubUrl: "enbuild-ib-vendor13.staging.dso.mil:443"
+    ## @param enbuildBk.installAgent.tlsServerName HA-path TLS SAN/SNI override (optional). Set to the hub cert SAN when HUB_URL points at an AWS NLB DNS name (Route53 round-robins per-AZ IPs); spokes dial the DNS + use this for verification. Leave empty for the legacy hostAliases path.
+    tlsServerName: ""
+    ## @param enbuildBk.installAgent.hubInternalIps Legacy CSV of per-AZ NLB IPs for spoke /etc/hosts hostAliases (air-gapped clusters that can't use AWS DNS). Empty by default; the HA path (tlsServerName + DNS) supersedes it.
+    hubInternalIps: ""
+    ## @param enbuildBk.installAgent.agentImageTag SHA of the enbuild-agent container image install-agent helm-installs on the spoke. Bump per agent release. Defaults baked in here so a fresh helm install gets a known-good tag without operator action; override via --set on rolls.
+    agentImageTag: "ac99ae1830c427a65db31a6874e5d4414d90133f"
+    ## @param enbuildBk.installAgent.chartRepo Git URL of the chart repo install-agent's Job clones to obtain enbuild-core / enbuild-stack / enbuild-agent charts. Default = platform-one-eks; override for forks or alt mirrors.
+    chartRepo: "https://gitlab.com/enbuild-staging/iac-templates/platform-one-eks.git"
+    ## @param enbuildBk.installAgent.chartRef Branch/tag of the chart repo install-agent's Job clones. Default tracks the long-lived integration branch where chart edits land before merge to main.
+    chartRef: "feat/p1ccm-agent-chart-skeleton"
+  ## @param enbuildBk.serviceAccount Override the BE pod's ServiceAccount. When empty (default), the pod binds to `{{ .Release.Name }}-enbuild-bk-installer` (minted by enbuild-bk-rbac.yaml; carries the perms install-agent needs). Override only if a deployment mode needs a different SA.
+  serviceAccount: ""
   ## BE 031 (production hardening per ADR-0001 risks-accepted): bk
   ## replicas + Redis-backed agent registry. When `agentGateway.replicas`
   ## is >1, the bk Deployment runs multiple replicas; agents register

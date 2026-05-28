@@ -20,6 +20,17 @@ spec:
         app.kubernetes.io/component: backend
       {{- include "enbuild-helm-chart.selectorLabels" . | nindent 8 }}
     spec:
+      {{- /*
+        CCM-08b idempotent-config (ADR-0029): bind the BE pod to the
+        installer ServiceAccount minted in enbuild-bk-rbac.yaml. That SA
+        carries the secrets/jobs/pods/configmaps/deployments perms the
+        /clusters/install-agent endpoint needs. Without this binding the
+        pod runs as the namespace default SA → install-agent 503s with
+        `secrets is forbidden`. Static across release lifetime — no
+        operator config needed (overridable via .Values.enbuildBk.serviceAccount
+        if a future deployment mode needs a different SA).
+      */}}
+      serviceAccountName: {{ .Values.enbuildBk.serviceAccount | default (printf "%s-enbuild-bk-installer" .Release.Name) }}
       containers:
       - env:
         - name: MONGODB_ENDPOINT
@@ -69,6 +80,31 @@ spec:
         - name: KUBE_PROXY_CACHE_MAX_ENTRIES
           value: {{ . | quote }}
         {{- end }}
+        {{- /*
+          CCM-08b idempotent-config (ADR-0029): non-secret install-agent
+          configuration sourced from helm values so `helm upgrade --reuse-values`
+          preserves them across every BE roll. Before this block existed, an
+          operator post-installed `kubectl set env` against the deployment for
+          each of these; those changes were wiped by the next chart upgrade.
+          The sensitive counterparts (GITLAB_TOKEN, ENBUILD_REPO1_*) ride the
+          envFrom secretRef below.
+          nil-safe: under reuse-values from a release that predates this key,
+          .Values.enbuildBk.installAgent is nil → default to empty dict; the
+          downstream `default` calls cover the individual keys.
+        */}}
+        {{- $ia := default (dict) .Values.enbuildBk.installAgent }}
+        - name: ENBUILD_HUB_AGENT_URL
+          value: {{ default "" $ia.hubUrl | quote }}
+        - name: ENBUILD_HUB_AGENT_TLS_SERVER_NAME
+          value: {{ default "" $ia.tlsServerName | quote }}
+        - name: ENBUILD_HUB_INTERNAL_IPS
+          value: {{ default "" $ia.hubInternalIps | quote }}
+        - name: ENBUILD_AGENT_IMAGE_TAG
+          value: {{ default "" $ia.agentImageTag | quote }}
+        - name: ENBUILD_AGENT_CHART_REPO
+          value: {{ default "https://gitlab.com/enbuild-staging/iac-templates/platform-one-eks.git" $ia.chartRepo | quote }}
+        - name: ENBUILD_AGENT_CHART_REF
+          value: {{ default "feat/p1ccm-agent-chart-skeleton" $ia.chartRef | quote }}
         envFrom:
         - secretRef:
             name: {{ .Release.Name }}-mongo-secrets
@@ -109,6 +145,21 @@ spec:
            values predate this key, so .Values.enbuildBk.securityTooling is nil.
            default (dict) guards the dereference (every existing release). */ -}}
         {{- with (default (dict) .Values.enbuildBk.securityTooling).existingSecret }}
+        - secretRef:
+            name: {{ . }}
+        {{- end }}
+        {{- /*
+          CCM-08b idempotent-config (ADR-0029): sensitive install-agent env
+          (GITLAB_TOKEN, ENBUILD_REPO1_USER, ENBUILD_REPO1_TOKEN) sourced
+          from an operator-pre-created Secret. Same operator-managed-secret
+          idiom as gitlabPat/exportSigning/securityTooling above. When
+          unset (default), the install-agent endpoint returns 503 with a
+          clear error and NOTES.txt warns at install time. Rotation =
+          recreate the Secret + rollout restart BE (envFrom values are
+          read at pod start).
+          nil-safe: see comment block above.
+        */}}
+        {{- with (default (dict) .Values.enbuildBk.installAgent).existingSecret }}
         - secretRef:
             name: {{ . }}
         {{- end }}

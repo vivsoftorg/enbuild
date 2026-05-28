@@ -1,0 +1,63 @@
+{{- /*
+  CCM-08 install-agent endpoint — the bk pod needs to create Jobs +
+  Secrets in its own namespace so it can stand up a hub-side install Job
+  per import. Default ServiceAccount has no such perms. We mint a
+  dedicated SA + Role + RoleBinding here and wire enbuild-bk.yaml to use
+  it via {{ .Release.Name }}-enbuild-bk-installer.
+*/}}
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: {{ .Release.Name }}-enbuild-bk-installer
+  labels:
+    app.kubernetes.io/component: backend
+    app.kubernetes.io/managed-by: enbuild
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: {{ .Release.Name }}-enbuild-bk-installer
+  labels:
+    app.kubernetes.io/component: backend
+    app.kubernetes.io/managed-by: enbuild
+rules:
+  # Create / read install Jobs spawned by /api/v1/clusters/install-agent.
+  - apiGroups: ["batch"]
+    resources: ["jobs"]
+    verbs: ["create", "get", "list", "watch", "delete"]
+  # Per-Job Secret holding the operator-supplied kubeconfig + AWS creds.
+  - apiGroups: [""]
+    resources: ["secrets"]
+    verbs: ["create", "get", "delete"]
+  # Read Job-spawned Pods (for status / log tail surfaced to the wizard).
+  - apiGroups: [""]
+    resources: ["pods"]
+    verbs: ["get", "list", "watch"]
+  - apiGroups: [""]
+    resources: ["pods/log"]
+    verbs: ["get"]
+  # CCM-08 install-agent Headlamp reconciliation: patch the headlamp
+  # kubeconfigs ConfigMap on each adoption + roll the Headlamp Deployment
+  # so the new spoke shows up in /headlamp/c/<cluster>/.
+  - apiGroups: [""]
+    resources: ["configmaps"]
+    verbs: ["get", "patch"]
+  - apiGroups: ["apps"]
+    resources: ["deployments"]
+    verbs: ["get", "patch"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: {{ .Release.Name }}-enbuild-bk-installer
+  labels:
+    app.kubernetes.io/component: backend
+    app.kubernetes.io/managed-by: enbuild
+subjects:
+  - kind: ServiceAccount
+    name: {{ .Release.Name }}-enbuild-bk-installer
+    namespace: {{ .Release.Namespace }}
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: {{ .Release.Name }}-enbuild-bk-installer
