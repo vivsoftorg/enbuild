@@ -72,7 +72,10 @@ spec:
             # Wait for pod-0 to accept TCP on 27017 (it's the seed for rs.initiate()).
             echo "[rs-init] waiting for ${PRIMARY_HOST}:27017 ..."
             for i in $(seq 1 60); do
-              if $MSH --quiet --norc --host "${PRIMARY_HOST}:27017" --eval 'db.runCommand({ ping: 1 })' >/dev/null 2>&1; then
+              if $MSH --quiet --norc --host "${PRIMARY_HOST}:27017" \
+                  --username "${MONGO_INITDB_ROOT_USERNAME}" \
+                  --password "${MONGO_INITDB_ROOT_PASSWORD}" \
+                  --authenticationDatabase admin --eval 'db.runCommand({ ping: 1 })' >/dev/null 2>&1; then
                 echo "[rs-init] pod-0 is up"
                 break
               fi
@@ -81,6 +84,9 @@ spec:
 
             # If rs.status() already reports a healthy set, exit 0 — idempotent.
             STATUS_OK=$($MSH --quiet --norc --host "${PRIMARY_HOST}:27017" \
+                  --username "${MONGO_INITDB_ROOT_USERNAME}" \
+                  --password "${MONGO_INITDB_ROOT_PASSWORD}" \
+                  --authenticationDatabase admin \
               --eval 'try { rs.status().ok } catch (e) { 0 }' 2>/dev/null || echo "0")
             if [ "$STATUS_OK" = "1" ]; then
               echo "[rs-init] replica set already initialized; exiting 0"
@@ -88,7 +94,10 @@ spec:
             fi
 
             echo "[rs-init] running rs.initiate() with members: ${MEMBERS_JSON}"
-            $MSH --quiet --norc --host "${PRIMARY_HOST}:27017" --eval "
+            $MSH --quiet --norc --host "${PRIMARY_HOST}:27017" \
+                  --username "${MONGO_INITDB_ROOT_USERNAME}" \
+                  --password "${MONGO_INITDB_ROOT_PASSWORD}" \
+                  --authenticationDatabase admin --eval "
               rs.initiate({
                 _id: \"${RS_NAME}\",
                 members: ${MEMBERS_JSON}
@@ -98,17 +107,26 @@ spec:
             echo "[rs-init] waiting for PRIMARY election ..."
             for i in $(seq 1 60); do
               PSTATE=$($MSH --quiet --norc --host "${PRIMARY_HOST}:27017" \
+                  --username "${MONGO_INITDB_ROOT_USERNAME}" \
+                  --password "${MONGO_INITDB_ROOT_PASSWORD}" \
+                  --authenticationDatabase admin \
                 --eval 'try { rs.status().members.find(m => m.stateStr === "PRIMARY") ? "yes" : "no" } catch (e) { "no" }' 2>/dev/null || echo "no")
               if [ "$PSTATE" = "yes" ]; then
                 echo "[rs-init] PRIMARY elected"
-                $MSH --quiet --norc --host "${PRIMARY_HOST}:27017" --eval 'rs.status().members.forEach(m => print(m.name, m.stateStr))'
+                $MSH --quiet --norc --host "${PRIMARY_HOST}:27017" \
+                  --username "${MONGO_INITDB_ROOT_USERNAME}" \
+                  --password "${MONGO_INITDB_ROOT_PASSWORD}" \
+                  --authenticationDatabase admin --eval 'rs.status().members.forEach(m => print(m.name, m.stateStr))'
                 exit 0
               fi
               sleep 3
             done
 
             echo "[rs-init] ERROR: PRIMARY not elected within 180s"
-            $MSH --quiet --norc --host "${PRIMARY_HOST}:27017" --eval 'rs.status()' || true
+            $MSH --quiet --norc --host "${PRIMARY_HOST}:27017" \
+                  --username "${MONGO_INITDB_ROOT_USERNAME}" \
+                  --password "${MONGO_INITDB_ROOT_PASSWORD}" \
+                  --authenticationDatabase admin --eval 'rs.status()' || true
             exit 1
         securityContext:
           allowPrivilegeEscalation: false

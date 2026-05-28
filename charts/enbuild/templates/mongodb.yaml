@@ -51,6 +51,38 @@ spec:
             matchLabels:
               app: mongo
       {{- end }}
+      {{- if gt $mongoReplicas 1 }}
+      # mongod refuses to start if the keyFile has any group/other permission
+      # bits. K8s `fsGroup` rewrites secret-volume file modes (forcing 0440 or
+      # similar), so a direct secret mount fails the strict perm check.
+      # This initContainer copies the keyfile from the secret-backed source
+      # dir into an emptyDir, chmods to 0400, and chowns to the mongo UID so
+      # the main container's --keyFile arg accepts it.
+      initContainers:
+      - name: chown-keyfile
+        image: {{ $mongoImageRegistry }}/{{ .Values.mongodb.image.repository }}:{{ .Values.mongodb.image.tag }}
+        imagePullPolicy: {{ .Values.global.image.pullPolicy }}
+        command: ["sh", "-c"]
+        args:
+          - |
+            set -eu
+            cp /etc/mongo-keyfile-src/keyfile /etc/mongo-keyfile/keyfile
+            chmod 0400 /etc/mongo-keyfile/keyfile
+            chown {{ .Values.mongodb.runAsUser | default 998 }}:{{ .Values.mongodb.runAsGroup | default 996 }} /etc/mongo-keyfile/keyfile
+        volumeMounts:
+        - mountPath: /etc/mongo-keyfile-src
+          name: mongo-keyfile-src
+          readOnly: true
+        - mountPath: /etc/mongo-keyfile
+          name: mongo-keyfile
+        securityContext:
+          runAsUser: 0
+          runAsNonRoot: false
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop: ["ALL"]
+            add: ["CHOWN"]
+      {{- end }}
       containers:
       - envFrom:
         - secretRef:
@@ -67,6 +99,8 @@ spec:
           - "--replSet"
           - {{ $rsName | quote }}
           - "--bind_ip_all"
+          - "--keyFile"
+          - "/etc/mongo-keyfile/keyfile"
         {{- end }}
         securityContext:
           allowPrivilegeEscalation: false
@@ -82,6 +116,26 @@ spec:
         volumeMounts:
         - mountPath: /data/db
           name: data
+        {{- if gt $mongoReplicas 1 }}
+        - mountPath: /etc/mongo-keyfile
+          name: mongo-keyfile
+          readOnly: true
+        {{- end }}
+      {{- if gt $mongoReplicas 1 }}
+      volumes:
+      # Secret-backed src (k8s applies fsGroup → mode becomes too open for
+      # mongod's strict perm check; initContainer fixes that into mongo-keyfile).
+      - name: mongo-keyfile-src
+        secret:
+          secretName: {{ .Release.Name }}-mongo-keyfile
+          items:
+          - key: keyfile
+            path: keyfile
+      # initContainer copies + chmods the keyfile into this emptyDir so the
+      # main container's --keyFile arg sees mode 0400 owned by mongo UID.
+      - name: mongo-keyfile
+        emptyDir: {}
+      {{- end }}
       dnsPolicy: ClusterFirst
 {{- if .Values.global.image.registry_credentials }}
       imagePullSecrets:
