@@ -1,4 +1,13 @@
 {{- if .Values.mongodb.enabled -}}
+{{/*
+Image registry resolution: per-subkey override wins over global, so the mongo
+subchart can pull from registry1.dso.mil (IronBank) while the rest of the
+ENBUILD stack pulls from registry.gitlab.com.
+*/ -}}
+{{- $mongoImageRegistry := .Values.mongodb.image.registry | default .Values.global.image.registry -}}
+{{- $mongoReplicas := int (.Values.mongodb.replicaCount | default 1) -}}
+{{- $rsName := .Values.mongodb.replicaSetName | default "rs0" -}}
+{{- $headlessSvc := printf "%s-mongo-headless" .Release.Name -}}
 apiVersion: apps/v1
 kind: StatefulSet
 metadata:
@@ -7,29 +16,58 @@ metadata:
     app: mongo
   {{- include "enbuild-helm-chart.labels" . | nindent 4 }}
 spec:
-  replicas: 1
+  replicas: {{ $mongoReplicas }}
   selector:
     matchLabels:
       app: mongo
       {{- include "enbuild-helm-chart.selectorLabels" . | nindent 6 }}
-  serviceName: mongo
+  # StatefulSet serviceName must point at the headless service so each pod gets
+  # a stable DNS name (pod-N.<headlessSvc>) required for replica-set member
+  # discovery.
+  serviceName: {{ $headlessSvc }}
   template:
     metadata:
       labels:
         app: mongo
         {{- include "enbuild-helm-chart.selectorLabels" . | nindent 8 }}
     spec:
+      # Multi-AZ HA (when replicaCount > 1): spread pods across topology zones;
+      # refuse to schedule two replicas in the same AZ. DoNotSchedule (vs
+      # ScheduleAnyway) so we'd rather have a Pending pod than two pods that
+      # share an AZ-loss failure mode.
+      {{- if gt $mongoReplicas 1 }}
+      affinity:
+        podAntiAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            - labelSelector:
+                matchLabels:
+                  app: mongo
+              topologyKey: {{ .Values.mongodb.topologyKey | default "topology.kubernetes.io/zone" }}
+      topologySpreadConstraints:
+        - maxSkew: 1
+          topologyKey: {{ .Values.mongodb.topologyKey | default "topology.kubernetes.io/zone" }}
+          whenUnsatisfiable: DoNotSchedule
+          labelSelector:
+            matchLabels:
+              app: mongo
+      {{- end }}
       containers:
       - envFrom:
         - secretRef:
             name: {{ .Release.Name }}-mongo-secrets
-        image: {{ .Values.global.image.registry }}/{{ .Values.mongodb.image.repository }}:{{ .Values.mongodb.image.tag }}
+        image: {{ $mongoImageRegistry }}/{{ .Values.mongodb.image.repository }}:{{ .Values.mongodb.image.tag }}
         imagePullPolicy: {{ .Values.global.image.pullPolicy }}
         name: mongo
         ports:
         - containerPort: 27017
           name: mongo
           protocol: TCP
+        {{- if gt $mongoReplicas 1 }}
+        args:
+          - "--replSet"
+          - {{ $rsName | quote }}
+          - "--bind_ip_all"
+        {{- end }}
         securityContext:
           allowPrivilegeEscalation: false
           capabilities:
@@ -75,6 +113,9 @@ spec:
           storage: 10Gi
       volumeMode: Filesystem
 ---
+# Application-facing ClusterIP service. In replica-set mode the BE/MQ still
+# talk to this name (the headless service below is for pod-to-pod member
+# discovery).
 apiVersion: v1
 kind: Service
 metadata:
@@ -89,4 +130,27 @@ spec:
   ports:
   - port: 27017
     targetPort: 27017
+{{- if gt $mongoReplicas 1 }}
+---
+# Headless service backing the StatefulSet — required for stable per-pod DNS
+# names of the form <pod>.<headlessSvc>.<ns>.svc.cluster.local, which the
+# replica-set members reference each other by.
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ $headlessSvc }}
+  labels:
+    app: mongo
+  {{- include "enbuild-helm-chart.labels" . | nindent 4 }}
+spec:
+  clusterIP: None
+  publishNotReadyAddresses: true
+  selector:
+    app: mongo
+  {{- include "enbuild-helm-chart.selectorLabels" . | nindent 4 }}
+  ports:
+  - port: 27017
+    targetPort: 27017
+    name: mongo
+{{- end }}
 {{- end }}
