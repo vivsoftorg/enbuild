@@ -22,7 +22,12 @@ spec:
       containers:
       - env:
         - name: MONGODB_ENDPOINT
+          {{- /* see enbuild-bk.yaml for rationale on mongo_endpoint_override */}}
+          {{- with .Values.mongodb.mongo_endpoint_override }}
+          value: {{ . | quote }}
+          {{- else }}
           value: mongodb://$(MONGO_INITDB_ROOT_USERNAME):$(MONGO_INITDB_ROOT_PASSWORD)@$(MONGO_SERVER)
+          {{- end }}
         envFrom:
         - secretRef:
             name: {{ .Release.Name }}-mongo-secrets

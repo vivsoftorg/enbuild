@@ -118,6 +118,7 @@ rabbitmq:
 ## @param mongodb.mongo_root_username [string] DB username. If `mongodb.enabled` this is used to to set the username. Else this is username for existing Cosmos or DocumentDB
 ## @param mongodb.mongo_root_password [string]  DB Password. If `mongodb.enabled` this is used to to set the password. Else this is password for existing Cosmos or DocumentDB
 ## @param mongodb.mongo_server [nullable,string] If `mongodb.enabled` is false , provide the right cosmosDB/DocumentDB endpoint
+## @param mongodb.mongo_endpoint_override [nullable,string] Verbatim MONGODB_ENDPOINT for bk/mq/ai/user. Set this for HA topologies (3-node replicaSet, cosmosDB with auth params) where the assembled `mongodb://USER:PW@MONGO_SERVER` URI lacks the necessary query string (`?replicaSet=...&authSource=admin`). When set, MONGO_INITDB_ROOT_USERNAME / PASSWORD / MONGO_SERVER vars are still rendered into the secret (the mongo StatefulSet itself still consumes them) but the BE pods use this URI directly instead of assembling from parts. Leave empty for single-node defaults.
 ## @param mongodb.image.repository Container repository for mongodb Container
 ## @param mongodb.image.tag Container tag for mongodb Container
 ## @param mongodb.storageClassName [nullable,string] Explicit StorageClass for MongoDB PVCs. If empty, uses `global.storageClass`
@@ -126,6 +127,11 @@ mongodb:
   mongo_root_username: "enbuild"
   mongo_root_password: "mongo_root_password"
   mongo_server: "If you are using cosmosDB then set the right cosmosDB endpoint as mongo_server and set the enabled=false"
+  # Set this to a verbatim mongodb:// URI to bypass the assembled
+  # `mongodb://USER:PW@MONGO_SERVER` form in bk/mq/ai/user templates.
+  # Required for HA (3-node replicaSet with ?replicaSet=rs0&authSource=admin)
+  # and cosmosDB (custom auth params). Empty = single-node default.
+  mongo_endpoint_override: ""
   storageClassName: ""
   image:
     repository: enbuild-staging/vivsoft-platform-ui/mongodb

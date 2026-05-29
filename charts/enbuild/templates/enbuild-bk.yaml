@@ -34,7 +34,25 @@ spec:
       containers:
       - env:
         - name: MONGODB_ENDPOINT
+          {{- /*
+            mongo_endpoint_override is the escape hatch for production HA
+            topologies (3-node replicaSet, cosmosDB, custom auth source).
+            When set, it becomes MONGODB_ENDPOINT verbatim, bypassing the
+            assembled URI built from USER/PASSWORD/SERVER. The assembled
+            form (`mongodb://...@MONGO_SERVER`) lacks `?replicaSet=...&authSource=admin`
+            so it breaks against HA Mongo deployments even when the password
+            is correct. vendor13-ib hit this 2026-05-28: chart secret said
+            `SuperSecret` but Mongo user store had the original chart default
+            (`mongo_root_password`) — every new pod crashlooped on auth until
+            we planted the literal URI via `kubectl set env`, which then got
+            silently reverted on the next helm upgrade. Codified here so the
+            literal URI survives.
+          */}}
+          {{- with .Values.mongodb.mongo_endpoint_override }}
+          value: {{ . | quote }}
+          {{- else }}
           value: mongodb://$(MONGO_INITDB_ROOT_USERNAME):$(MONGO_INITDB_ROOT_PASSWORD)@$(MONGO_SERVER)
+          {{- end }}
         {{- /*
           BE 099 KubeProxyController demo-mode fallback actor. When
           Headlamp's HTTP requests carry no X-Actor-Email/JWT the
