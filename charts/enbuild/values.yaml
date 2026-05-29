@@ -126,7 +126,20 @@ mongodb:
   enabled: true
   mongo_root_username: "enbuild"
   mongo_root_password: "mongo_root_password"
-  mongo_server: "If you are using cosmosDB then set the right cosmosDB endpoint as mongo_server and set the enabled=false"
+  # mongo_server is rendered into the enbuild-ib-mongo-secrets Secret (key MONGO_SERVER)
+  # and consumed by the bk/mq/ai/user envFrom + the assembled MONGODB_ENDPOINT URI
+  # template. The OLD literal help-text default ("If you are using cosmosDB then set...")
+  # would silently flow into the Secret on first install, and the next helm upgrade
+  # against a live cluster with the password already rotated would stomp the real value
+  # back to that string — observed on vendor13-ib 2026-05-29 (mq-consumer crashlooped
+  # with MongoParseError because the URI literal began with "If you are using cosmosDB").
+  # For mongodb.enabled=true (in-cluster StatefulSet), leave this empty — bk/mq derive
+  # the URI from the Mongo headless DNS. For external Cosmos/DocumentDB, set verbatim
+  # via values override (e.g. values-vendor13-ib.yaml). For HA replicaSet topologies
+  # the legacy `mongodb` 3.x driver in the mq-consumer image can't parse multi-host
+  # URIs reliably — pin a single primary host here OR use mongo_endpoint_override
+  # with `?readPreference=primaryPreferred&authSource=admin` query string.
+  mongo_server: ""
   # Set this to a verbatim mongodb:// URI to bypass the assembled
   # `mongodb://USER:PW@MONGO_SERVER` form in bk/mq/ai/user templates.
   # Required for HA (3-node replicaSet with ?replicaSet=rs0&authSource=admin)
@@ -254,9 +267,9 @@ enbuildBk:
   installAgent:
     ## @param enbuildBk.installAgent.existingSecret Name of an operator-managed Secret carrying the 3 sensitive install-agent env vars: GITLAB_TOKEN (gitlab.com PAT for cloning the agent chart repo), ENBUILD_REPO1_USER (registry1.dso.mil pull username), ENBUILD_REPO1_TOKEN (registry1.dso.mil pull token). When set, the deployment adds an envFrom for that secret. When empty (default), the install-agent endpoint 503s on use with a clear error AND NOTES.txt prints a warning at install time. Operator pre-creates via `kubectl -n enbuild create secret generic enbuild-install-agent-creds --from-literal=GITLAB_TOKEN=... --from-literal=ENBUILD_REPO1_USER=... --from-literal=ENBUILD_REPO1_TOKEN=...`. Rotation = kubectl recreate Secret + rollout restart BE.
     existingSecret: ""
-    ## @param enbuildBk.installAgent.hubUrl Hub gRPC endpoint (host:port) the spoke agent dials outbound. Default is the legacy vendor13-ib NLB DNS; override per environment via examples/enbuild/values-<env>.yaml.
-    hubUrl: "enbuild-ib-vendor13.staging.dso.mil:443"
-    ## @param enbuildBk.installAgent.tlsServerName HA-path TLS SAN/SNI override (optional). Set to the hub cert SAN when HUB_URL points at an AWS NLB DNS name (Route53 round-robins per-AZ IPs); spokes dial the DNS + use this for verification. Leave empty for the legacy hostAliases path.
+    ## @param enbuildBk.installAgent.hubUrl Hub gRPC endpoint (host:port) the spoke agent dials outbound. **Use the AWS NLB DNS hostname for the HA path** (Route53 round-robins healthy AZ IPs; survives single-AZ outages with no /etc/hosts surgery on the spoke). The cert-SAN hostname (e.g. enbuild-ib-vendor13.staging.dso.mil) often only resolves on the hub's private Route53 zone — spokes in other VPCs cannot dial it directly. Override per environment in examples/enbuild/values-<env>.yaml. Empty default forces operator awareness — install-agent endpoint refuses without it.
+    hubUrl: ""
+    ## @param enbuildBk.installAgent.tlsServerName **HA path: required when hubUrl is an NLB DNS name.** Set to the hub cert SAN so TLS SNI/SAN validation passes (Go's tls.Config.ServerName). Leave empty for the legacy single-IP /etc/hosts hostAliases path (set hubInternalIps for that mode); kept for air-gapped clusters that cannot reach AWS public DNS.
     tlsServerName: ""
     ## @param enbuildBk.installAgent.hubInternalIps Legacy CSV of per-AZ NLB IPs for spoke /etc/hosts hostAliases (air-gapped clusters that can't use AWS DNS). Empty by default; the HA path (tlsServerName + DNS) supersedes it.
     hubInternalIps: ""
