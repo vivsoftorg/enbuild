@@ -20,10 +20,109 @@ spec:
         app.kubernetes.io/component: backend
       {{- include "enbuild-helm-chart.selectorLabels" . | nindent 8 }}
     spec:
+      {{- /*
+        CCM-08b idempotent-config (ADR-0029): bind the BE pod to the
+        installer ServiceAccount minted in enbuild-bk-rbac.yaml. That SA
+        carries the secrets/jobs/pods/configmaps/deployments perms the
+        /clusters/install-agent endpoint needs. Without this binding the
+        pod runs as the namespace default SA → install-agent 503s with
+        `secrets is forbidden`. Static across release lifetime — no
+        operator config needed (overridable via .Values.enbuildBk.serviceAccount
+        if a future deployment mode needs a different SA).
+      */}}
+      serviceAccountName: {{ .Values.enbuildBk.serviceAccount | default (printf "%s-enbuild-bk-installer" .Release.Name) }}
       containers:
       - env:
         - name: MONGODB_ENDPOINT
+          {{- /*
+            mongo_endpoint_override is the escape hatch for production HA
+            topologies (3-node replicaSet, cosmosDB, custom auth source).
+            When set, it becomes MONGODB_ENDPOINT verbatim, bypassing the
+            assembled URI built from USER/PASSWORD/SERVER. The assembled
+            form (`mongodb://...@MONGO_SERVER`) lacks `?replicaSet=...&authSource=admin`
+            so it breaks against HA Mongo deployments even when the password
+            is correct. vendor13-ib hit this 2026-05-28: chart secret said
+            `SuperSecret` but Mongo user store had the original chart default
+            (`mongo_root_password`) — every new pod crashlooped on auth until
+            we planted the literal URI via `kubectl set env`, which then got
+            silently reverted on the next helm upgrade. Codified here so the
+            literal URI survives.
+          */}}
+          {{- with .Values.mongodb.mongo_endpoint_override }}
+          value: {{ . | quote }}
+          {{- else }}
           value: mongodb://$(MONGO_INITDB_ROOT_USERNAME):$(MONGO_INITDB_ROOT_PASSWORD)@$(MONGO_SERVER)
+          {{- end }}
+        {{- /*
+          BE 099 KubeProxyController demo-mode fallback actor. When
+          Headlamp's HTTP requests carry no X-Actor-Email/JWT the
+          controller falls back to this email before TenancyGuard
+          (project-membership) runs. Folded into the chart 2026-05-19
+          so the env survives helm-upgrade — prior `kubectl set env`
+          patches were getting auto-reverted on rollouts. Skipped when
+          empty so unset == hardcoded controller default
+          (`alice@example.com`).
+        */ -}}
+        {{- with .Values.enbuildBk.kubeProxyFallbackActor }}
+        - name: KUBE_PROXY_FALLBACK_ACTOR
+          value: {{ . | quote }}
+        {{- end }}
+        {{- /*
+          ClusterRpcService timeout (ms) for hub→agent RPCs. Default in
+          source is 10000 — too tight for Headlamp browsing through BE 099
+          K8sApiProxy because the agent dispatches serially (see
+          agents/enbuild-agent/internal/stream/stream.go). Recommended:
+          30000. Empty = source default.
+        */ -}}
+        {{- with .Values.enbuildBk.clusterRpcTimeoutMs }}
+        - name: CLUSTER_RPC_TIMEOUT_MS
+          value: {{ . | quote }}
+        {{- end }}
+        {{- /*
+          BE 100 — KubeProxyCacheService tuning. Schema tier caches
+          /openapi/v2 + discovery endpoints (long TTL); list tier
+          caches resource lists (short TTL, matches Headlamp refresh
+          cadence). maxEntries caps each tier independently to bound
+          memory. Empty values fall back to source defaults
+          (300 s / 10 s / 50).
+        */ -}}
+        {{- with (default (dict) .Values.enbuildBk.kubeProxyCache).schemaTtlSeconds }}
+        - name: KUBE_PROXY_CACHE_SCHEMA_TTL_SECONDS
+          value: {{ . | quote }}
+        {{- end }}
+        {{- with (default (dict) .Values.enbuildBk.kubeProxyCache).listTtlSeconds }}
+        - name: KUBE_PROXY_CACHE_LIST_TTL_SECONDS
+          value: {{ . | quote }}
+        {{- end }}
+        {{- with (default (dict) .Values.enbuildBk.kubeProxyCache).maxEntries }}
+        - name: KUBE_PROXY_CACHE_MAX_ENTRIES
+          value: {{ . | quote }}
+        {{- end }}
+        {{- /*
+          CCM-08b idempotent-config (ADR-0029): non-secret install-agent
+          configuration sourced from helm values so `helm upgrade --reuse-values`
+          preserves them across every BE roll. Before this block existed, an
+          operator post-installed `kubectl set env` against the deployment for
+          each of these; those changes were wiped by the next chart upgrade.
+          The sensitive counterparts (GITLAB_TOKEN, ENBUILD_REPO1_*) ride the
+          envFrom secretRef below.
+          nil-safe: under reuse-values from a release that predates this key,
+          .Values.enbuildBk.installAgent is nil → default to empty dict; the
+          downstream `default` calls cover the individual keys.
+        */}}
+        {{- $ia := default (dict) .Values.enbuildBk.installAgent }}
+        - name: ENBUILD_HUB_AGENT_URL
+          value: {{ default "" $ia.hubUrl | quote }}
+        - name: ENBUILD_HUB_AGENT_TLS_SERVER_NAME
+          value: {{ default "" $ia.tlsServerName | quote }}
+        - name: ENBUILD_HUB_INTERNAL_IPS
+          value: {{ default "" $ia.hubInternalIps | quote }}
+        - name: ENBUILD_AGENT_IMAGE_TAG
+          value: {{ default "" $ia.agentImageTag | quote }}
+        - name: ENBUILD_AGENT_CHART_REPO
+          value: {{ default "https://gitlab.com/enbuild-staging/iac-templates/platform-one-eks.git" $ia.chartRepo | quote }}
+        - name: ENBUILD_AGENT_CHART_REF
+          value: {{ default "feat/p1ccm-agent-chart-skeleton" $ia.chartRef | quote }}
         envFrom:
         - secretRef:
             name: {{ .Release.Name }}-mongo-secrets
@@ -50,6 +149,38 @@ spec:
         - secretRef:
             name: {{ . }}
         {{- end }}
+        {{- /*
+          P1 CCM Console — hub-self security tooling env (CCM-13d). Operator
+          pre-creates a Secret carrying TWISTLOCK_API_URL/USERNAME/PASSWORD,
+          ANCHORE_API_URL/USERNAME/PASSWORD, FALCO_CLUSTER_ID,
+          FALCO_WEBHOOK_SECRET, OPA_GATEKEEPER_ENABLED, FALCO_AUDIT_LANE.
+          Keeps Big Bang Twistlock/Anchore creds out of Helm values and
+          rotatable out-of-band; also bridges them cross-namespace into
+          the bk pod (creds live in the twistlock/anchore namespaces).
+          Same operator-managed-secret idiom as gitlabPat/exportSigning.
+        */ -}}
+        {{- /* nil-safe: under `helm upgrade --reuse-values` the prior release's
+           values predate this key, so .Values.enbuildBk.securityTooling is nil.
+           default (dict) guards the dereference (every existing release). */ -}}
+        {{- with (default (dict) .Values.enbuildBk.securityTooling).existingSecret }}
+        - secretRef:
+            name: {{ . }}
+        {{- end }}
+        {{- /*
+          CCM-08b idempotent-config (ADR-0029): sensitive install-agent env
+          (GITLAB_TOKEN, ENBUILD_REPO1_USER, ENBUILD_REPO1_TOKEN) sourced
+          from an operator-pre-created Secret. Same operator-managed-secret
+          idiom as gitlabPat/exportSigning/securityTooling above. When
+          unset (default), the install-agent endpoint returns 503 with a
+          clear error and NOTES.txt warns at install time. Rotation =
+          recreate the Secret + rollout restart BE (envFrom values are
+          read at pod start).
+          nil-safe: see comment block above.
+        */}}
+        {{- with (default (dict) .Values.enbuildBk.installAgent).existingSecret }}
+        - secretRef:
+            name: {{ . }}
+        {{- end }}
         # Image registry: per-service `enbuildBk.image.registry` override
         # wins over the chart-wide `global.image.registry`. Unset by default →
         # falls back to global, preserving every existing deploy's behavior.
@@ -59,27 +190,51 @@ spec:
         # for the override shape + intended temporary lifecycle.
         image: {{ default .Values.global.image.registry .Values.enbuildBk.image.registry }}/{{ .Values.enbuildBk.image.repository }}:{{ default .Chart.AppVersion (default .Values.global.AppVersion .Values.enbuildBk.image.tag) }}
         imagePullPolicy: {{ .Values.global.image.pullPolicy }}
+        {{- /*
+          BE 099 health-probe gate (2026-05-21). bk's NestJS health check has
+          a hardcoded `memory_rss` threshold (app.service.ts:30 — 250 MB at
+          time of writing). K8sApiProxy buffers Headlamp's /openapi/v2
+          responses (11 MB per call for Big Bang spokes), Node retains them
+          past GC, RSS climbs past 250 in normal operation, /api/health
+          returns 503, liveness kills the pod, gRPC streams to every spoke
+          agent break. Until the source threshold is raised to 1 GB (and/or
+          the K8sApiProxy gets streaming/caching), this gate lets the
+          operator disable the probes per environment. Default true to
+          preserve existing chart posture; vendor13-ib values flip false.
+        */ -}}
+        {{- /*
+          Probes hit dedicated /api/health/live (heap-only, no RSS) and
+          /api/health/ready (heap + mongo + disk) instead of the legacy
+          combined /api/health. The combined endpoint includes RSS which
+          climbs above threshold under normal K8sApiProxy buffering of
+          Headlamp /openapi/v2 (11 MB per call on Big Bang spokes). The
+          dedicated endpoints reflect the real K8s probe intent.
+        */ -}}
+        {{- if (default (dict) .Values.enbuildBk.healthProbe).enabled | default true }}
         livenessProbe:
           failureThreshold: 3
           httpGet:
-            path: /api/health
+            path: /api/health/live
             port: 8080
           initialDelaySeconds: 3
           periodSeconds: 10
           successThreshold: 1
           timeoutSeconds: 2
+        {{- end }}
         name: enbuild-bk
         ports:
         - containerPort: 8080
+        {{- if (default (dict) .Values.enbuildBk.healthProbe).enabled | default true }}
         readinessProbe:
           failureThreshold: 3
           httpGet:
-            path: /api/health
+            path: /api/health/ready
             port: 8080
           initialDelaySeconds: 3
           periodSeconds: 10
           successThreshold: 1
           timeoutSeconds: 2
+        {{- end }}
         resources: {{- toYaml .Values.enbuildBk.resources | nindent 10 }}
         securityContext:
           allowPrivilegeEscalation: false

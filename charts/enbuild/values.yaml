@@ -118,6 +118,7 @@ rabbitmq:
 ## @param mongodb.mongo_root_username [string] DB username. If `mongodb.enabled` this is used to to set the username. Else this is username for existing Cosmos or DocumentDB
 ## @param mongodb.mongo_root_password [string]  DB Password. If `mongodb.enabled` this is used to to set the password. Else this is password for existing Cosmos or DocumentDB
 ## @param mongodb.mongo_server [nullable,string] If `mongodb.enabled` is false , provide the right cosmosDB/DocumentDB endpoint
+## @param mongodb.mongo_endpoint_override [nullable,string] Verbatim MONGODB_ENDPOINT for bk/mq/ai/user. Set this for HA topologies (3-node replicaSet, cosmosDB with auth params) where the assembled `mongodb://USER:PW@MONGO_SERVER` URI lacks the necessary query string (`?replicaSet=...&authSource=admin`). When set, MONGO_INITDB_ROOT_USERNAME / PASSWORD / MONGO_SERVER vars are still rendered into the secret (the mongo StatefulSet itself still consumes them) but the BE pods use this URI directly instead of assembling from parts. Leave empty for single-node defaults.
 ## @param mongodb.image.repository Container repository for mongodb Container
 ## @param mongodb.image.tag Container tag for mongodb Container
 ## @param mongodb.storageClassName [nullable,string] Explicit StorageClass for MongoDB PVCs. If empty, uses `global.storageClass`
@@ -126,6 +127,11 @@ mongodb:
   mongo_root_username: "enbuild"
   mongo_root_password: "mongo_root_password"
   mongo_server: "If you are using cosmosDB then set the right cosmosDB endpoint as mongo_server and set the enabled=false"
+  # Set this to a verbatim mongodb:// URI to bypass the assembled
+  # `mongodb://USER:PW@MONGO_SERVER` form in bk/mq/ai/user templates.
+  # Required for HA (3-node replicaSet with ?replicaSet=rs0&authSource=admin)
+  # and cosmosDB (custom auth params). Empty = single-node default.
+  mongo_endpoint_override: ""
   storageClassName: ""
   image:
     repository: enbuild-staging/vivsoft-platform-ui/mongodb
@@ -169,6 +175,64 @@ enbuildBk:
   replicas: 1
   service_type: ClusterIP
   encryption_key: "encryption_key"
+  ## P1 CCM Console — Headlamp K8sApiProxy fallback actor (BE 099 demo-mode
+  ## hook, see backend/microservices/enbuild/src/kubeProxy/kubeProxy.controller.ts).
+  ## When Headlamp's HTTP requests carry no X-Actor-Email/JWT, the
+  ## KubeProxyController falls back to this value before applying tenancy
+  ## (project membership). Set to an email that's a member of the project
+  ## owning the demo cluster. Empty = hardcoded controller default
+  ## (`alice@example.com`). Keeps `kubectl set env` patches from getting
+  ## reverted on the next helm-upgrade / auto-reconcile.
+  kubeProxyFallbackActor: ""
+  ## P1 CCM Console — ClusterRpcService timeout for hub→agent RPCs (ms).
+  ## Default in source (cluster-rpc.service.ts) is 10000 — too tight for
+  ## Headlamp browsing through the K8sApiProxy: a serial-dispatch agent
+  ## (agents/enbuild-agent/internal/stream/stream.go) processes Headlamp's
+  ## ~10 parallel requests one-at-a-time; the tail of the queue exhausts
+  ## the 10s budget before its handler even starts → "Lost connection to
+  ## the cluster" red banner. 30000 (30s) makes this rare. The proper
+  ## fix lives in the agent (concurrent Dispatch + serialized Send via
+  ## outbound channel); this is the env-var quick-win that ships first.
+  ## Default raised to 30000 (was "") on 2026-05-19 so every release ships
+  ## with the keepalive-safe value — prior empty default meant new deploys
+  ## inherited the 10s source default and re-hit the lost-connection bug.
+  clusterRpcTimeoutMs: "30000"
+  ## P1 CCM Console — bk health probe gate (2026-05-21). When false, the
+  ## chart skips rendering livenessProbe + readinessProbe on enbuild-bk.
+  ## Use case: bk's NestJS Terminus health check has a hardcoded
+  ## memory_rss threshold (app.service.ts:30) that K8sApiProxy buffering of
+  ## /openapi/v2 (11 MB per call on Big Bang spokes) can exceed in normal
+  ## operation, causing a death loop that breaks every spoke agent gRPC
+  ## stream. Default true keeps existing posture; flip to false on
+  ## environments where the source threshold hasn't been raised yet.
+  healthProbe:
+    enabled: true
+  ## P1 CCM Console — KubeProxyCacheService tuning (BE 100, 2026-05-26).
+  ## The hub BE caches K8sApiProxy GET responses to eliminate Headlamp's
+  ## "Failed to get authentication information: Request timed-out" on
+  ## Big Bang spokes. /openapi/v2 is ~11 MB and takes ~13 s through the
+  ## spoke gRPC stream — past Headlamp's ~10 s client-side fetch
+  ## timeout. First operator pays the cost; everyone else inside the
+  ## TTL window gets <50 ms.
+  ##
+  ## Two TTL tiers, env-tunable. Empty values fall back to source
+  ## defaults (300 / 10 / 50). Watch/exec/log/subresource/single-item
+  ## GETs and all non-GET verbs bypass the cache entirely. Stream
+  ## teardown invalidates the cluster's slice so reconnects never
+  ## serve stale schema.
+  kubeProxyCache:
+    ## Schema tier — /openapi/v2 + v3 + API/group/version discovery.
+    ## Content only changes when CRDs are added/removed; 5 min is
+    ## conservative. Empty = source default 300 s.
+    schemaTtlSeconds: "300"
+    ## List tier — resource lists (namespaced + cluster-scoped). Short
+    ## TTL matches Headlamp's auto-refresh cadence so dashboards still
+    ## feel current. Empty = source default 10 s.
+    listTtlSeconds: "10"
+    ## LRU cap per tier. Memory ceiling at 50 entries × ~11 MB schema +
+    ## 50 × ~1 MB list = ~600 MB worst case, well under the 1 GB RSS
+    ## threshold. Empty = source default 50.
+    maxEntries: "50"
   ## P1 CCM Console — operator-managed secret support (backwards-compatible).
   ## See template comments in backend-secret.yaml + enbuild-bk.yaml.
   gitlabPat:
@@ -176,7 +240,34 @@ enbuildBk:
   exportSigning:
     existingSecret: ""
     privateKeyPem: ""
-
+  securityTooling:
+    ## @param enbuildBk.securityTooling.existingSecret Name of an operator-managed Secret carrying hub-self CCM-13d security-tooling env (TWISTLOCK_API_URL/USERNAME/PASSWORD, ANCHORE_API_URL/USERNAME/PASSWORD, FALCO_CLUSTER_ID, FALCO_WEBHOOK_SECRET, OPA_GATEKEEPER_ENABLED, FALCO_AUDIT_LANE). Added as an envFrom on the bk container. Keeps Big Bang tool creds out of Helm values + rotatable out-of-band; bridges them cross-namespace into the bk pod. Backwards-compatible default: empty (hub-self reports those sources unavailable until set).
+    existingSecret: ""
+  ## CCM-08b install-agent endpoint configuration (ADR-0029 — chart-managed,
+  ## first-install-correct, survives every `helm upgrade --reuse-values`).
+  ##
+  ## Sensitive bits (GITLAB_TOKEN / ENBUILD_REPO1_USER / ENBUILD_REPO1_TOKEN)
+  ## ride an operator-pre-created Secret; non-secret config rides helm values.
+  ## Before this section existed, operators kubectl-set-env'd these post-install
+  ## and they were wiped by the next chart roll. Mirrors the operator-managed-
+  ## secret idiom from gitlabPat/exportSigning/securityTooling above.
+  installAgent:
+    ## @param enbuildBk.installAgent.existingSecret Name of an operator-managed Secret carrying the 3 sensitive install-agent env vars: GITLAB_TOKEN (gitlab.com PAT for cloning the agent chart repo), ENBUILD_REPO1_USER (registry1.dso.mil pull username), ENBUILD_REPO1_TOKEN (registry1.dso.mil pull token). When set, the deployment adds an envFrom for that secret. When empty (default), the install-agent endpoint 503s on use with a clear error AND NOTES.txt prints a warning at install time. Operator pre-creates via `kubectl -n enbuild create secret generic enbuild-install-agent-creds --from-literal=GITLAB_TOKEN=... --from-literal=ENBUILD_REPO1_USER=... --from-literal=ENBUILD_REPO1_TOKEN=...`. Rotation = kubectl recreate Secret + rollout restart BE.
+    existingSecret: ""
+    ## @param enbuildBk.installAgent.hubUrl Hub gRPC endpoint (host:port) the spoke agent dials outbound. Default is the legacy vendor13-ib NLB DNS; override per environment via examples/enbuild/values-<env>.yaml.
+    hubUrl: "enbuild-ib-vendor13.staging.dso.mil:443"
+    ## @param enbuildBk.installAgent.tlsServerName HA-path TLS SAN/SNI override (optional). Set to the hub cert SAN when HUB_URL points at an AWS NLB DNS name (Route53 round-robins per-AZ IPs); spokes dial the DNS + use this for verification. Leave empty for the legacy hostAliases path.
+    tlsServerName: ""
+    ## @param enbuildBk.installAgent.hubInternalIps Legacy CSV of per-AZ NLB IPs for spoke /etc/hosts hostAliases (air-gapped clusters that can't use AWS DNS). Empty by default; the HA path (tlsServerName + DNS) supersedes it.
+    hubInternalIps: ""
+    ## @param enbuildBk.installAgent.agentImageTag SHA of the enbuild-agent container image install-agent helm-installs on the spoke. Bump per agent release. Defaults baked in here so a fresh helm install gets a known-good tag without operator action; override via --set on rolls.
+    agentImageTag: "ac99ae1830c427a65db31a6874e5d4414d90133f"
+    ## @param enbuildBk.installAgent.chartRepo Git URL of the chart repo install-agent's Job clones to obtain enbuild-core / enbuild-stack / enbuild-agent charts. Default = platform-one-eks; override for forks or alt mirrors.
+    chartRepo: "https://gitlab.com/enbuild-staging/iac-templates/platform-one-eks.git"
+    ## @param enbuildBk.installAgent.chartRef Branch/tag of the chart repo install-agent's Job clones. Default tracks the long-lived integration branch where chart edits land before merge to main.
+    chartRef: "feat/p1ccm-agent-chart-skeleton"
+  ## @param enbuildBk.serviceAccount Override the BE pod's ServiceAccount. When empty (default), the pod binds to `{{ .Release.Name }}-enbuild-bk-installer` (minted by enbuild-bk-rbac.yaml; carries the perms install-agent needs). Override only if a deployment mode needs a different SA.
+  serviceAccount: ""
 ## @section ENBUILD USER Services parameters
 ## @param enbuildUser.image.repository  Container repository for enbuildUser
 ## @param enbuildUser.image.tag [nullable] Container image tag. Skip to use the HelmChart appVersion as Image Tag
@@ -389,6 +480,24 @@ headlamp:
     # -- Container image tag, If "" uses appVersion in Chart.yaml
     tag: ""
 
+  # -- ENBUILD spoke clusters Headlamp should be able to view. Each entry is
+  # the cluster id used in the BE K8sApiProxy URL path
+  # (/api/v1/clusters/<id>/k8s-api). The chart renders one cluster+context
+  # per entry into the chart-managed `headlamp-kubeconfigs` ConfigMap, all
+  # sharing the `anon` user (tenancy enforced downstream by BE
+  # KubeProxyController + agent stream). Default empty (only `main`).
+  #
+  # Example (set via values override or --set):
+  #   headlamp:
+  #     spokes:
+  #       - ccm-vendor13-eks-final
+  #       - ccm-vendor13-demo3
+  #
+  # For multi-tenant scale (hundreds of spokes), this manual values list
+  # is replaced by a BE projector endpoint that renders the kubeconfig
+  # dynamically from the agent registry — see CODIFICATION.md "Unit 2".
+  spokes: []
+
   # -- An optional list of references to secrets in the same namespace to use for pulling any of the images used
   imagePullSecrets: []
   # -- Overrides the name of the chart
@@ -400,51 +509,23 @@ headlamp:
   namespaceOverride: ""
 
   # -- An optional list of init containers to be run before the main containers.
-  initContainers:
-    - command:
-        - /bin/sh
-        - -c
-        - mkdir -p /headlamp/plugins && cp -r /plugins/* /headlamp/plugins/
-      # image: knrt10/headlamp-plugins-test:latest # it has all the plugins
-      # image: ghcr.io/orange-cloudfoundry/headlamp-plugin:latest # no dynamic clusters plugin
-      image: ghcr.io/vivsoftorg/enbuild-headlamp-theme:0.0.1
-      imagePullPolicy: IfNotPresent
-      name: headlamp-plugins
-      volumeMounts:
-        - mountPath: /headlamp/plugins
-          name: headlamp-plugins
-
-    - command:
-        - /bin/sh
-        - "-c"
-        - |
-          kubectl config set-cluster main --server=https://kubernetes.default.svc --certificate-authority=/var/run/secrets/kubernetes.io/serviceaccount/ca.crt
-          kubectl config set-credentials main --token=$(cat /var/run/secrets/kubernetes.io/serviceaccount/token)
-          kubectl config set-context main --cluster=main --user=main
-          kubectl config use-context main
-      env:
-        - name: KUBERNETES_SERVICE_HOST
-          valueFrom:
-            fieldRef:
-              fieldPath: status.hostIP
-        - name: KUBERNETES_SERVICE_PORT
-          value: "6443"
-        - name: KUBECONFIG
-          value: /home/headlamp/.config/Headlamp/kubeconfigs/config
-      image: bitnami/kubectl:latest
-      name: create-kubeconfig
-      securityContext:
-        capabilities:
-          drop:
-            - ALL
-        privileged: false
-        readOnlyRootFilesystem: true
-        runAsGroup: 101
-        runAsNonRoot: true
-        runAsUser: 100
-      volumeMounts:
-        - mountPath: /home/headlamp/.config/Headlamp/kubeconfigs
-          name: kubeconfig
+  # NOTE: BOTH prior init containers were removed 2026-05-19 in favor of
+  # chart-managed ConfigMaps that survive helm-upgrade / auto-reconcile:
+  #
+  #  - `headlamp-plugins` init container (pulled external
+  #    ghcr.io/vivsoftorg/enbuild-headlamp-theme image into a PVC) →
+  #    replaced by templates/headlamp-plugin-configmap.yaml
+  #    (`headlamp-plugin-enbuild-theme`), mounted at
+  #    /headlamp/plugins/enbuild-theme.
+  #  - `create-kubeconfig` init container (built only the `main` context
+  #    into an emptyDir) → replaced by
+  #    templates/headlamp-kubeconfigs-configmap.yaml (`headlamp-kubeconfigs`)
+  #    which holds `main` PLUS every spoke from .Values.headlamp.spokes,
+  #    mounted at /home/headlamp/.config/Headlamp/kubeconfigs/config.
+  #
+  # No external image dependency, no PVC, no init-container — operator
+  # patches stop getting reverted on the next BE/headlamp roll.
+  initContainers: []
   config:
     inCluster: true
     # -- base url path at which headlamp should run
@@ -599,8 +680,11 @@ headlamp:
 
   # -- Headlamp containers volume mounts
   volumeMounts:
-    - mountPath: /headlamp/plugins
+    # Plugin mounts as a subdir of pluginsDir (/headlamp/plugins) so Headlamp
+    # detects it as the `enbuild-theme` plugin (main.js + package.json).
+    - mountPath: /headlamp/plugins/enbuild-theme
       name: headlamp-plugins
+      readOnly: true
 
     - mountPath: /home/headlamp/.config/Headlamp/kubeconfigs/config
       name: kubeconfig
@@ -609,11 +693,21 @@ headlamp:
 
   # -- Headlamp pod's volumes
   volumes:
+    # ENBUILD theme plugin — chart-managed ConfigMap (folded in 2026-05-19,
+    # replacing the external-image init-container + PVC). Static CM name
+    # because subchart values can't template {{ .Release.Name }}.
     - name: headlamp-plugins
-      persistentVolumeClaim:
-        claimName: enbuild-headlamp
+      configMap:
+        name: headlamp-plugin-enbuild-theme
+    # Chart-managed kubeconfig CM (folded 2026-05-19). Holds `main` + every
+    # spoke listed in .Values.headlamp.spokes. Static CM name because
+    # subchart values can't template {{ .Release.Name }}.
     - name: kubeconfig
-      emptyDir: {}
+      configMap:
+        name: headlamp-kubeconfigs
+        items:
+          - key: config
+            path: config
 
   persistentVolumeClaim:
     # -- Enable Persistent Volume Claim

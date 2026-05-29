@@ -6,6 +6,9 @@ target/
 .cr-release-packages/
 release.sh
 charts/enbuild/charts/*
+# Exception: in-house subcharts are tracked. (catalog 008 Stage 2 prep)
+!charts/enbuild/charts/step-ca/
+!charts/enbuild/charts/step-ca/**
 **/node_modules/*
 dist/
 cli/binaries/*
