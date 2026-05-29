@@ -13,3 +13,24 @@
   echo "Visit http://127.0.0.1:3000 to use your application after starting the port forward"
   kubectl --namespace {{ .Release.Namespace }} port-forward svc/{{ .Release.Name }}-enbuild-ui 3000:80
 {{- end }}
+{{- if not (default (dict) .Values.enbuildBk.installAgent).existingSecret }}
+
+⚠️  CCM-08b install-agent endpoint is NOT yet wired (ADR-0029).
+
+    POST /api/v1/clusters/install-agent will return HTTP 503
+    (install_agent_secret_create_failed) until you create the Secret and
+    set `enbuildBk.installAgent.existingSecret` in your values:
+
+    1) Pre-create the Secret:
+         kubectl -n {{ .Release.Namespace }} create secret generic enbuild-install-agent-creds \
+           --from-literal=GITLAB_TOKEN='<gitlab.com PAT for cloning the agent chart repo>' \
+           --from-literal=ENBUILD_REPO1_USER='<registry1.dso.mil pull username>' \
+           --from-literal=ENBUILD_REPO1_TOKEN='<registry1.dso.mil pull token>'
+
+    2) Upgrade the release wiring the secret:
+         helm upgrade {{ .Release.Name }} . --reuse-values \
+           --set enbuildBk.installAgent.existingSecret=enbuild-install-agent-creds
+
+    The wizard's cluster-import flow exercises this endpoint; without the
+    Secret the wizard's "Continue — install agent" click fails.
+{{- end }}

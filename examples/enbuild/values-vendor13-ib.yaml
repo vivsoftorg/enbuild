@@ -100,6 +100,35 @@ enbuildBk:
   image:
     repository: ironbank/vivsoft/enbuild/backend
     tag: 1.0.30-5101272
+  # P1 CCM Console — Headlamp K8sApiProxy fallback actor. alice@example.com
+  # is a member of the eks-final demo project, so requests with no
+  # X-Actor-Email/JWT pass TenancyGuard. Set explicitly here instead of
+  # relying on the controller hardcoded default so the operator-visible
+  # config matches the runtime behavior.
+  kubeProxyFallbackActor: "alice@example.com"
+  # clusterRpcTimeoutMs is set to "30000" by the chart default
+  # (charts/enbuild/values.yaml). Override here only to change it for
+  # this environment.
+  # bk probes off (2026-05-21) — until the BE RSS threshold bump
+  # (app.service.ts:30 250 MB -> 1 GB) ships in a new image, K8sApiProxy
+  # buffering of /openapi/v2 (11 MB Big Bang) climbs RSS past 250 MB and
+  # the probes fail, triggering a kubelet kill loop that breaks every
+  # spoke agent gRPC stream. Flip back to true once the source bump is
+  # live on this environment.
+  healthProbe:
+    enabled: false
+  # CCM-08b install-agent endpoint configuration (ADR-0029).
+  # Operator MUST pre-create the Secret before `helm install enbuild-ib`:
+  #   kubectl -n enbuild create secret generic enbuild-install-agent-creds \
+  #     --from-literal=GITLAB_TOKEN='<gitlab.com PAT>' \
+  #     --from-literal=ENBUILD_REPO1_USER='<repo1 user, e.g. cms553>' \
+  #     --from-literal=ENBUILD_REPO1_TOKEN='<repo1 token>'
+  # NOTES.txt prints this command at install time when existingSecret is unset.
+  installAgent:
+    existingSecret: enbuild-install-agent-creds
+    hubUrl: "enbuild-ib-vendor13.staging.dso.mil:443"
+    # agentImageTag, chartRepo, chartRef — defaults from charts/enbuild/values.yaml
+    # apply (latest multi-engine agent SHA + platform-one-eks chart-skeleton ref).
 
 enbuildUser:
   image:
@@ -136,33 +165,18 @@ headlamp:
     pullPolicy: Always
   imagePullSecrets:
     - name: enbuild-ib-image-pull-secret
-  initContainers:
-    - command:
-        - /bin/sh
-        - -c
-        - |
-          kubectl config set-cluster main --server=https://kubernetes.default.svc --certificate-authority=/var/run/secrets/kubernetes.io/serviceaccount/ca.crt
-          kubectl config set-credentials main --token=$(cat /var/run/secrets/kubernetes.io/serviceaccount/token)
-          kubectl config set-context main --cluster=main --user=main
-          kubectl config use-context main
-      env:
-        - name: KUBECONFIG
-          value: /home/headlamp/.config/Headlamp/kubeconfigs/config
-      image: registry1.dso.mil/ironbank/opensource/kubernetes/kubectl:v1.34.6
-      imagePullPolicy: Always
-      name: create-kubeconfig
-      securityContext:
-        capabilities:
-          drop:
-            - ALL
-        privileged: false
-        readOnlyRootFilesystem: true
-        runAsGroup: 101
-        runAsNonRoot: true
-        runAsUser: 100
-      volumeMounts:
-        - mountPath: /home/headlamp/.config/Headlamp/kubeconfigs
-          name: kubeconfig
+  # Spoke clusters surfaced in the Headlamp cluster picker. Each renders
+  # as a kubeconfig context routed through the BE K8sApiProxy
+  # (templates/headlamp-kubeconfigs-configmap.yaml). The agent on the
+  # spoke must be heartbeating for the proxy to reach it.
+  spokes:
+    - ccm-vendor13-eks-final
+  # NOTE: the create-kubeconfig init container + emptyDir kubeconfig
+  # volume were removed 2026-05-19. Both are now chart-managed via
+  # templates/headlamp-kubeconfigs-configmap.yaml (covers `main` +
+  # every entry in `spokes` above). The headlamp subchart's
+  # parent-values volumes/volumeMounts in charts/enbuild/values.yaml
+  # mount the CM at /home/headlamp/.config/Headlamp/kubeconfigs/config.
   config:
     inCluster: true
     baseURL: /headlamp
@@ -170,14 +184,6 @@ headlamp:
     watchPlugins: false
     extraArgs:
       - -enable-dynamic-clusters
-  volumeMounts:
-    - mountPath: /home/headlamp/.config/Headlamp/kubeconfigs/config
-      name: kubeconfig
-      readOnly: true
-      subPath: config
-  volumes:
-    - name: kubeconfig
-      emptyDir: {}
   persistentVolumeClaim:
     enabled: false
 

@@ -1,0 +1,51 @@
+/* ENBUILD white-label overlay for Headlamp.
+ *
+ * Slimmed 2026-05-21 — the previous version hid Headlamp's Drawer + AppBar
+ * to make room for a JS-injected ENBUILD top nav, which produced a
+ * duplicated brand. The native AppBar is now the only chrome (re-skinned
+ * via the enbuild-theme plugin's registerAppLogo + theme tokens), so this
+ * file only contributes targeted polish:
+ *
+ *   - AppBar height aligns to the 48px frontend-p1ccm Header.tsx
+ *   - AppBar border-bottom matches the ENBUILD line color
+ *   - Brand block spacing matches Header.tsx proportions
+ *
+ * Layout (sidebar visible, AppBar visible, no injected #enbuild-topnav) is
+ * Headlamp's default — fewer selectors, fewer breakages on Headlamp version
+ * bumps. The plugin SDK's theme tokens own colors; this file owns the
+ * couple of structural tweaks the plugin SDK can't reach.
+ */
+
+:root {
+  --eb-accent: #05A2C2;
+  --eb-accent-ink: #006C82;
+  --eb-bar-line-light: #DFE3E6;
+  --eb-bar-line-dark: #2D3848;
+  --eb-bar-h: 48px;
+}
+
+/* AppBar border-bottom + height alignment with frontend-p1ccm Header.tsx
+ * (h-12 = 48px). Headlamp's default is taller; trimming makes the
+ * proportions read closer to the parent ENBUILD UI. */
+header.MuiAppBar-root,
+header[class*="AppBar"] {
+  min-height: var(--eb-bar-h) !important;
+  border-bottom: 1px solid var(--eb-bar-line-dark);
+}
+html[data-theme="light"] header.MuiAppBar-root,
+html[data-theme="light"] header[class*="AppBar"] {
+  border-bottom-color: var(--eb-bar-line-light);
+}
+
+header.MuiAppBar-root .MuiToolbar-root,
+header[class*="AppBar"] .MuiToolbar-root {
+  min-height: var(--eb-bar-h) !important;
+}
+
+/* The brand block (plugin's registerAppLogo) gets some breathing room
+ * from the cluster picker that follows it. Headlamp's default spacing
+ * is tighter than frontend-p1ccm's. */
+header.MuiAppBar-root [data-testid="logo"],
+header[class*="AppBar"] [data-testid="logo"] {
+  margin-right: 12px;
+}
