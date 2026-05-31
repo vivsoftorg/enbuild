@@ -188,6 +188,17 @@ enbuildBk:
   replicas: 1
   service_type: ClusterIP
   encryption_key: "encryption_key"
+  # Hub-side gRPC AgentGateway exposure (closes #64). When grpcEnabled is
+  # true, the chart renders an enbuild-bk-grpc Service on port 8443 + the
+  # matching containerPort. grpcVirtualService.host MUST be set per-env —
+  # empty default = VS attaches no host = agent dials get 404.
+  grpcEnabled: true
+  grpcPort: 8443
+  grpcServiceType: ClusterIP
+  grpcVirtualService:
+    enabled: true
+    host: ""
+    gateway: istio-gateway/public-ingressgateway
   ## P1 CCM Console — Headlamp K8sApiProxy fallback actor (BE 099 demo-mode
   ## hook, see backend/microservices/enbuild/src/kubeProxy/kubeProxy.controller.ts).
   ## When Headlamp's HTTP requests carry no X-Actor-Email/JWT, the

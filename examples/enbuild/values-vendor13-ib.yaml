@@ -129,6 +129,11 @@ enbuildBk:
     hubUrl: "enbuild-ib-vendor13.staging.dso.mil:443"
     # agentImageTag, chartRepo, chartRef — defaults from charts/enbuild/values.yaml
     # apply (latest multi-engine agent SHA + platform-one-eks chart-skeleton ref).
+  # Hub-side gRPC ingress (closes #64). Host MUST match what the agent
+  # dials (ENBUILD_HUB_AGENT_TLS_SERVER_NAME). Empty default in values.yaml
+  # means no host attaches → agent dials get 404 from the UI catch-all.
+  grpcVirtualService:
+    host: enbuild-ib-vendor13.staging.dso.mil
 
 enbuildUser:
   image:

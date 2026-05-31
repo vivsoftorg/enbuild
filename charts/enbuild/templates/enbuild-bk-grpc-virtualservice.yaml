@@ -1,0 +1,35 @@
+{{- if and .Values.enbuildBk.grpcEnabled .Values.enbuildBk.grpcVirtualService.enabled -}}
+# P1 CCM Console — Istio VirtualService routing path-prefixed gRPC traffic
+# from the public Istio Gateway to the in-cluster enbuild-bk-grpc Service.
+#
+# The catalog 006 discovery findings flagged this as the
+# "least new infra" hub-reachability path: the existing public-ingressgateway
+# already terminates TLS via wildcard cert + speaks HTTP/2, which carries gRPC
+# transparently. This VirtualService scopes the new path prefix `/enbuild.v1.`
+# to the in-cluster gRPC Service WITHOUT adding new Gateway server entries
+# or new LoadBalancers.
+#
+# See vivsoft-platform-ui/agents/coordination.md catalog 007 row.
+apiVersion: networking.istio.io/v1beta1
+kind: VirtualService
+metadata:
+  name: {{ .Release.Name }}-enbuild-bk-grpc-vs
+  namespace: {{ .Release.Namespace }}
+  labels: {{- include "enbuild-helm-chart.labels" . | nindent 4 }}
+  annotations:
+    meta.dso.mil/note: "Multi-cluster pull-agent gRPC route — see vivsoft-platform-ui/agents/coordination.md catalog 007"
+spec:
+  hosts:
+    - {{ .Values.enbuildBk.grpcVirtualService.host | quote }}
+  gateways:
+    - {{ .Values.enbuildBk.grpcVirtualService.gateway | quote }}
+  http:
+    - match:
+        - uri:
+            prefix: /enbuild.v1.
+      route:
+        - destination:
+            host: {{ .Release.Name }}-enbuild-bk-grpc.{{ .Release.Namespace }}.svc.cluster.local
+            port:
+              number: {{ .Values.enbuildBk.grpcPort | default 8443 }}
+{{- end -}}

@@ -224,6 +224,11 @@ spec:
         name: enbuild-bk
         ports:
         - containerPort: 8080
+        {{- if .Values.enbuildBk.grpcEnabled }}
+        - containerPort: 8443
+          name: grpc
+          protocol: TCP
+        {{- end }}
         {{- if (default (dict) .Values.enbuildBk.healthProbe).enabled | default true }}
         readinessProbe:
           failureThreshold: 3
