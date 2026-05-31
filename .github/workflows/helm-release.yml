@@ -3,6 +3,12 @@ on:
   push:
     branches:
       - main
+      # P1 CCM hub long-lived trunk — see CLAUDE.md note in p1-cluster-mgmt.
+      # Publishing from here lets the P1 CCM contract iterate without main
+      # MRs gating every roll. Chart-releaser still publishes to gh-pages,
+      # so the gh-pages helm repo carries trunk-published charts alongside
+      # main-published ones.
+      - feat/p1ccm-enbuild-helm-trunk
     paths:
       - "charts/**"
 
