@@ -1,0 +1,87 @@
+name: Release Charts (P1 CCM Trunk)
+
+# Auto-publishes chart-touching commits on `feat/p1ccm-enbuild-helm-trunk`
+# as GitHub Release assets — DELIBERATELY NOT to the gh-pages helm repo.
+#
+# Why a separate workflow / why NOT the existing helm-release.yml + gh-pages:
+#   1. helm-release.yml uses chart-releaser-action + auto-bumps the chart
+#      patch version on every CI run + creates `enbuild-X.Y.Z` git tags +
+#      pushes to the gh-pages branch (which serves the public helm repo at
+#      https://vivsoftorg.github.io/enbuild). Adding the trunk to that
+#      trigger was tried 2026-05-31 (commit 510758b) and REVERTED (commit
+#      9861ccb) because trunk's per-commit churn would compete with main's
+#      tag namespace + index.yaml and silently break main's release cadence.
+#   2. The P1 CCM contract iterates fast on this trunk for weeks before any
+#      merge to main is appropriate. Until then trunk-published artifacts
+#      must NOT enter the public helm repo / chart-releaser tag namespace.
+#   3. Tag prefix `enbuild-trunk-<version>` keeps this workflow's releases
+#      DISTINCT from main's `enbuild-<version>` tags. Chart versions on this
+#      trunk use a `-p1ccm-trunk.N` pre-release suffix so semver makes the
+#      distinction unambiguous (helm picks them only when explicitly asked).
+#   4. Consumer (roll-vendor13-ib.sh wrapper) downloads the asset via
+#      `gh release download` then sets LOCAL_CHART_TGZ. No helm repo URL,
+#      no chart-releaser, no gh-pages interaction.
+
+on:
+  push:
+    branches:
+      - feat/p1ccm-enbuild-helm-trunk
+    paths:
+      - "charts/**"
+  workflow_dispatch: {}
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write  # gh release create / upload — does NOT write gh-pages
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+
+      - name: Add helm repos (for subchart deps)
+        run: |
+          helm repo add bitnami     https://charts.bitnami.com/bitnami
+          helm repo add jupyterhub  https://jupyterhub.github.io/helm-chart
+          helm repo add open-webui  https://helm.openwebui.com/
+          helm repo add loki-stack  https://grafana.github.io/helm-charts
+          helm repo add headlamp    https://kubernetes-sigs.github.io/headlamp/
+
+      - name: Build deps + helm package
+        id: pkg
+        run: |
+          helm dependency build charts/enbuild
+          helm package charts/enbuild --destination /tmp
+          VERSION="$(awk '/^version:/ {print $2; exit}' charts/enbuild/Chart.yaml)"
+          echo "version=$VERSION"               >> "$GITHUB_OUTPUT"
+          echo "tag=enbuild-trunk-$VERSION"     >> "$GITHUB_OUTPUT"
+          echo "tgz=/tmp/enbuild-$VERSION.tgz"  >> "$GITHUB_OUTPUT"
+
+      - name: Create or update GitHub Release with the chart tgz
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TAG:     ${{ steps.pkg.outputs.tag }}
+          TGZ:     ${{ steps.pkg.outputs.tgz }}
+          VERSION: ${{ steps.pkg.outputs.version }}
+        run: |
+          set -euo pipefail
+          if gh release view "$TAG" >/dev/null 2>&1; then
+            echo "Release $TAG already exists — replacing asset"
+            gh release upload "$TAG" "$TGZ" --clobber
+          else
+            gh release create "$TAG" "$TGZ" \
+              --target "$GITHUB_SHA" \
+              --title  "P1 CCM Trunk: enbuild-$VERSION" \
+              --notes  "$(printf '%s\n' \
+                'Auto-published from feat/p1ccm-enbuild-helm-trunk for the P1 CCM contract.' \
+                '' \
+                'Consume via:' \
+                '  gh release download '"$TAG"' --repo vivsoftorg/enbuild --pattern '"'"'enbuild-*.tgz'"'"' --dir /tmp' \
+                '  LOCAL_CHART_TGZ=/tmp/enbuild-'"$VERSION"'.tgz \\' \
+                '    EXTRA_HELM_ARGS="--values $HOME/code/p1-cluster-mgmt/envs/vendor13-ib/stage-a-mongo-handoff.values.yaml" \\' \
+                '    ~/code/p1-cluster-mgmt/scripts/roll-vendor13-ib.sh backend <sha>' \
+                '' \
+                'NOT distributed via https://vivsoftorg.github.io/enbuild — see workflow comment for why.')"
+          fi
