@@ -79,6 +79,21 @@ spec:
           value: {{ . | quote }}
         {{- end }}
         {{- /*
+          ADR-0035 fleet-aggregation snapshot store. These are the PERMANENT
+          production defaults (both ON) — the per-cluster + fleet Security
+          views read from the hub snapshot store (bounded, paginated) that the
+          agents populate by pushing count-as-iterate summaries, instead of the
+          unbounded live spoke fan-out. Validated live on vendor13-ib 2026-06-02.
+            - SNAPSHOT_INGEST_ENABLED: accept agent-pushed security summaries.
+            - SNAPSHOT_READ_FROM_STORE: serve Security reads from the store.
+          Default "true". Set to "false" only for an emergency revert to the
+          live-RPC path (the code keeps the live path + ?live=1 escape hatch).
+        */}}
+        - name: SNAPSHOT_INGEST_ENABLED
+          value: {{ .Values.enbuildBk.snapshotIngestEnabled | default "true" | quote }}
+        - name: SNAPSHOT_READ_FROM_STORE
+          value: {{ .Values.enbuildBk.snapshotReadFromStore | default "true" | quote }}
+        {{- /*
           BE 100 — KubeProxyCacheService tuning. Schema tier caches
           /openapi/v2 + discovery endpoints (long TTL); list tier
           caches resource lists (short TTL, matches Headlamp refresh

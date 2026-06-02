@@ -221,6 +221,12 @@ enbuildBk:
   ## with the keepalive-safe value — prior empty default meant new deploys
   ## inherited the 10s source default and re-hit the lost-connection bug.
   clusterRpcTimeoutMs: "30000"
+  ## ADR-0035 fleet-aggregation snapshot store — PERMANENT production defaults
+  ## (both "true"). Security views read from the hub snapshot store the agents
+  ## populate (bounded/paginated), not the live spoke fan-out. Override to
+  ## "false" only for an emergency revert to the live-RPC path.
+  snapshotIngestEnabled: "true"
+  snapshotReadFromStore: "true"
   ## P1 CCM Console — bk health probe gate (2026-05-21). When false, the
   ## chart skips rendering livenessProbe + readinessProbe on enbuild-bk.
   ## Use case: bk's NestJS Terminus health check has a hardcoded
