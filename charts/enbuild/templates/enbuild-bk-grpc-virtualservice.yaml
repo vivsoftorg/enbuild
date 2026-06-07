@@ -21,6 +21,18 @@ metadata:
 spec:
   hosts:
     - {{ .Values.enbuildBk.grpcVirtualService.host | quote }}
+    {{- /* additionalHosts: extra :authority names the agent may present.
+           The gateway TERMINATES TLS (SIMPLE) so Istio routes gRPC by the
+           HTTP/2 :authority, which gRPC-go derives from the agent's
+           TLS_SERVER_NAME. When the catalog cuts spokes over to the new
+           private-zone DNS (HUB_URL=enbuild-ib.vendor13.staging.dso.mil,
+           TLS_SERVER_NAME=enbuild-ib.staging.dso.mil), the authority changes
+           and MUST be listed here or the stream 404s at the hub (TLS still
+           succeeds — so it fails silently as "stuck provisioning"). Keep the
+           primary `host` for existing agents. */}}
+    {{- range .Values.enbuildBk.grpcVirtualService.additionalHosts }}
+    - {{ . | quote }}
+    {{- end }}
   gateways:
     - {{ .Values.enbuildBk.grpcVirtualService.gateway | quote }}
   http:

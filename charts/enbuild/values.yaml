@@ -198,6 +198,10 @@ enbuildBk:
   grpcVirtualService:
     enabled: true
     host: ""
+    # additionalHosts: extra gRPC :authority names to route (besides `host`).
+    # Needed when an env runs agents with mixed HUB_URL/TLS_SERVER_NAME values
+    # (e.g. the private-zone DNS cutover). Empty default; set per-env.
+    additionalHosts: []
     gateway: istio-gateway/public-ingressgateway
   ## P1 CCM Console — Headlamp K8sApiProxy fallback actor (BE 099 demo-mode
   ## hook, see backend/microservices/enbuild/src/kubeProxy/kubeProxy.controller.ts).
