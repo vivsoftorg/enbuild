@@ -68,11 +68,11 @@ spec:
           value: {{ . | quote }}
         {{- end }}
         {{- /*
-          ClusterRpcService timeout (ms) for hub→agent RPCs. Default in
-          source is 10000 — too tight for Headlamp browsing through BE 099
-          K8sApiProxy because the agent dispatches serially (see
-          agents/enbuild-agent/internal/stream/stream.go). Recommended:
-          30000. Empty = source default.
+          ClusterRpcService timeout (ms) for hub→agent RPCs. Chart default
+          10000 (2026-06-11 latency P0 — fail fast so one slow/dead agent
+          RPC can't pin a console poll for 30s; the agent's old
+          serial-dispatch bottleneck that motivated 30000 is gone). Empty =
+          source default (10000). See values.yaml for history.
         */ -}}
         {{- with .Values.enbuildBk.clusterRpcTimeoutMs }}
         - name: CLUSTER_RPC_TIMEOUT_MS

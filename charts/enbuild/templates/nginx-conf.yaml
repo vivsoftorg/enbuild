@@ -11,9 +11,21 @@ data:
 
 
   default.conf: |-
+    # '' -> '' (not 'close'): when the request is not a WebSocket upgrade the
+    # Connection header is dropped entirely, which keeps HTTP/1.1 upstream
+    # keepalive viable for the plain API traffic that shares these locations.
     map $http_upgrade $connection_upgrade {
       default upgrade;
-      '' close;
+      '' '';
+    }
+
+    # Keep a small pool of warm connections to the backend so every API call
+    # doesn't pay TCP (+ Istio sidecar) connection setup. Requires
+    # proxy_http_version 1.1 + the $connection_upgrade map above in the
+    # locations that use it.
+    upstream enbuild_backend {
+      server {{ .Release.Name }}-enbuild-backend:80;
+      keepalive 16;
     }
 
     server {
@@ -35,6 +47,22 @@ data:
 
       include override.conf;
 
+      # P1 CCM latency P0 (2026-06-11): the hub is reached through an SSM
+      # tunnel + port-forward capped at ~650KB/s — compressing text payloads
+      # (825KB /stacks JSON → ~10x smaller) is the single biggest win. The
+      # IronBank nginx base has the gzip module compiled in (config-only
+      # change). text/html is gzipped by default; do not add it to gzip_types
+      # (nginx warns on the duplicate).
+      gzip on;
+      gzip_comp_level 5;
+      gzip_min_length 1024;
+      gzip_vary on;
+      gzip_proxied any;
+      gzip_types application/javascript text/javascript text/css application/json image/svg+xml application/x-ndjson;
+      # Long-lived browser connections over the tunnel — don't make the SPA
+      # re-handshake every 75s (nginx default).
+      keepalive_timeout 300;
+
       proxy_pass_header Authorization;
       proxy_set_header Host $host;
       proxy_set_header X-Real-IP $remote_addr;
@@ -42,7 +70,18 @@ data:
       proxy_set_header X-Forwarded-Proto $scheme;
 
       location /enbuild-bk/ {
-        proxy_pass http://{{ .Release.Name }}-enbuild-backend/;
+        proxy_pass http://enbuild_backend/;
+        # WebSocket-capable + upstream keepalive. NOTE nginx semantics:
+        # proxy_set_header at location level REPLACES ALL inherited
+        # server-level proxy_set_header directives, so the four server-level
+        # headers are replicated here verbatim — do not remove them.
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection $connection_upgrade;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
       }
 
       location /enbuild-user/ {
@@ -74,6 +113,13 @@ data:
 
       location /headlamp/ {
         proxy_pass http://{{ .Release.Name }}-headlamp/headlamp/;
+
+        # WebSocket upgrade pass-through (Headlamp pod logs/exec/watch
+        # streams). The $connection_upgrade map drops the Connection header
+        # for plain requests, keeping upstream keepalive viable.
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection $connection_upgrade;
 
         # sub_filter can't rewrite a gzipped upstream — force plain HTML.
         proxy_set_header Accept-Encoding "";
@@ -144,6 +190,32 @@ data:
           sub_filter_once off;
       }
 {{- end }}
+
+      # P1 CCM latency P0 (2026-06-11): Vite emits content-hashed filenames
+      # under assets/ — a changed file always gets a new URL, so the browser
+      # may cache them forever and skip the tunnel round-trip entirely on
+      # reloads. Serves the same static root as the /p1-ccm-console/ block
+      # below (inherited root); no SPA fallback here — a missing hashed asset
+      # must be a hard 404, never index.html. NOTE: add_header at location
+      # level replaces inherited add_headers; there are none at server level
+      # in this config, so nothing needs replicating.
+      # Deliberately NO 'always' flag: without it nginx attaches the header
+      # only to 2xx/3xx success codes, so a missing asset's 404 is never
+      # cached immutably by browsers (404 is cacheable-by-default per RFC
+      # 9110, and a year-long cached 404 on a deterministic Vite hash URL
+      # would survive the fixed image being deployed).
+      location /p1-ccm-console/assets/ {
+        try_files $uri =404;
+        add_header Cache-Control "public, max-age=31536000, immutable";
+      }
+
+      # The console entrypoint must always revalidate so a new deploy's
+      # index.html (pointing at new hashed assets) is picked up immediately.
+      # The SPA fallback below internally redirects here, so deep-link
+      # responses get this header too.
+      location = /p1-ccm-console/index.html {
+        add_header Cache-Control "no-cache" always;
+      }
 
       # P1 CCM Console SPA deep-link fallback (B4 nginx fix).
       # Without this block, hard-refreshes / direct URL hits to client-side

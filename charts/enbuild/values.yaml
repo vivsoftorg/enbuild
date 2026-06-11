@@ -179,6 +179,8 @@ enbuildUi:
 ## @param enbuildBk.replicas Container enbuildBk Replicas
 ## @param enbuildBk.service_type  enbuildBk service_type
 ## @param enbuildBk.encryption_key  encryption_key to be used by Backend
+## @param enbuildBk.resources.requests.cpu  CPU resource request for the hub backend
+## @param enbuildBk.resources.requests.memory  Memory resource request for the hub backend
 ## @param enbuildBk.gitlabPat.existingSecret  Name of an operator-managed Secret carrying GITLAB_TOKEN (and optionally GITLAB_HOST). When set, the deployment adds an envFrom for that secret; the inline GITLAB_TOKEN from enbuildConsumer.gitlab.token is omitted to avoid duplicate envvars. Use this in P1 environments where the PAT is provisioned out-of-band and rotated separately. Backwards-compatible default: empty (uses inline values).
 ## @param enbuildBk.exportSigning.existingSecret  Name of an operator-managed Secret carrying SIEM_SIGNING_KEY (PEM-encoded ECDSA P-256 private key) for the CCM-32 audit export bundle (EN-1237). Strongly preferred over privateKeyPem for production. Backwards-compatible default: empty.
 ## @param enbuildBk.exportSigning.privateKeyPem  Inline PEM private key used to sign /audit/export-bundle responses. Dev/test only; production should use existingSecret. Multiline string. Backwards-compatible default: empty (signing disabled; bundle returns signed=false).
@@ -188,6 +190,16 @@ enbuildBk:
   replicas: 1
   service_type: ClusterIP
   encryption_key: "encryption_key"
+  ## P1 CCM latency P0 (2026-06-11): scheduling floor for the hub backend so
+  ## it isn't CPU-starved on busy nodes (it fans out hub→agent RPCs and
+  ## buffers large K8sApiProxy responses). Requests ONLY — deliberately no
+  ## limits: a CPU limit would throttle exactly the latency-sensitive bursts
+  ## this is meant to protect, and a memory limit risks OOM-killing the pod
+  ## during legitimate /openapi/v2 buffering (~11 MB per Big Bang spoke call).
+  resources:
+    requests:
+      cpu: 250m
+      memory: 512Mi
   # Hub-side gRPC AgentGateway exposure (closes #64). When grpcEnabled is
   # true, the chart renders an enbuild-bk-grpc Service on port 8443 + the
   # matching containerPort. grpcVirtualService.host MUST be set per-env —
@@ -213,18 +225,15 @@ enbuildBk:
   ## reverted on the next helm-upgrade / auto-reconcile.
   kubeProxyFallbackActor: ""
   ## P1 CCM Console — ClusterRpcService timeout for hub→agent RPCs (ms).
-  ## Default in source (cluster-rpc.service.ts) is 10000 — too tight for
-  ## Headlamp browsing through the K8sApiProxy: a serial-dispatch agent
-  ## (agents/enbuild-agent/internal/stream/stream.go) processes Headlamp's
-  ## ~10 parallel requests one-at-a-time; the tail of the queue exhausts
-  ## the 10s budget before its handler even starts → "Lost connection to
-  ## the cluster" red banner. 30000 (30s) makes this rare. The proper
-  ## fix lives in the agent (concurrent Dispatch + serialized Send via
-  ## outbound channel); this is the env-var quick-win that ships first.
-  ## Default raised to 30000 (was "") on 2026-05-19 so every release ships
-  ## with the keepalive-safe value — prior empty default meant new deploys
-  ## inherited the 10s source default and re-hit the lost-connection bug.
-  clusterRpcTimeoutMs: "30000"
+  ## History: source default 10000; raised to 30000 on 2026-05-19 because the
+  ## then-serial-dispatch agent queued Headlamp's ~10 parallel requests and
+  ## the tail exhausted the 10s budget → "Lost connection" red banner.
+  ## Lowered back to 10000 in the 2026-06-11 latency P0: the serial-dispatch
+  ## bottleneck is gone, and a 30s ceiling means one slow/dead agent RPC
+  ## pins a console poll for 30s — failing fast at 10s keeps the rollup and
+  ## cluster views responsive. Override per-env if an agent legitimately
+  ## needs longer. Empty = source default (10000).
+  clusterRpcTimeoutMs: "10000"
   ## ADR-0035 fleet-aggregation snapshot store — PERMANENT production defaults
   ## (both "true"). Security views read from the hub snapshot store the agents
   ## populate (bounded/paginated), not the live spoke fan-out. Override to

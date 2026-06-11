@@ -106,9 +106,10 @@ enbuildBk:
   # relying on the controller hardcoded default so the operator-visible
   # config matches the runtime behavior.
   kubeProxyFallbackActor: "alice@example.com"
-  # clusterRpcTimeoutMs is set to "30000" by the chart default
-  # (charts/enbuild/values.yaml). Override here only to change it for
-  # this environment.
+  # clusterRpcTimeoutMs is set to "10000" by the chart default
+  # (charts/enbuild/values.yaml; lowered from 30000 in the 2026-06-11
+  # latency P0 — fail fast so one slow/dead agent RPC can't pin a console
+  # poll for 30s). Override here only to change it for this environment.
   # bk probes off (2026-05-21) — until the BE RSS threshold bump
   # (app.service.ts:30 250 MB -> 1 GB) ships in a new image, K8sApiProxy
   # buffering of /openapi/v2 (11 MB Big Bang) climbs RSS past 250 MB and

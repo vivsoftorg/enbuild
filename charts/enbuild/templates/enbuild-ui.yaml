@@ -18,6 +18,12 @@ spec:
     {{- include "enbuild-helm-chart.selectorLabels" . | nindent 6 }}
   template:
     metadata:
+      annotations:
+        # Roll the UI pod whenever the nginx ConfigMap changes. The ConfigMap
+        # is mounted via subPath, which kubelet does NOT live-update — without
+        # this checksum a chart-only nginx edit upgrades the ConfigMap but the
+        # running pod keeps serving the old config forever.
+        checksum/nginx-conf: {{ include (print $.Template.BasePath "/nginx-conf.yaml") . | sha256sum }}
       labels:
         app: ui
         app.kubernetes.io/component: ui
