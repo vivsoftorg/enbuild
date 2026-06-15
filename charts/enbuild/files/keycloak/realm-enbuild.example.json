@@ -1,0 +1,388 @@
+{
+  "realm": "enbuild",
+  "enabled": true,
+  "sslRequired": "none",
+  "registrationAllowed": false,
+  "loginWithEmailAllowed": true,
+  "duplicateEmailsAllowed": false,
+  "resetPasswordAllowed": true,
+  "editUsernameAllowed": false,
+  "accessTokenLifespan": 1800,
+  "ssoSessionIdleTimeout": 7200,
+  "ssoSessionMaxLifespan": 36000,
+  "clients": [
+    {
+      "clientId": "enbuild-ui",
+      "name": "enbuild-ui",
+      "description": "P1 CCM Console SPA (public OIDC client, PKCE). ADR-0022.",
+      "enabled": true,
+      "publicClient": true,
+      "standardFlowEnabled": true,
+      "implicitFlowEnabled": false,
+      "directAccessGrantsEnabled": true,
+      "rootUrl": "http://localhost:3000",
+      "baseUrl": "/",
+      "redirectUris": [
+        "http://localhost:3000/*",
+        "http://127.0.0.1:3000/*",
+        "http://localhost:8081/*",
+        "http://127.0.0.1:8081/*"
+      ],
+      "webOrigins": [
+        "http://localhost:3000",
+        "http://127.0.0.1:3000",
+        "+",
+        "http://localhost:8081",
+        "http://127.0.0.1:8081"
+      ],
+      "protocol": "openid-connect",
+      "attributes": {
+        "pkce.code.challenge.method": "S256",
+        "post.logout.redirect.uris": "+"
+      },
+      "protocolMappers": [
+        {
+          "name": "groups",
+          "protocol": "openid-connect",
+          "protocolMapper": "oidc-group-membership-mapper",
+          "consentRequired": false,
+          "config": {
+            "full.path": "true",
+            "id.token.claim": "true",
+            "access.token.claim": "true",
+            "userinfo.token.claim": "true",
+            "claim.name": "groups"
+          }
+        }
+      ]
+    },
+    {
+      "clientId": "enbuild",
+      "name": "enbuild",
+      "description": "P1 CCM backend confidential client + service account (Keycloak Admin API). ADR-0022.",
+      "enabled": true,
+      "publicClient": false,
+      "secret": "REDACTED-lives-in-operator-Secret",
+      "standardFlowEnabled": true,
+      "directAccessGrantsEnabled": true,
+      "serviceAccountsEnabled": true,
+      "redirectUris": [
+        "http://localhost:3000/*",
+        "http://127.0.0.1:3000/*"
+      ],
+      "webOrigins": [
+        "+"
+      ],
+      "protocol": "openid-connect",
+      "protocolMappers": [
+        {
+          "name": "groups",
+          "protocol": "openid-connect",
+          "protocolMapper": "oidc-group-membership-mapper",
+          "consentRequired": false,
+          "config": {
+            "full.path": "true",
+            "id.token.claim": "true",
+            "access.token.claim": "true",
+            "userinfo.token.claim": "true",
+            "claim.name": "groups"
+          }
+        }
+      ]
+    }
+  ],
+  "groups": [
+    {
+      "name": "enbuild",
+      "path": "/enbuild",
+      "subGroups": [
+        {
+          "name": "platform-admins",
+          "path": "/enbuild/platform-admins",
+          "subGroups": []
+        },
+        {
+          "name": "projects",
+          "path": "/enbuild/projects",
+          "subGroups": [
+            {
+              "name": "iron-bank",
+              "path": "/enbuild/projects/iron-bank",
+              "subGroups": [
+                {
+                  "name": "viewer",
+                  "path": "/enbuild/projects/iron-bank/viewer"
+                },
+                {
+                  "name": "member",
+                  "path": "/enbuild/projects/iron-bank/member"
+                },
+                {
+                  "name": "maintainer",
+                  "path": "/enbuild/projects/iron-bank/maintainer"
+                },
+                {
+                  "name": "owner",
+                  "path": "/enbuild/projects/iron-bank/owner"
+                }
+              ]
+            },
+            {
+              "name": "big-bang",
+              "path": "/enbuild/projects/big-bang",
+              "subGroups": [
+                {
+                  "name": "viewer",
+                  "path": "/enbuild/projects/big-bang/viewer"
+                },
+                {
+                  "name": "member",
+                  "path": "/enbuild/projects/big-bang/member"
+                },
+                {
+                  "name": "maintainer",
+                  "path": "/enbuild/projects/big-bang/maintainer"
+                },
+                {
+                  "name": "owner",
+                  "path": "/enbuild/projects/big-bang/owner"
+                }
+              ]
+            },
+            {
+              "name": "alpha",
+              "path": "/enbuild/projects/alpha",
+              "subGroups": [
+                {
+                  "name": "viewer",
+                  "path": "/enbuild/projects/alpha/viewer"
+                },
+                {
+                  "name": "member",
+                  "path": "/enbuild/projects/alpha/member"
+                },
+                {
+                  "name": "maintainer",
+                  "path": "/enbuild/projects/alpha/maintainer"
+                },
+                {
+                  "name": "owner",
+                  "path": "/enbuild/projects/alpha/owner"
+                }
+              ]
+            },
+            {
+              "name": "bravo",
+              "path": "/enbuild/projects/bravo",
+              "subGroups": [
+                {
+                  "name": "viewer",
+                  "path": "/enbuild/projects/bravo/viewer"
+                },
+                {
+                  "name": "member",
+                  "path": "/enbuild/projects/bravo/member"
+                },
+                {
+                  "name": "maintainer",
+                  "path": "/enbuild/projects/bravo/maintainer"
+                },
+                {
+                  "name": "owner",
+                  "path": "/enbuild/projects/bravo/owner"
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "users": [
+    {
+      "username": "admin@p1.mil",
+      "email": "admin@p1.mil",
+      "firstName": "Platform",
+      "lastName": "Admin",
+      "enabled": true,
+      "emailVerified": true,
+      "credentials": [
+        {
+          "type": "password",
+          "value": "REDACTED",
+          "temporary": false
+        }
+      ],
+      "groups": [
+        "/enbuild/platform-admins"
+      ],
+      "realmRoles": [
+        "admin"
+      ]
+    },
+    {
+      "username": "owner-ib@p1.mil",
+      "email": "owner-ib@p1.mil",
+      "firstName": "Iron",
+      "lastName": "Owner",
+      "enabled": true,
+      "emailVerified": true,
+      "credentials": [
+        {
+          "type": "password",
+          "value": "REDACTED",
+          "temporary": false
+        }
+      ],
+      "groups": [
+        "/enbuild/projects/iron-bank/owner"
+      ],
+      "realmRoles": [
+        "devops"
+      ]
+    },
+    {
+      "username": "viewer-ib@p1.mil",
+      "email": "viewer-ib@p1.mil",
+      "firstName": "Iron",
+      "lastName": "Viewer",
+      "enabled": true,
+      "emailVerified": true,
+      "credentials": [
+        {
+          "type": "password",
+          "value": "REDACTED",
+          "temporary": false
+        }
+      ],
+      "groups": [
+        "/enbuild/projects/iron-bank/viewer"
+      ],
+      "realmRoles": [
+        "viewer"
+      ]
+    },
+    {
+      "username": "owner-bb@p1.mil",
+      "email": "owner-bb@p1.mil",
+      "firstName": "BigBang",
+      "lastName": "Owner",
+      "enabled": true,
+      "emailVerified": true,
+      "credentials": [
+        {
+          "type": "password",
+          "value": "REDACTED",
+          "temporary": false
+        }
+      ],
+      "groups": [
+        "/enbuild/projects/big-bang/owner"
+      ],
+      "realmRoles": [
+        "devops"
+      ]
+    },
+    {
+      "username": "service-account-enbuild",
+      "enabled": true,
+      "serviceAccountClientId": "enbuild",
+      "clientRoles": {
+        "realm-management": [
+          "manage-users",
+          "manage-clients",
+          "view-users",
+          "query-users",
+          "query-groups"
+        ]
+      }
+    },
+    {
+      "username": "alpha-owner@p1.mil",
+      "email": "alpha-owner@p1.mil",
+      "firstName": "Alpha",
+      "lastName": "Owner",
+      "emailVerified": true,
+      "enabled": true,
+      "credentials": [
+        {
+          "type": "password",
+          "value": "REDACTED",
+          "temporary": false
+        }
+      ],
+      "groups": [
+        "/enbuild/projects/alpha/owner"
+      ],
+      "realmRoles": [
+        "devops"
+      ]
+    },
+    {
+      "username": "bravo-owner@p1.mil",
+      "email": "bravo-owner@p1.mil",
+      "firstName": "Bravo",
+      "lastName": "Owner",
+      "emailVerified": true,
+      "enabled": true,
+      "credentials": [
+        {
+          "type": "password",
+          "value": "REDACTED",
+          "temporary": false
+        }
+      ],
+      "groups": [
+        "/enbuild/projects/bravo/owner"
+      ],
+      "realmRoles": [
+        "devops"
+      ]
+    }
+  ],
+  "components": {
+    "org.keycloak.keys.KeyProvider": [
+      {
+        "name": "p1ccm-fixed-rsa",
+        "providerId": "rsa",
+        "subComponents": {},
+        "config": {
+          "privateKey": [
+            "REDACTED-lives-in-operator-Secret"
+          ],
+          "certificate": [
+            "REDACTED-lives-in-operator-Secret"
+          ],
+          "priority": [
+            "200"
+          ],
+          "enabled": [
+            "true"
+          ],
+          "active": [
+            "true"
+          ],
+          "algorithm": [
+            "RS256"
+          ]
+        }
+      }
+    ]
+  },
+  "roles": {
+    "realm": [
+      {
+        "name": "admin",
+        "description": "RolesGuard route gate \u2014 platform admin routes (@Roles('admin'))"
+      },
+      {
+        "name": "devops",
+        "description": "RolesGuard route gate \u2014 operator routes"
+      },
+      {
+        "name": "viewer",
+        "description": "RolesGuard route gate \u2014 read persona (absent from write @Roles lists by design)"
+      }
+    ]
+  }
+}

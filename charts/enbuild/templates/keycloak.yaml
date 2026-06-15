@@ -1,0 +1,116 @@
+{{- /*
+  Keycloak — self-hosted SSO for the ENBUILD platform login (vendor13-ib).
+  Folded onto the trunk chart 2026-06-15 to ADOPT the live `<release>-keycloak`
+  Deployment/Service that were running UNMANAGED (orphaned from an older
+  `secfindings-hubself` roll). The pod template carries no chart-version label,
+  so a version bump does not restart the pod.
+
+  SECRETS: the realm (with the fixed RSA signing key, the confidential client
+  secret, and the demo-persona passwords) and the bootstrap-admin password live
+  in an OPERATOR-PRE-CREATED Secret `<release>-keycloak-secrets` — NEVER in the
+  chart/git. Create it before rolling: see runbooks/enbuild-hub-reconcile-adopt.md
+  and ~/code/enbuild-ib-keycloak-secrets.LOCAL/create-keycloak-secret.sh.
+  Secret keys: `realm-enbuild.json` (full realm) + `KC_BOOTSTRAP_ADMIN_PASSWORD`.
+  A REDACTED structural copy ships at files/keycloak/realm-enbuild.example.json
+  for reference only (the chart does not deploy it).
+
+  NOTE: moving the realm from a ConfigMap to this Secret + adding the admin
+  secretKeyRefs changes the pod template, so this fold costs a one-time Keycloak
+  restart on roll (acceptable on the staging prototype; login returns identical).
+  Gated off by default; enabled per-env (vendor13-ib).
+*/ -}}
+{{- if .Values.keycloak.enabled }}
+{{- $sec := .Values.keycloak.existingSecret | default (printf "%s-keycloak-secrets" .Release.Name) }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ .Release.Name }}-keycloak
+  labels:
+    {{- include "enbuild-helm-chart.labels" . | nindent 4 }}
+    app.kubernetes.io/component: keycloak
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: {{ .Release.Name }}-keycloak
+  template:
+    metadata:
+      labels:
+        app: {{ .Release.Name }}-keycloak
+    spec:
+      containers:
+      - name: keycloak
+        image: {{ .Values.keycloak.image | default "registry1.dso.mil/ironbank/opensource/keycloak/keycloak:25.0.6" }}
+        imagePullPolicy: IfNotPresent
+        args:
+        - start-dev
+        - --import-realm
+        env:
+        - name: KEYCLOAK_ADMIN
+          value: {{ .Values.keycloak.adminUser | default "admin" | quote }}
+        - name: KC_BOOTSTRAP_ADMIN_USERNAME
+          value: {{ .Values.keycloak.adminUser | default "admin" | quote }}
+        - name: KEYCLOAK_ADMIN_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: {{ $sec }}
+              key: KC_BOOTSTRAP_ADMIN_PASSWORD
+        - name: KC_BOOTSTRAP_ADMIN_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: {{ $sec }}
+              key: KC_BOOTSTRAP_ADMIN_PASSWORD
+        - name: KC_HTTP_ENABLED
+          value: "true"
+        - name: KC_HOSTNAME_STRICT
+          value: "false"
+        - name: KC_HOSTNAME
+          value: {{ .Values.keycloak.hostname | default "http://localhost:8088" | quote }}
+        - name: KC_HOSTNAME_BACKCHANNEL_DYNAMIC
+          value: "true"
+        - name: KC_HEALTH_ENABLED
+          value: "true"
+        - name: KC_PROXY_HEADERS
+          value: xforwarded
+        ports:
+        - containerPort: 8080
+          name: http
+          protocol: TCP
+        resources:
+          limits:
+            memory: {{ .Values.keycloak.resources.limits.memory | default "1Gi" | quote }}
+          requests:
+            cpu: {{ .Values.keycloak.resources.requests.cpu | default "250m" | quote }}
+            memory: {{ .Values.keycloak.resources.requests.memory | default "512Mi" | quote }}
+        volumeMounts:
+        - mountPath: /opt/keycloak/data/import
+          name: realm-import
+          readOnly: true
+      imagePullSecrets:
+      - name: {{ .Release.Name }}-image-pull-secret
+      volumes:
+      - name: realm-import
+        secret:
+          secretName: {{ $sec }}
+          items:
+          - key: realm-enbuild.json
+            path: realm-enbuild.json
+          defaultMode: 420
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ .Release.Name }}-keycloak
+  labels:
+    {{- include "enbuild-helm-chart.labels" . | nindent 4 }}
+    app.kubernetes.io/component: keycloak
+spec:
+  type: ClusterIP
+  selector:
+    app: {{ .Release.Name }}-keycloak
+  ports:
+  - name: http
+    port: 8080
+    protocol: TCP
+    targetPort: 8080
+{{- end }}

@@ -964,3 +964,31 @@ jupyterhub:
                     if [ ! -d demo ]; then
                       git clone https://github.com/vivsoftorg/iris-flower-classifier-demo-notebook.git demo
                     fi
+
+## @section Keycloak (self-hosted SSO for platform login)
+## Renders <release>-keycloak Deployment/Service. The realm + bootstrap-admin
+## password come from an OPERATOR-PRE-CREATED Secret (keys: realm-enbuild.json,
+## KC_BOOTSTRAP_ADMIN_PASSWORD) — never from these values. Default OFF;
+## vendor13-ib enables it (adopts the live orphaned deployment).
+keycloak:
+  enabled: false
+  image: registry1.dso.mil/ironbank/opensource/keycloak/keycloak:25.0.6
+  hostname: http://localhost:8088
+  adminUser: admin
+  ## existingSecret: operator-created Secret holding realm-enbuild.json +
+  ## KC_BOOTSTRAP_ADMIN_PASSWORD. Empty => "<release>-keycloak-secrets".
+  existingSecret: ""
+  resources:
+    limits:
+      memory: 1Gi
+    requests:
+      cpu: 250m
+      memory: 512Mi
+
+## @section PKI (hub/spoke cert-manager — Design A self-signed, ADR-0004)
+## recreateHubIssuer: recreate enbuild-hub-issuer CA ClusterIssuer pointing at
+## the EXISTING CA secret (restores renewal; does NOT regenerate the CA).
+pki:
+  recreateHubIssuer: false
+  hubIssuerName: enbuild-hub-issuer
+  caSecretName: enbuild-ca-tls

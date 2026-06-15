@@ -1,0 +1,29 @@
+{{- /*
+  Recreate ONLY the `enbuild-hub-issuer` CA ClusterIssuer (Design A, ADR-0004),
+  pointing at the ALREADY-EXISTING CA secret `enbuild-ca-tls` in the
+  cert-manager namespace. Folded onto the trunk chart 2026-06-15: the live
+  hub/spoke certs (enbuild-hub-grpc-tls, ...spoke-client-tls) and the spoke
+  Certificate still reference this issuer, but the ClusterIssuer object itself
+  was pruned, so cert-manager can no longer RENEW them. Recreating it restores
+  renewal under the SAME CA — it does NOT re-issue or rotate any cert now.
+
+  DELIBERATELY MINIMAL: we do NOT render the selfsigned-issuer / CA-Certificate
+  templates here, because the CA already exists — regenerating it would rotate
+  `enbuild-ca-tls` and break every spoke that trusts the current CA. Bringing
+  the hub/spoke Certificates themselves under chart management is a separate,
+  spec-matched pass (they would otherwise re-issue). Self-signed only; the Vault
+  PKI path (ADR-0019 Design C) is deferred (no Vault on the hub; needs P1 root /
+  authorization). Gated off by default.
+*/ -}}
+{{- if .Values.pki.recreateHubIssuer }}
+apiVersion: cert-manager.io/v1
+kind: ClusterIssuer
+metadata:
+  name: {{ .Values.pki.hubIssuerName | default "enbuild-hub-issuer" }}
+  labels:
+    {{- include "enbuild-helm-chart.labels" . | nindent 4 }}
+    app.kubernetes.io/component: pki
+spec:
+  ca:
+    secretName: {{ .Values.pki.caSecretName | default "enbuild-ca-tls" }}
+{{- end }}
