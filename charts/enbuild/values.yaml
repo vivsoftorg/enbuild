@@ -175,6 +175,8 @@ enbuildUi:
 ## @param enbuildBk.kubeProxyFallbackActor [nullable,string] Headlamp K8sApiProxy fallback actor email. When Headlamp requests carry no X-Actor-Email/JWT, the KubeProxyController falls back to this value. Empty = hardcoded controller default (`alice@example.com`).
 ## @param enbuildBk.clusterRpcTimeoutMs [default: "30000"] ClusterRpcService timeout (ms) for hub-to-agent RPCs. Raise from the 10000 source default to avoid "Lost connection to the cluster" under serial-dispatch agents with concurrent Headlamp requests.
 ## @param enbuildBk.healthProbe.enabled [default: true] Enable liveness/readiness probes on enbuild-bk. Set to false on environments where the Terminus RSS threshold causes a death loop from K8sApiProxy /openapi/v2 buffering.
+## @param enbuildBk.healthProbe.livenessPath [default: "/api/health"] HTTP path for the bk liveness probe. Default is the combined endpoint on the standard released backend; P1-CCM overrides to /api/health/live (heap-only) to keep the RSS dimension out of the liveness check.
+## @param enbuildBk.healthProbe.readinessPath [default: "/api/health"] HTTP path for the bk readiness probe. Default is the combined endpoint; P1-CCM overrides to /api/health/ready (heap + mongo + disk).
 ## @param enbuildBk.kubeProxyCache.schemaTtlSeconds [default: "300"] TTL (seconds) for the /openapi/v2 and API-discovery schema cache tier. Empty = source default 300 s.
 ## @param enbuildBk.kubeProxyCache.listTtlSeconds [default: "10"] TTL (seconds) for resource-list cache tier. Empty = source default 10 s.
 ## @param enbuildBk.kubeProxyCache.maxEntries [default: "50"] LRU entry cap per cache tier. Empty = source default 50.
@@ -214,8 +216,15 @@ enbuildBk:
   ## operation, causing a death loop that breaks every spoke agent gRPC
   ## stream. Default true keeps existing posture; flip to false on
   ## environments where the source threshold hasn't been raised yet.
+  ## Probe HTTP paths. Default /api/health — the combined endpoint present on
+  ## the standard released backend. P1-CCM exposes the dedicated split
+  ## endpoints and should override these to /api/health/live (heap-only) and
+  ## /api/health/ready (heap + mongo + disk) so the combined check's RSS
+  ## dimension can't trip the death loop described above.
   healthProbe:
     enabled: true
+    livenessPath: /api/health
+    readinessPath: /api/health
   ## P1 CCM Console — KubeProxyCacheService tuning (BE 100, 2026-05-26).
   ## The hub BE caches K8sApiProxy GET responses to eliminate Headlamp's
   ## "Failed to get authentication information: Request timed-out" on
