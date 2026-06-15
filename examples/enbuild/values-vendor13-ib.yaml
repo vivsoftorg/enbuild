@@ -117,6 +117,14 @@ enbuildBk:
   # live on this environment.
   healthProbe:
     enabled: false
+    # Probe paths are value-driven as of the externalize change on this MR.
+    # The chart default is the combined /api/health (works on the standard
+    # released backend). P1-CCM's backend exposes the dedicated split
+    # endpoints, so pin liveness to the heap-only one: this keeps the RSS
+    # dimension (the kill-loop cause described above) out of the liveness
+    # check whenever probes are re-enabled here.
+    livenessPath: /api/health/live
+    readinessPath: /api/health/ready
   # CCM-08b install-agent endpoint configuration (ADR-0029).
   # Operator MUST pre-create the Secret before `helm install enbuild-ib`:
   #   kubectl -n enbuild create secret generic enbuild-install-agent-creds \
