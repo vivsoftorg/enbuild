@@ -11,8 +11,8 @@ metadata:
   name: {{ .Release.Name }}-headlamp-brand
   labels:
 {{- include "enbuild-helm-chart.labels" . | nindent 4 }}
-binaryData:
-  favicon.ico: {{ .Files.Get "files/headlamp-brand/favicon.ico" | b64enc | quote }}
+# binaryData:
+#   favicon.ico: {{ .Files.Get "files/headlamp-brand/favicon.ico" | b64enc | quote }}
 data:
   whitelabel.css: |-
 {{ .Files.Get "files/headlamp-brand/whitelabel.css" | indent 4 }}
