@@ -37,9 +37,10 @@ global:
     # username: registry_user_name
     # password: registry_password
 
+  ## @param global.gitlabRegistryCredentials [nullable,object] Optional GitLab Container Registry credentials. Leave unset on normal deploys; supply via --set at install time when an environment needs to pull images from registry.gitlab.com in addition to the primary `global.image.registry`.
   ## @param global.gitlabRegistryCredentials.username [nullable,string] Optional GitLab Container Registry username (or "oauth2" when password is a PAT). Leave unset on normal deploys; supply via --set at install time when an environment needs to pull images from registry.gitlab.com in addition to the primary `global.image.registry`. Pairs with `password` below.
-    ## @param global.gitlabRegistryCredentials.password [nullable,string] GitLab Container Registry password / PAT (with read_registry scope). NEVER commit a real value; provide via --set or an untracked secrets values file at install time.
-    ## @param global.gitlabRegistryCredentials.registry [default: "registry.gitlab.com"] GitLab Container Registry host. Overridable for self-hosted GitLab instances (rare).
+  ## @param global.gitlabRegistryCredentials.password [nullable,string] GitLab Container Registry password / PAT (with read_registry scope). NEVER commit a real value; provide via --set or an untracked secrets values file at install time.
+  ## @param global.gitlabRegistryCredentials.registry [default: "registry.gitlab.com"] GitLab Container Registry host. Overridable for self-hosted GitLab instances (rare).
   gitlabRegistryCredentials: {}
     # registry: registry.gitlab.com
     # username: GITLAB_USER_NAME
@@ -76,6 +77,7 @@ lightning_features:
 ## @param rabbitmq.auth.username  RabbitMQ username
 ## @param rabbitmq.auth.password  RabbitMQ password
 ## @param rabbitmq.auth.erlangCookie  RabbitMQ erlangCookie
+## @param rabbitmq.auth.securePassword [default: false] Set to false to make Bitnami RabbitMQ chart honour `auth.password` instead of generating a random password. Must be false to prevent a PVC-wipe from creating a new random admin password that mismatches the backend connection string.
 ## @skip rabbitmq.clustering
 ## @param rabbitmq.host [nullable,string] If `rabbitmq.enabled` is false , provide the right rabbitmq endpoint
 ## @skip rabbitmq.env
@@ -109,9 +111,10 @@ rabbitmq:
   env: prod
   queue_prefix: enbuild
   image:
-    registry: public.ecr.aws
-    repository: bitnami/rabbitmq
-    tag: 3.11.13-debian-11-r0
+  # docker tag  registry1.dso.mil/ironbank/bitnami/rabbitmq/3.12.14 registry.gitlab.com/enbuild-staging/vivsoft-platform-ui/rabbitmq:3.12.14
+    registry: registry.gitlab.com
+    repository: enbuild-staging/vivsoft-platform-ui/rabbitmq
+    tag: 3.12.14
 
 ## @section ENBUILD Database parameters
 ## @param mongodb.enabled  [default: false] Set to true to Deploy the MongoDB.
@@ -169,6 +172,12 @@ enbuildUi:
 ## @param enbuildBk.gitlabPat.existingSecret  Name of an operator-managed Secret carrying GITLAB_TOKEN (and optionally GITLAB_HOST). When set, the deployment adds an envFrom for that secret; the inline GITLAB_TOKEN from enbuildConsumer.gitlab.token is omitted to avoid duplicate envvars. Use this in P1 environments where the PAT is provisioned out-of-band and rotated separately. Backwards-compatible default: empty (uses inline values).
 ## @param enbuildBk.exportSigning.existingSecret  Name of an operator-managed Secret carrying SIEM_SIGNING_KEY (PEM-encoded ECDSA P-256 private key) for the CCM-32 audit export bundle (EN-1237). Strongly preferred over privateKeyPem for production. Backwards-compatible default: empty.
 ## @param enbuildBk.exportSigning.privateKeyPem  Inline PEM private key used to sign /audit/export-bundle responses. Dev/test only; production should use existingSecret. Multiline string. Backwards-compatible default: empty (signing disabled; bundle returns signed=false).
+## @param enbuildBk.kubeProxyFallbackActor [nullable,string] Headlamp K8sApiProxy fallback actor email. When Headlamp requests carry no X-Actor-Email/JWT, the KubeProxyController falls back to this value. Empty = hardcoded controller default (`alice@example.com`).
+## @param enbuildBk.clusterRpcTimeoutMs [default: "30000"] ClusterRpcService timeout (ms) for hub-to-agent RPCs. Raise from the 10000 source default to avoid "Lost connection to the cluster" under serial-dispatch agents with concurrent Headlamp requests.
+## @param enbuildBk.healthProbe.enabled [default: true] Enable liveness/readiness probes on enbuild-bk. Set to false on environments where the Terminus RSS threshold causes a death loop from K8sApiProxy /openapi/v2 buffering.
+## @param enbuildBk.kubeProxyCache.schemaTtlSeconds [default: "300"] TTL (seconds) for the /openapi/v2 and API-discovery schema cache tier. Empty = source default 300 s.
+## @param enbuildBk.kubeProxyCache.listTtlSeconds [default: "10"] TTL (seconds) for resource-list cache tier. Empty = source default 10 s.
+## @param enbuildBk.kubeProxyCache.maxEntries [default: "50"] LRU entry cap per cache tier. Empty = source default 50.
 enbuildBk:
   image:
     repository: enbuild-staging/vivsoft-platform-ui/enbuild-backend
