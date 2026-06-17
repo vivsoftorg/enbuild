@@ -4,31 +4,27 @@ description: A Helm chart for ENBUILD
 type: application
 keywords: [enbuild, bigbang]
 home: https://www.vivsoft.io/
-sources: [https://github.com/jupyterhub/zero-to-jupyterhub-k8s]
+sources: [https://github.com/vivsoftorg/enbuild]
 icon: https://enbuild-docs.vivplatform.io/images/emma/enbuild-logo.png
 kubeVersion: '>=1.25.0-0'
-version: 0.0.49-p1ccm-trunk.4
+version: 0.1.0-p1ccm-trunk.0
 appVersion: 1.0.30
 maintainers:
   - name: Juned Memon
     email: jmemon@vivsoft.io
+# Opinionated ENBUILD hub platform. Only two subcharts ship with the platform:
+#   - rabbitmq : the launch/event message broker (core; always on).
+#   - headlamp : the embedded cluster console (operations; toggle via
+#                lightning_features.operations_lightning.headlamp).
+# The previously-bundled jupyterhub / open-webui / loki-stack dependencies were
+# removed in 0.1.0 — they were gated OFF in every environment and added a large
+# unsupported upstream value surface + attack surface. See
+# docs/VALUES-OPINIONATION-AUDIT.md.
 dependencies:
   - name: rabbitmq
     version: 11.13.0
     repository: https://charts.bitnami.com/bitnami
     condition: rabbitmq.enabled
-  - name: jupyterhub
-    version: 4.3.1
-    repository: https://jupyterhub.github.io/helm-chart
-    condition: lightning_features.develop_lightning.models
-  - name: open-webui
-    version: 3.1.6
-    repository: https://helm.openwebui.com/
-    condition: enbuildAI.ollama.enabled
-  - name: loki-stack
-    version: 2.10.2
-    repository: https://grafana.github.io/helm-charts
-    condition: lightning_features.operations_lightning.monitoring
   - name: headlamp
     version: 0.36.0
     repository: https://kubernetes-sigs.github.io/headlamp/

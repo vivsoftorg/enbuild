@@ -88,12 +88,6 @@ data:
         proxy_pass http://{{ .Release.Name }}-enbuild-user/;
       }
 
-{{- if .Values.lightning_features.deploy_lightning.ai_lightning }}
-      location /enbuild-ai/ {
-        proxy_pass http://{{ .Release.Name }}-enbuild-ai/;
-      }
-{{- end }}
-
 {{- if .Values.lightning_features.operations_lightning.headlamp }}
       # ENBUILD Headlamp white-label (folded into the chart so helm-upgrade
       # doesn't wipe the operator-applied patch — same carryover discipline
@@ -138,57 +132,6 @@ data:
         sub_filter '</head>' '<link rel="stylesheet" href="/headlamp-brand/whitelabel.css"><script src="/headlamp-brand/whitelabel.js"></script></head>';
       }
 
-{{- end }}
-
-{{- if .Values.lightning_features.operations_lightning.monitoring }}
-      location /grafana/ {
-        proxy_pass http://{{ .Release.Name }}-grafana/;
-        rewrite ^/grafana/(.*) /$1 break;
-     }
-{{- end }}
-
-{{- if .Values.lightning_features.develop_lightning.application }}
-      location /bolt/ {
-          proxy_pass http://{{ .Release.Name }}-enbuild-bolt/bolt/;
-          proxy_set_header Host $host;
-          proxy_set_header Connection '';
-      }
-{{- end }}
-
-{{- if .Values.lightning_features.secure_lightning.ctf }}
-      location /ctf/ {
-          proxy_pass http://{{ .Release.Name }}-enbuild-ctf/;
-          proxy_set_header Host $host;
-          proxy_set_header Connection '';
-      }
-{{- end }}
-
-{{- if .Values.lightning_features.develop_lightning.models }}
-      location /jupyter/ {
-          proxy_pass http://proxy-public/jupyter/;
-
-          # --- WebSocket support ---
-          proxy_http_version 1.1;
-          proxy_set_header Upgrade $http_upgrade;
-          proxy_set_header Connection $connection_upgrade;
-
-          # --- Preserve headers ---
-          proxy_set_header Host $host;
-          proxy_set_header X-Real-IP $remote_addr;
-          proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-          proxy_set_header X-Forwarded-Proto $scheme;
-
-          # --- Long timeouts for notebook kernels ---
-          proxy_read_timeout 3600;
-          proxy_send_timeout 3600;
-
-          # --- Rewrite hub-related paths ---
-          proxy_redirect /hub/ /jupyter/hub/;
-          proxy_cookie_path /hub/ /jupyter/hub/;
-          sub_filter 'href="/hub/' 'href="/jupyter/hub/';
-          sub_filter 'src="/hub/' 'src="/jupyter/hub/';
-          sub_filter_once off;
-      }
 {{- end }}
 
       # P1 CCM latency P0 (2026-06-11): Vite emits content-hashed filenames

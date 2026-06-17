@@ -139,10 +139,35 @@ spec:
         - name: ENBUILD_AGENT_CHART_REF
           value: {{ default "feat/p1ccm-agent-chart-skeleton" $ia.chartRef | quote }}
         envFrom:
+        {{- /*
+          MongoDB credentials. When mongodb.existingSecret is set the operator
+          Secret is sourced directly (and templates/mongodb-secrets.yaml does
+          not render a chart Secret); otherwise the chart-rendered
+          {release}-mongo-secrets is used (local dev/test).
+        */}}
         - secretRef:
-            name: {{ .Release.Name }}-mongo-secrets
+            name: {{ .Values.mongodb.existingSecret | default (printf "%s-mongo-secrets" .Release.Name) }}
         - secretRef:
             name: {{ .Release.Name }}-backend-secret
+        {{- /*
+          At-rest ENCRYPTION_KEY from an operator-managed Secret (key
+          ENCRYPTION_KEY). When set, backend-secret omits the inline key and
+          this envFrom supplies it. Required in every real deployment.
+        */ -}}
+        {{- with (default (dict) .Values.enbuildBk.encryptionKey).existingSecret }}
+        - secretRef:
+            name: {{ . }}
+        {{- end }}
+        {{- /*
+          Message-broker connection (RABBIT_MQ_CONNECTION_STRING) from an
+          operator-managed Secret. When set, backend-secret omits the assembled
+          connection string and this envFrom supplies it — keeps the broker
+          password out of Helm values.
+        */ -}}
+        {{- with (default (dict) .Values.enbuildBk.messaging).existingSecret }}
+        - secretRef:
+            name: {{ . }}
+        {{- end }}
         {{- /*
           P1 CCM Console — operator-managed secret support. When the
           operator pre-creates a Secret carrying GITLAB_TOKEN (and
@@ -265,9 +290,9 @@ spec:
           runAsGroup: 1000
           runAsNonRoot: true
           runAsUser: 1000
-{{- if .Values.global.image.registry_credentials }}
+{{- if or .Values.global.imagePullSecretName .Values.global.image.registry_credentials }}
       imagePullSecrets:
-        - name: {{ .Release.Name }}-image-pull-secret
+        - name: {{ .Values.global.imagePullSecretName | default (printf "%s-image-pull-secret" .Release.Name) }}
 {{- end }}
 ---
 apiVersion: v1

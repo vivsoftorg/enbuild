@@ -1,510 +1,288 @@
+# =============================================================================
+# ENBUILD HUB PLATFORM — Helm values
+# =============================================================================
+# This chart is OPINIONATED. The platform decides HOW it runs; you only bind
+# WHERE it runs. Within each section, values are grouped as:
+#
+#   [CUSTOMER]  — set these per environment (DNS, gateway, image registry +
+#                 tags, capacity, references to operator-created credential
+#                 Secrets).
+#   [INTERNAL]  — platform wiring with exactly one correct value. Overriding
+#                 these is unsupported and the usual cause of broken deploys.
+#
+# Credentials are NEVER stored in this file. They are provided via
+# operator-created Kubernetes Secrets referenced by *.existingSecret /
+# global.imagePullSecretName. See docs/OPERATOR-DEPLOYMENT-GUIDE.md for the
+# required Secrets, what each powers (catalog deployments, cluster launches,
+# agent installs, image pulls, SSO), and the kubectl commands to create them.
+#
+# Full rationale: docs/VALUES-OPINIONATION-AUDIT.md
+# =============================================================================
+
 ## @section Global parameters
-## @param global.AppVersion [nullable,string] [default: ""] Provide custom appVersion, to override the default one. All the ENBUILD images will be of the same version. To use indidual tag for each service set the tag on per service basis.
-## @param global.domain [default: ijuned.com] What domain to use to expose the ENBUILD using istio or Ingress
-## @param global.disable_tls_gitlab [default: false] Set to true if you are using self-signed certificates
-## @param global.ingress.enabled [default: false] Should we create the Ingress Resources ?
-## @param global.ingress.tls [default: false] Is Ingress TLS enabled ?
-## @param global.ingress.tls_secret [string] If Ingress is TLS enabled, Provide the Secret for the TLS Certificate.
-## @param global.ingress.classname [string] Ingress classname if enabled.
-## @param global.ingress.annotations [array] Ingress annotations if enabled.
-## @param global.istio.enabled [default: false]   Should we create the Istio Resources ?
-## @param global.istio.gateway Istio gateway to use for creating Virtual Service.
-## @param global.image.registry [default: registry.gitlab.com]  Container registry to pull images from
-## @param global.image.pullPolicy [default: Always]  Container imagePullPolicy
-## @param global.storageClass [nullable,string] Explicit StorageClass to use for stateful dependencies when the cluster has no default StorageClass
-## @param global.image.registry_credentials [nullable,object] if the image.registry is private container registry, provide the credentials
-## @param global.image.registry_credentials.username [nullable,string]  Container registry Username
-## @param global.image.registry_credentials.password  [nullable,string] Container registry password
-##
 global:
-  AppVersion: ""
-  domain: ijuned.com
-  disable_tls_gitlab: false # Set to true if you are using self-signed certificates
+  # [CUSTOMER] DNS suffix for hub ingress hosts + cert SANs.
+  # `<enbuildUi.hostname>.<global.domain>` = console FQDN.
+  domain: ""
+  # [CUSTOMER] true only when GitLab presents a self-signed/untrusted cert.
+  disable_tls_gitlab: false
+  # [CUSTOMER] Edge exposure — use EITHER istio OR ingress, not both.
+  istio:
+    enabled: true                 # expose via an Istio Gateway
+    gateway: istio-system/main    # <namespace>/<gateway>
   ingress:
     enabled: false
     tls: false
-    tls_secret: vivplatform-cert
-    classname:
-    annotations:
-      cert-manager.io/cluster-issuer: "letsencrypt-prod"
-  istio:
-    enabled: false
-    gateway: istio-system/main
-  image:
-    registry: registry.gitlab.com
-    pullPolicy: Always
-    registry_credentials: {}
-    # username: registry_user_name
-    # password: registry_password
-
-  ## @param global.gitlabRegistryCredentials.username [nullable,string] Optional GitLab Container Registry username (or "oauth2" when password is a PAT). Leave unset on normal deploys; supply via --set at install time when an environment needs to pull images from registry.gitlab.com in addition to the primary `global.image.registry`. Pairs with `password` below.
-    ## @param global.gitlabRegistryCredentials.password [nullable,string] GitLab Container Registry password / PAT (with read_registry scope). NEVER commit a real value; provide via --set or an untracked secrets values file at install time.
-    ## @param global.gitlabRegistryCredentials.registry [default: "registry.gitlab.com"] GitLab Container Registry host. Overridable for self-hosted GitLab instances (rare).
-  gitlabRegistryCredentials: {}
-    # registry: registry.gitlab.com
-    # username: GITLAB_USER_NAME
-    # password: GITLAB_PASSWORD_OR_PAT
-
+    tls_secret: ""                # pre-created TLS cert Secret when tls=true
+    className: ""                 # IngressClass name (standardized key)
+    annotations: {}
+  # [CUSTOMER] Pre-created kubernetes.io/dockerconfigjson Secret for private/
+  # Iron Bank registry pulls. REQUIRED for private registries; keeps registry
+  # creds out of values entirely. (kubectl create secret docker-registry ...)
+  imagePullSecretName: ""
+  # [CUSTOMER] StorageClass for stateful deps. Empty = cluster default.
   storageClass: ""
+  image:
+    # [CUSTOMER] Registry all first-party images pull from (air-gap rebind).
+    registry: registry1.dso.mil
+    # [CUSTOMER] Always | IfNotPresent | Never (air-gap → IfNotPresent).
+    pullPolicy: Always
+    # [INTERNAL] Dev/test inline registry creds (renders a chart Secret). Leave
+    # EMPTY in real deployments — use global.imagePullSecretName. NEVER commit creds.
+    registry_credentials: {}
 
-## @section ENBUILD Lightning Features to be enabled
-## @param lightning_features.develop_lightning.application [default: false] Enable Bolt deployment
-## @param lightning_features.develop_lightning.models [default: false] Enable JupyterHub deployment
-## @param lightning_features.secure_lightning.ctf [default: false] Enable CTF deployment
-## @param lightning_features.deploy_lightning.infra_lightning [default: false] Enable Data Lightning deployment
-## @param lightning_features.deploy_lightning.data_lightning [default: false] Enable Data Lightning deployment
-## @param lightning_features.deploy_lightning.ai_lightning [default: false] Enable AI Lightning deployment
-## @param lightning_features.operations_lightning.headlamp [default: false] Enable Headlamp deployment
-## @param lightning_features.operations_lightning.monitoring [default: false] Enable Loki Stack deployment
+  # [INTERNAL] All first-party images share one version; empty = track chart
+  # appVersion. This is the middle fallback in the image-tag chain — keep declared.
+  AppVersion: ""
+  # [INTERNAL] "" = Keycloak/SSO (operator-managed). "local" = dev local-account fallback.
+  auth_plugin: ""
+  # [INTERNAL] true (+ ingress.enabled) renders a plain Ingress instead of the
+  # frontend Istio VirtualService. Default false (mesh path).
+  create_istio_virtual_service: false
+  # [INTERNAL] Dev-only second registry (GitLab) creds. Leave empty; never commit.
+  gitlabRegistryCredentials: {}
+
+## @section Lightning features
+# Only operator-toggleable feature. Bolt / JupyterHub / CTF / AI / monitoring
+# were removed from the chart in 0.1.0 (OFF in every environment); their flags
+# are now hardcoded false in the frontend config.
 lightning_features:
-  develop_lightning:
-    application: false
-    models: false
-  secure_lightning:
-    ctf: false
-  deploy_lightning:
-    infra_lightning: true
-    data_lightning: false
-    ai_lightning: false
   operations_lightning:
-    headlamp: false
-    monitoring: false
+    # [CUSTOMER] Deploy the embedded Headlamp cluster console + integration.
+    headlamp: true
 
-## @section ENBUILD RabbitMQ parameters
-## @param rabbitmq.enabled  [default: true] Set to false to use existing RabbitMQ
-## @param rabbitmq.replicaCount  RabbitMQ replicaCount
-## @param rabbitmq.auth.username  RabbitMQ username
-## @param rabbitmq.auth.password  RabbitMQ password
-## @param rabbitmq.auth.erlangCookie  RabbitMQ erlangCookie
-## @skip rabbitmq.clustering
-## @param rabbitmq.host [nullable,string] If `rabbitmq.enabled` is false , provide the right rabbitmq endpoint
-## @skip rabbitmq.env
-## @param rabbitmq.queue_prefix Queue Prefix for all RabbitMQ Queues
-## @param rabbitmq.image.registry RabbitMQ image registry
-## @param rabbitmq.image.repository RabbitMQ image repository
-## @param rabbitmq.image.tag RabbitMQ image tag
-
+## @section Message broker (RabbitMQ) — core, bundled
 rabbitmq:
+  # [CUSTOMER] true = bundle the in-cluster broker (recommended). false = use
+  # an external broker (set enbuildBk.messaging.existingSecret).
   enabled: true
-  replicaCount: 1
+  persistence:
+    size: 8Gi                     # [CUSTOMER] broker volume size
   auth:
-    username: admin
-    password: SuperSecret
-    erlangCookie: lamba
-    # T1.2 fix — bitnami's default `securePassword: true` causes the chart to
-    # generate a random admin password and IGNORE auth.password. After a PVC
-    # wipe the freshly created admin user has a NEW random password while the
-    # backend still connects with `amqp://admin:SuperSecret@...` (sourced from
-    # RABBIT_MQ_CONNECTION_STRING in enbuild-ib-backend-secret). Result:
-    # PLAIN login refused -> backend + mq-consumer crashloop until someone
-    # runs `rabbitmqctl change_password admin SuperSecret` manually
-    # (we hit this on vendor13-ib 2026-04-30, ~3h outage).
-    # Setting securePassword: false makes the chart honour auth.password, so a
-    # PVC wipe re-creates the admin user with `SuperSecret` and backend
-    # reconnects without intervention. See plan T1.2.
+    username: enbuild             # [CUSTOMER] broker username (non-secret)
+    # [CUSTOMER] Operator Secret (key `rabbitmq-password`) — broker password. REQUIRED.
+    existingPasswordSecret: ""
+    # [CUSTOMER] Operator Secret (key `rabbitmq-erlang-cookie`) — clustering cookie. REQUIRED.
+    existingErlangSecret: ""
+    # [INTERNAL] honour the existing-secret password after a PVC wipe (T1.2).
     securePassword: false
+    # [INTERNAL] inline creds EMPTY by design — provide via existing*Secret above.
+    password: ""
+    erlangCookie: ""
+  image:
+    # [CUSTOMER] Air-gap / Iron Bank rebind + version pin.
+    registry: registry1.dso.mil
+    repository: ironbank/bitnami/rabbitmq
+    tag: "3.12.14"
+  # [INTERNAL]
+  replicaCount: 1
   clustering:
     forceBoot: true
-  host: rabbitmq.rabbitmq # Needed only rabbitmq.enabled is false
+  host: rabbitmq.rabbitmq         # external host (only when enabled=false, dev)
   env: prod
   queue_prefix: enbuild
-  image:
-    registry: public.ecr.aws
-    repository: bitnami/rabbitmq
-    tag: 3.11.13-debian-11-r0
 
-## @section ENBUILD Database parameters
-## @param mongodb.enabled  [default: false] Set to true to Deploy the MongoDB.
-## @param mongodb.mongo_root_username [string] DB username. If `mongodb.enabled` this is used to to set the username. Else this is username for existing Cosmos or DocumentDB
-## @param mongodb.mongo_root_password [string]  DB Password. If `mongodb.enabled` this is used to to set the password. Else this is password for existing Cosmos or DocumentDB
-## @param mongodb.mongo_server [nullable,string] If `mongodb.enabled` is false , provide the right cosmosDB/DocumentDB endpoint
-## @param mongodb.mongo_endpoint_override [nullable,string] Verbatim MONGODB_ENDPOINT for bk/mq/ai/user. Set this for HA topologies (3-node replicaSet, cosmosDB with auth params) where the assembled `mongodb://USER:PW@MONGO_SERVER` URI lacks the necessary query string (`?replicaSet=...&authSource=admin`). When set, MONGO_INITDB_ROOT_USERNAME / PASSWORD / MONGO_SERVER vars are still rendered into the secret (the mongo StatefulSet itself still consumes them) but the BE pods use this URI directly instead of assembling from parts. Leave empty for single-node defaults.
-## @param mongodb.image.repository Container repository for mongodb Container
-## @param mongodb.image.tag Container tag for mongodb Container
-## @param mongodb.storageClassName [nullable,string] Explicit StorageClass for MongoDB PVCs. If empty, uses `global.storageClass`
+## @section Database (MongoDB)
+# Launch/catalog state store. Live runs EXTERNAL HA Mongo (enabled=false) via
+# mongo_endpoint_override; enabled=true gives a dev single-node StatefulSet.
 mongodb:
-  enabled: true
-  mongo_root_username: "enbuild"
-  mongo_root_password: "mongo_root_password"
-  # mongo_server is rendered into the enbuild-ib-mongo-secrets Secret (key MONGO_SERVER)
-  # and consumed by the bk/mq/ai/user envFrom + the assembled MONGODB_ENDPOINT URI
-  # template. The OLD literal help-text default ("If you are using cosmosDB then set...")
-  # would silently flow into the Secret on first install, and the next helm upgrade
-  # against a live cluster with the password already rotated would stomp the real value
-  # back to that string — observed on vendor13-ib 2026-05-29 (mq-consumer crashlooped
-  # with MongoParseError because the URI literal began with "If you are using cosmosDB").
-  # For mongodb.enabled=true (in-cluster StatefulSet), leave this empty — bk/mq derive
-  # the URI from the Mongo headless DNS. For external Cosmos/DocumentDB, set verbatim
-  # via values override (e.g. values-vendor13-ib.yaml). For HA replicaSet topologies
-  # the legacy `mongodb` 3.x driver in the mq-consumer image can't parse multi-host
-  # URIs reliably — pin a single primary host here OR use mongo_endpoint_override
-  # with `?readPreference=primaryPreferred&authSource=admin` query string.
-  mongo_server: ""
-  # Set this to a verbatim mongodb:// URI to bypass the assembled
-  # `mongodb://USER:PW@MONGO_SERVER` form in bk/mq/ai/user templates.
-  # Required for HA (3-node replicaSet with ?replicaSet=rs0&authSource=admin)
-  # and cosmosDB (custom auth params). Empty = single-node default.
+  # [CUSTOMER] false = external/managed Mongo (prod HA); true = bundled dev Mongo.
+  enabled: false
+  # [CUSTOMER] Operator Secret with MONGO_INITDB_ROOT_USERNAME /
+  # MONGO_INITDB_ROOT_PASSWORD / MONGO_INITDB_DATABASE / MONGO_SERVER. REQUIRED.
+  # When set, no Mongo credential Secret is rendered and the password stays out of values.
+  existingSecret: ""
+  # [CUSTOMER] Verbatim MONGODB_ENDPOINT for external/HA Mongo. Reference the
+  # password via $(MONGO_INITDB_ROOT_PASSWORD) so NO secret appears here, e.g.:
+  #   mongodb://$(MONGO_INITDB_ROOT_USERNAME):$(MONGO_INITDB_ROOT_PASSWORD)@h1:27017,h2:27017/?replicaSet=rs0&authSource=admin
+  # Empty = assemble a single-node URI from the existingSecret fields.
   mongo_endpoint_override: ""
+  # [CUSTOMER] StorageClass for the bundled Mongo PVC (enabled=true only).
   storageClassName: ""
   image:
-    repository: enbuild-staging/vivsoft-platform-ui/mongodb
+    # [INTERNAL] bundled-Mongo image (enabled=true only); air-gap via global.image.registry.
+    repository: ironbank/opensource/mongodb/mongodb
     tag: 4.4.5
+  # [INTERNAL] inline creds EMPTY by design — provide via mongodb.existingSecret.
+  mongo_root_username: ""
+  mongo_root_password: ""
+  mongo_server: ""
 
-## @section ENBUILD UI Services parameters
-## @param enbuildUi.image.repository  Container repository for enbuildUi
-## @param enbuildUi.image.tag  [nullable] Container image tag. Skip to use the HelmChart appVersion as Image Tag
-## @param enbuildUi.replicas Container enbuildUI Replicas
-## @param enbuildUi.service_type  enbuildUI service_type
-## @param enbuildUi.node_port  enbuildUI node_port
-## @param enbuildUi.hostname  enbuild service hostname. `enbuildUi.hostname`.`global.domain` becomes your FQDN
-## @param enbuildUi.kiali_url  kiali_url
-## @param enbuildUi.grafana_url  grafana_url
-## @param enbuildUi.loki_url  loki_url
-## @param enbuildUi.kubecost_url  kubecost_url
+## @section ENBUILD Console (frontend / UI)
 enbuildUi:
-  image:
-    repository: enbuild-staging/vivsoft-platform-ui/enbuild-frontend
-  replicas: 1
-  service_type: ClusterIP
-  node_port: 30080
-  hostname: enbuild # hostname.domain become FQDN
+  # [CUSTOMER] Console hostname. `hostname.global.domain` = FQDN.
+  hostname: ""
+  replicas: 1                     # [CUSTOMER]
+  # [CUSTOMER] Console dashboard iframe URLs — point at THIS env's observability.
   kiali_url: "/kiali/"
   grafana_url: "/grafana/d/os6Bh8Omk/kubernetes-cluster?orgId=1&refresh=30s"
   loki_url: "/grafana/d/liz0yRCZz/logs-app?orgId=1"
   kubecost_url: "kubecost/overview.html"
-
-## @section ENBUILD Backend Services parameters
-## @param enbuildBk.image.repository  Container repository for enbuildBk
-## @param enbuildBk.image.tag  [nullable] Container image tag. Skip to use the HelmChart appVersion as Image Tag
-## @param enbuildBk.replicas Container enbuildBk Replicas
-## @param enbuildBk.service_type  enbuildBk service_type
-## @param enbuildBk.encryption_key  encryption_key to be used by Backend
-## @param enbuildBk.resources.requests.cpu  CPU resource request for the hub backend
-## @param enbuildBk.resources.requests.memory  Memory resource request for the hub backend
-## @param enbuildBk.gitlabPat.existingSecret  Name of an operator-managed Secret carrying GITLAB_TOKEN (and optionally GITLAB_HOST). When set, the deployment adds an envFrom for that secret; the inline GITLAB_TOKEN from enbuildConsumer.gitlab.token is omitted to avoid duplicate envvars. Use this in P1 environments where the PAT is provisioned out-of-band and rotated separately. Backwards-compatible default: empty (uses inline values).
-## @param enbuildBk.exportSigning.existingSecret  Name of an operator-managed Secret carrying SIEM_SIGNING_KEY (PEM-encoded ECDSA P-256 private key) for the CCM-32 audit export bundle (EN-1237). Strongly preferred over privateKeyPem for production. Backwards-compatible default: empty.
-## @param enbuildBk.exportSigning.privateKeyPem  Inline PEM private key used to sign /audit/export-bundle responses. Dev/test only; production should use existingSecret. Multiline string. Backwards-compatible default: empty (signing disabled; bundle returns signed=false).
-enbuildBk:
   image:
-    repository: enbuild-staging/vivsoft-platform-ui/enbuild-backend
-  replicas: 1
+    tag: ""                       # [CUSTOMER] pin console image; empty = appVersion
+    # [INTERNAL]
+    repository: enbuild-staging/vivsoft-platform-ui/enbuild-frontend
+    # registry: per-service air-gap override; unset → global.image.registry
+  # [INTERNAL] internal ClusterIP service reached via mesh/ingress + in-pod nginx.
   service_type: ClusterIP
-  encryption_key: "encryption_key"
-  ## P1 CCM latency P0 (2026-06-11): scheduling floor for the hub backend so
-  ## it isn't CPU-starved on busy nodes (it fans out hub→agent RPCs and
-  ## buffers large K8sApiProxy responses). Requests ONLY — deliberately no
-  ## limits: a CPU limit would throttle exactly the latency-sensitive bursts
-  ## this is meant to protect, and a memory limit risks OOM-killing the pod
-  ## during legitimate /openapi/v2 buffering (~11 MB per Big Bang spoke call).
+  node_port: 30080                # consumed only if service_type=NodePort (unsupported)
+
+## @section ENBUILD Backend (gRPC API + control plane)
+enbuildBk:
+  replicas: 1                     # [CUSTOMER]
+  # [CUSTOMER] backend CPU/memory.
   resources:
     requests:
       cpu: 250m
       memory: 512Mi
-  # Hub-side gRPC AgentGateway exposure (closes #64). When grpcEnabled is
-  # true, the chart renders an enbuild-bk-grpc Service on port 8443 + the
-  # matching containerPort. grpcVirtualService.host MUST be set per-env —
-  # empty default = VS attaches no host = agent dials get 404.
-  grpcEnabled: true
-  grpcPort: 8443
-  grpcServiceType: ClusterIP
-  grpcVirtualService:
-    enabled: true
-    host: ""
-    # additionalHosts: extra gRPC :authority names to route (besides `host`).
-    # Needed when an env runs agents with mixed HUB_URL/TLS_SERVER_NAME values
-    # (e.g. the private-zone DNS cutover). Empty default; set per-env.
-    additionalHosts: []
-    gateway: istio-gateway/public-ingressgateway
-  ## P1 CCM Console — Headlamp K8sApiProxy fallback actor (BE 099 demo-mode
-  ## hook, see backend/microservices/enbuild/src/kubeProxy/kubeProxy.controller.ts).
-  ## When Headlamp's HTTP requests carry no X-Actor-Email/JWT, the
-  ## KubeProxyController falls back to this value before applying tenancy
-  ## (project membership). Set to an email that's a member of the project
-  ## owning the demo cluster. Empty = hardcoded controller default
-  ## (`alice@example.com`). Keeps `kubectl set env` patches from getting
-  ## reverted on the next helm-upgrade / auto-reconcile.
-  kubeProxyFallbackActor: ""
-  ## P1 CCM Console — ClusterRpcService timeout for hub→agent RPCs (ms).
-  ## History: source default 10000; raised to 30000 on 2026-05-19 because the
-  ## then-serial-dispatch agent queued Headlamp's ~10 parallel requests and
-  ## the tail exhausted the 10s budget → "Lost connection" red banner.
-  ## Lowered back to 10000 in the 2026-06-11 latency P0: the serial-dispatch
-  ## bottleneck is gone, and a 30s ceiling means one slow/dead agent RPC
-  ## pins a console poll for 30s — failing fast at 10s keeps the rollup and
-  ## cluster views responsive. Override per-env if an agent legitimately
-  ## needs longer. Empty = source default (10000).
-  clusterRpcTimeoutMs: "10000"
-  ## ADR-0035 fleet-aggregation snapshot store — PERMANENT production defaults
-  ## (both "true"). Security views read from the hub snapshot store the agents
-  ## populate (bounded/paginated), not the live spoke fan-out. Override to
-  ## "false" only for an emergency revert to the live-RPC path.
-  snapshotIngestEnabled: "true"
-  snapshotReadFromStore: "true"
-  ## P1 CCM Console — bk health probe gate (2026-05-21). When false, the
-  ## chart skips rendering livenessProbe + readinessProbe on enbuild-bk.
-  ## Use case: bk's NestJS Terminus health check has a hardcoded
-  ## memory_rss threshold (app.service.ts:30) that K8sApiProxy buffering of
-  ## /openapi/v2 (11 MB per call on Big Bang spokes) can exceed in normal
-  ## operation, causing a death loop that breaks every spoke agent gRPC
-  ## stream. Default true keeps existing posture; flip to false on
-  ## environments where the source threshold hasn't been raised yet.
-  healthProbe:
-    enabled: true
-  ## P1 CCM Console — KubeProxyCacheService tuning (BE 100, 2026-05-26).
-  ## The hub BE caches K8sApiProxy GET responses to eliminate Headlamp's
-  ## "Failed to get authentication information: Request timed-out" on
-  ## Big Bang spokes. /openapi/v2 is ~11 MB and takes ~13 s through the
-  ## spoke gRPC stream — past Headlamp's ~10 s client-side fetch
-  ## timeout. First operator pays the cost; everyone else inside the
-  ## TTL window gets <50 ms.
-  ##
-  ## Two TTL tiers, env-tunable. Empty values fall back to source
-  ## defaults (300 / 10 / 50). Watch/exec/log/subresource/single-item
-  ## GETs and all non-GET verbs bypass the cache entirely. Stream
-  ## teardown invalidates the cluster's slice so reconnects never
-  ## serve stale schema.
-  kubeProxyCache:
-    ## Schema tier — /openapi/v2 + v3 + API/group/version discovery.
-    ## Content only changes when CRDs are added/removed; 5 min is
-    ## conservative. Empty = source default 300 s.
-    schemaTtlSeconds: "300"
-    ## List tier — resource lists (namespaced + cluster-scoped). Short
-    ## TTL matches Headlamp's auto-refresh cadence so dashboards still
-    ## feel current. Empty = source default 10 s.
-    listTtlSeconds: "10"
-    ## LRU cap per tier. Memory ceiling at 50 entries × ~11 MB schema +
-    ## 50 × ~1 MB list = ~600 MB worst case, well under the 1 GB RSS
-    ## threshold. Empty = source default 50.
-    maxEntries: "50"
-  ## P1 CCM Console — operator-managed secret support (backwards-compatible).
-  ## See template comments in backend-secret.yaml + enbuild-bk.yaml.
+  # --- [CUSTOMER] operator credential Secret references (never inline secrets) ---
+  # Operator Secret (key ENCRYPTION_KEY) — at-rest data encryption key. REQUIRED.
+  # Rotating it re-keys stored data; treat as a data migration.
+  encryptionKey:
+    existingSecret: ""
+  # Operator Secret (key RABBIT_MQ_CONNECTION_STRING) — keeps broker password
+  # out of values. REQUIRED unless using the bundled-broker dev path.
+  messaging:
+    existingSecret: ""
+  # Operator Secret (key GITLAB_TOKEN) for catalog/GitOps; usually supplied via
+  # installAgent.existingSecret instead.
   gitlabPat:
     existingSecret: ""
+  # Operator Secret with Big Bang security-tool creds (Twistlock/Anchore/Falco). Optional.
+  securityTooling:
+    existingSecret: ""
+  # Operator Secret (key SIEM_SIGNING_KEY) for /audit/export-bundle. Optional (prod-preferred).
   exportSigning:
     existingSecret: ""
-    privateKeyPem: ""
-  securityTooling:
-    ## @param enbuildBk.securityTooling.existingSecret Name of an operator-managed Secret carrying hub-self CCM-13d security-tooling env (TWISTLOCK_API_URL/USERNAME/PASSWORD, ANCHORE_API_URL/USERNAME/PASSWORD, FALCO_CLUSTER_ID, FALCO_WEBHOOK_SECRET, OPA_GATEKEEPER_ENABLED, FALCO_AUDIT_LANE). Added as an envFrom on the bk container. Keeps Big Bang tool creds out of Helm values + rotatable out-of-band; bridges them cross-namespace into the bk pod. Backwards-compatible default: empty (hub-self reports those sources unavailable until set).
-    existingSecret: ""
-  ## CCM-08b install-agent endpoint configuration (ADR-0029 — chart-managed,
-  ## first-install-correct, survives every `helm upgrade --reuse-values`).
-  ##
-  ## Sensitive bits (GITLAB_TOKEN / ENBUILD_REPO1_USER / ENBUILD_REPO1_TOKEN)
-  ## ride an operator-pre-created Secret; non-secret config rides helm values.
-  ## Before this section existed, operators kubectl-set-env'd these post-install
-  ## and they were wiped by the next chart roll. Mirrors the operator-managed-
-  ## secret idiom from gitlabPat/exportSigning/securityTooling above.
+    privateKeyPem: ""             # dev/test inline path only
+  # --- [CUSTOMER] Hub gRPC AgentGateway (how spoke agents reach this hub) ---
+  grpcVirtualService:
+    enabled: true
+    host: ""                      # REQUIRED external gRPC FQDN agents dial (cert SAN)
+    additionalHosts: []           # extra :authority names to route
+    gateway: istio-gateway/public-ingressgateway   # <ns>/<gateway>
+  # --- install-agent (how the hub installs the agent onto spoke clusters) ---
   installAgent:
-    ## @param enbuildBk.installAgent.existingSecret Name of an operator-managed Secret carrying the 3 sensitive install-agent env vars: GITLAB_TOKEN (gitlab.com PAT for cloning the agent chart repo), ENBUILD_REPO1_USER (registry1.dso.mil pull username), ENBUILD_REPO1_TOKEN (registry1.dso.mil pull token). When set, the deployment adds an envFrom for that secret. When empty (default), the install-agent endpoint 503s on use with a clear error AND NOTES.txt prints a warning at install time. Operator pre-creates via `kubectl -n enbuild create secret generic enbuild-install-agent-creds --from-literal=GITLAB_TOKEN=... --from-literal=ENBUILD_REPO1_USER=... --from-literal=ENBUILD_REPO1_TOKEN=...`. Rotation = kubectl recreate Secret + rollout restart BE.
+    # [CUSTOMER] Operator Secret with GITLAB_TOKEN + ENBUILD_REPO1_USER +
+    # ENBUILD_REPO1_TOKEN. REQUIRED for launches/agent installs (also supplies
+    # the backend's GITLAB_TOKEN).
     existingSecret: ""
-    ## @param enbuildBk.installAgent.hubUrl Hub gRPC endpoint (host:port) the spoke agent dials outbound. **Use the AWS NLB DNS hostname for the HA path** (Route53 round-robins healthy AZ IPs; survives single-AZ outages with no /etc/hosts surgery on the spoke). The cert-SAN hostname (e.g. enbuild-ib-vendor13.staging.dso.mil) often only resolves on the hub's private Route53 zone — spokes in other VPCs cannot dial it directly. Override per environment in examples/enbuild/values-<env>.yaml. Empty default forces operator awareness — install-agent endpoint refuses without it.
-    hubUrl: ""
-    ## @param enbuildBk.installAgent.tlsServerName **HA path: required when hubUrl is an NLB DNS name.** Set to the hub cert SAN so TLS SNI/SAN validation passes (Go's tls.Config.ServerName). Leave empty for the legacy single-IP /etc/hosts hostAliases path (set hubInternalIps for that mode); kept for air-gapped clusters that cannot reach AWS public DNS.
-    tlsServerName: ""
-    ## @param enbuildBk.installAgent.hubInternalIps Legacy CSV of per-AZ NLB IPs for spoke /etc/hosts hostAliases (air-gapped clusters that can't use AWS DNS). Empty by default; the HA path (tlsServerName + DNS) supersedes it.
-    hubInternalIps: ""
-    ## @param enbuildBk.installAgent.agentImageTag SHA of the enbuild-agent container image install-agent helm-installs on the spoke. Bump per agent release. Defaults baked in here so a fresh helm install gets a known-good tag without operator action; override via --set on rolls.
+    hubUrl: ""                    # [CUSTOMER] host:443 the spoke agent dials back to (REQUIRED)
+    tlsServerName: ""             # [CUSTOMER] hub cert SAN for TLS SNI on the NLB-DNS path
+    hubInternalIps: ""            # [CUSTOMER] legacy CSV of NLB IPs (air-gap /etc/hosts)
+    # [INTERNAL] agent image + chart source pins (fleet-moves-together, ADR-0034).
     agentImageTag: "ac99ae1830c427a65db31a6874e5d4414d90133f"
-    ## @param enbuildBk.installAgent.chartRepo Git URL of the chart repo install-agent's Job clones to obtain enbuild-core / enbuild-stack / enbuild-agent charts. Default = platform-one-eks; override for forks or alt mirrors.
     chartRepo: "https://gitlab.com/enbuild-staging/iac-templates/platform-one-eks.git"
-    ## @param enbuildBk.installAgent.chartRef Branch/tag of the chart repo install-agent's Job clones. Default tracks the long-lived integration branch where chart edits land before merge to main.
     chartRef: "feat/p1ccm-agent-chart-skeleton"
-  ## @param enbuildBk.serviceAccount Override the BE pod's ServiceAccount. When empty (default), the pod binds to `{{ .Release.Name }}-enbuild-bk-installer` (minted by enbuild-bk-rbac.yaml; carries the perms install-agent needs). Override only if a deployment mode needs a different SA.
-  serviceAccount: ""
-## @section ENBUILD USER Services parameters
-## @param enbuildUser.image.repository  Container repository for enbuildUser
-## @param enbuildUser.image.tag [nullable] Container image tag. Skip to use the HelmChart appVersion as Image Tag
-## @param enbuildUser.replicas Container enbuildUser Replicas
-## @param enbuildUser.service_type  enbuildUser service_type
-enbuildUser:
   image:
-    repository: enbuild-staging/vivsoft-platform-ui/enbuild-user
-  replicas: 1
-  service_type: ClusterIP
+    tag: ""                       # [CUSTOMER] pin backend image; empty = appVersion
+    # [INTERNAL]
+    repository: enbuild-staging/vivsoft-platform-ui/enbuild-backend
+    # registry: per-service air-gap override; unset → global.image.registry
 
-## @section ENBUILD Consumer Services parameters
-## @param enbuildConsumer.image.registry [nullable,string] Per-service registry override. Unset → falls back to `global.image.registry`. Use to consume an mq-consumer image from a non-default registry (e.g. GitLab staging while waiting for an Iron Bank rebuild). Leave unset for normal deployments.
-## @param enbuildConsumer.image.repository  Container repository for enbuildConsumer
-## @param enbuildConsumer.image.tag [nullable] Container image tag. Skip to use the HelmChart appVersion as Image Tag
-## @param enbuildConsumer.replicas Container enbuildConsumer Replicas
-## @param enbuildConsumer.command Command override for the MQ consumer container
-## @param enbuildConsumer.args Args override for the MQ consumer container
-enbuildConsumer:
+  # --- [INTERNAL] (do not override) ---
+  # Inline at-rest key EMPTY by design — provide via encryptionKey.existingSecret.
+  encryption_key: ""
+  # Optional non-secret GitLab SCM connection config (host/group/projectId/
+  # namespaceId/ref). Unset = platform/per-catalog defaults (as live). The
+  # GITLAB_TOKEN is NEVER set here — it rides installAgent.existingSecret.
+  gitlabConnection: {}
+  service_type: ClusterIP
+  grpcEnabled: true
+  grpcPort: 8443                  # fixed; matches hardcoded container/targetPort
+  grpcServiceType: ClusterIP
+  clusterRpcTimeoutMs: "10000"    # 2026-06-11 latency P0 — fail fast so one slow/dead agent RPC can't pin a console poll; the serial-dispatch bottleneck that motivated 30000 is gone
+  snapshotIngestEnabled: "true"   # ADR-0035 fleet snapshot store (permanent)
+  snapshotReadFromStore: "true"
+  kubeProxyFallbackActor: ""      # console K8sApiProxy demo fallback (empty = controller default)
+  healthProbe:
+    enabled: true
+  kubeProxyCache:
+    schemaTtlSeconds: "300"
+    listTtlSeconds: "10"
+    maxEntries: "50"
+  serviceAccount: ""              # empty binds the chart-minted installer SA
+
+## @section ENBUILD User service
+enbuildUser:
+  replicas: 1                     # [CUSTOMER]
   image:
-    repository: enbuild-staging/vivsoft-platform-ui/enbuild-mq-consumer
-  replicas: 1
+    tag: ""                       # [CUSTOMER] empty = appVersion
+    repository: enbuild-staging/vivsoft-platform-ui/enbuild-user   # [INTERNAL]
+  service_type: ClusterIP         # [INTERNAL]
+
+## @section ENBUILD Consumer (mq launch worker)
+enbuildConsumer:
+  replicas: 1                     # [CUSTOMER]
+  image:
+    registry: ""                  # [CUSTOMER] per-service air-gap override; unset → global
+    tag: ""                       # [CUSTOMER] empty = appVersion
+    repository: enbuild-staging/vivsoft-platform-ui/enbuild-mq-consumer   # [INTERNAL]
+  # [INTERNAL]
   command:
     - npm
   args:
     - run
     - run:mq:all
 
-## @section ENBUILD AI Services parameters
-## @param enbuildAI.image.repository  Container repository for enbuildAI
-## @param enbuildAI.image.tag  [nullable] Container image tag. Skip to use the HelmChart appVersion as Image Tag
-## @param enbuildAI.replicas Container enbuilAI Replicas
-## @param enbuildAI.service_type  enbuildAI service_type
-## @param enbuildAI.api_key  api_key [default: "dummy"] for OpenAI service if you planning to use OpenAI service
-## @param enbuildAI.ollama.enabled [default: "ollama/llama3.2"] model_name for OpenAI service.
-## @param enbuildAI.model_name [default: "ollama/llama3.2"] model_name for OpenAI service.
-## @param enbuildAI.ollama_endpoint [default: "http://open-webui-ollama:11434"] ollama_endpoint for OpenAI service.
-## @param enbuildAI.serviceAccount.create [default: false] Create a dedicated service account for AI pod
-## @param enbuildAI.serviceAccount.name [default: ""] Name of service account. If empty, uses release name pattern
-## @param enbuildAI.serviceAccount.annotations [default: {}] Annotations for AI service account (e.g., for IRSA)
-enbuildAI:
-  ollama:
-    enabled: false # Set to true to install Ollama
-  model_name: "ollama/llama3.2"
-  api_key: "dummy"
-  ollama_endpoint: "http://open-webui-ollama:11434"
-  image:
-    repository: enbuild-staging/vivsoft-platform-ui/enbuild-ai
-  replicas: 1
-  service_type: ClusterIP
-  serviceAccount:
-    create: false
-    name: ""
-    annotations: {}
-
-## @section enbuildBolt Services parameters
-## @param enbuildBolt.image.repository  Container repository for enbuildBolt
-## @param enbuildBolt.image.tag  Container image tag. Skip to use the HelmChart appVersion as Image Tag
-## @param enbuildBolt.replicas Container enbuildBolt Replicas
-## @param enbuildBolt.service_type  enbuildBolt service_type
-enbuildBolt:
-  image:
-    repository: ghcr.io/vivsoftorg/dev-lightning
-    tag: v1.0.0
-  replicas: 1
-  service_type: ClusterIP
-
-## @section enbuildCTF Services parameters
-## @param enbuildCTF.image.repository  Container repository for enbuildCTF
-## @param enbuildCTF.image.tag  [nullable] Container image tag. Skip to use the HelmChart appVersion as Image Tag
-## @param enbuildCTF.replicas Container enbuildCTF Replicas
-## @param enbuildCTF.service_type  enbuildCTF service_type
-## @param enbuildCTF.debug  Set to true to enable debug mode in CTF backend
-## @param enbuildCTF.cors_origins  Allowed CORS origins for CTF backend
-## @param enbuildCTF.log_level  Log level for CTF backend
-## @param enbuildCTF.aws_region  AWS region for CTF backend to use AWS services like S3
-## @param enbuildCTF.resources.requests.memory  Memory resource request for CTF backend
-## @param enbuildCTF.resources.requests.cpu  CPU resource request for CTF backend
-## @param enbuildCTF.resources.limits.memory  Memory resource limit for CTF backend
-## @param enbuildCTF.resources.limits.cpu  CPU resource limit for CTF backend
-## @param enbuildCTF.serviceAccount.create [default: false] Create a dedicated service account for CTF pod
-## @param enbuildCTF.serviceAccount.name [default: ""] Name of service account. If empty, uses release name pattern
-## @param enbuildCTF.serviceAccount.annotations [default: {}] Annotations for CTF service account (e.g., for IRSA)
-
-enbuildCTF:
-  image:
-    repository: enbuild-staging/vivsoft-platform-ui/enbuild-ctf
-  replicas: 1
-  service_type: ClusterIP
-  debug: true
-  cors_origins: "['http://localhost:5173','http://localhost:5000','http://localhost:3000']"
-  log_level: "DEBUG"
-  aws_region: "us-east-1"
+## @section Keycloak (self-hosted SSO for platform login)
+# Renders <release>-keycloak Deployment/Service when enabled. The realm + admin
+# password come from an OPERATOR-PRE-CREATED Secret — never from these values.
+keycloak:
+  # [CUSTOMER] Deploy the bundled Keycloak (SSO login). Default off; enable per-env.
+  enabled: false
+  # [CUSTOMER] Air-gap / Iron Bank image rebind + version pin.
+  image: registry1.dso.mil/ironbank/opensource/keycloak/keycloak:25.0.6
+  # [CUSTOMER] Operator Secret holding `realm-enbuild.json` + `KC_BOOTSTRAP_ADMIN_PASSWORD`.
+  # Empty => "<release>-keycloak-secrets". See docs/OPERATOR-DEPLOYMENT-GUIDE.md.
+  existingSecret: ""
+  # [CUSTOMER] Keycloak capacity.
   resources:
-    requests:
-      memory: "1Gi"
-      cpu: "500m"
     limits:
-      memory: "1Gi"
-      cpu: "1"
-  serviceAccount:
-    create: false
-    name: ""
-    annotations: {}
+      memory: 1Gi
+    requests:
+      cpu: 250m
+      memory: 512Mi
+  # [INTERNAL] in-cluster issuer URL the backend validates tokens against.
+  hostname: http://localhost:8088
+  adminUser: admin
 
+## @section PKI (hub/spoke cert-manager — Design A self-signed, ADR-0004)
+pki:
+  # [CUSTOMER] One-shot: recreate the enbuild-hub-issuer CA ClusterIssuer pointing
+  # at the EXISTING CA secret (restores cert renewal; does NOT regenerate the CA).
+  # Set true for one roll when the issuer is missing, then back to false.
+  recreateHubIssuer: false
+  # [INTERNAL] fixed cert-manager object names for the hub gRPC/pull-agent mTLS fabric.
+  hubIssuerName: enbuild-hub-issuer
+  caSecretName: enbuild-ca-tls
 
-## Third Party Charts
-## @skip open-webui
-open-webui:
-  ollama:
-    enabled: true
-    image:
-      tag: "0.3.1"
-    ollama:
-      gpu:
-        enabled: false
-        type: "nvidia"
-        number: 1
-      models:
-        - llama3.2:1b
-    runtimeClassName: ""
-    persistentVolume:
-      enabled: true
-
-## @skip loki-stack
-## @skip loki-stack.grafana
-loki-stack:
-  test_pod:
-    enabled: false
-  loki:
-    enabled: true
-  promtail:
-    enabled: true
-    config:
-      clients:
-        - url: http://{{ .Release.Name }}-loki:3100/loki/api/v1/push
-  fluent-bit:
-    enabled: false
-  prometheus:
-    enabled: true
-  filebeat:
-    enabled: false
-  logstash:
-    enabled: false
-  grafana:
-    enabled: true
-    testFramework:
-      enabled: false
-    persistence:
-      enabled: true
-    adminPassword: V1v$oftR0ck5
-    adminUser: admin
-    dashboards:
-      default:
-        Logs_App:
-          gnetId: 13639
-          revision: 1
-          datasource: Loki
-        Kubernetes_Cluster:
-          gnetId: 7249
-          revision: 1
-          datasource: Prometheus
-    dashboardProviders:
-      dashboardproviders.yaml:
-        apiVersion: 1
-        providers:
-          - name: "default"
-            orgId: 1
-            folder: ""
-            type: file
-            disableDeletion: false
-            editable: true
-            options:
-              path: /var/lib/grafana/dashboards/default
-    grafana.ini:
-      preferences:
-        theme: light
-      auth:
-        disable_login_form: false
-        auto_login: true
-      auth.basic:
-        enabled: true
-      auth.anonymous:
-        enabled: true
-      security:
-        allow_embedding: true
-      feature_toggles:
-        accessTokenExpirationCheck: true
-      server:
-        domain: enbuild.{{ .Values.global.domain }}
-        root_url: "%(protocol)s://%(domain)s:%(http_port)s/grafana/"
-        serve_from_sub_path: false
-
-##@skip headlamp
+## @section Headlamp (embedded cluster console — only optional subchart)
+# Only image.* / replicaCount / resources / spokes are operator knobs. The rest
+# is the platform's Headlamp integration (chart-managed kubeconfig + theme
+# ConfigMaps, white-label volume mounts) — do not override.
+# NOTE (hardening follow-up): clusterRoleBinding.clusterRoleName is cluster-admin
+# (unchanged from live); scope to a read-only ClusterRole in a later pass.
 headlamp:
   # Default values for headlamp.
   # This is a YAML-formatted file.
@@ -754,7 +532,7 @@ headlamp:
 
   persistentVolumeClaim:
     # -- Enable Persistent Volume Claim
-    enabled: true
+    enabled: false
     # -- Annotations to add to the persistent volume claim (if enabled)
     annotations:
       {}
@@ -895,100 +673,3 @@ headlamp:
   #     name: my-config-too
   #   data:
   #     key: value
-
-## @skip jupyterhub
-jupyterhub:
-  proxy:
-    service:
-      type: ClusterIP
-  hub:
-    baseUrl: /jupyter
-    config:
-      JupyterHub:
-        authenticator_class: dummy
-        allow_named_servers: False
-      Authenticator:
-        auto_login: false
-  cull:
-    enabled: true
-  singleuser:
-    image:
-      pullPolicy: Always
-
-    profileList:
-      - display_name: "CDAO Reliable AI Instance"
-        description: "Includes base Reliable AI Security Toolkit Python Tools - Counterfit, Foolbox and Armory"
-        default: true
-        kubespawner_override:
-          image: quay.io/jupyter/scipy-notebook:2025-10-27
-          lifecycle_hooks:
-            postStart:
-              exec:
-                command:
-                  - /bin/sh
-                  - -c
-                  - |
-                    cd /home/jovyan
-                    if [ ! -d demo ]; then
-                      git clone https://github.com/vivsoftorg/iris-flower-classifier-demo-notebook.git demo
-                    fi
-
-      - display_name: "CDAO Reliable AI Datascience Instance"
-        description: "Includes base Reliable AI Explainability Toolkit Python Tools - XAITK, LIME, SHAP, Explainer Dashboard"
-        kubespawner_override:
-          image: quay.io/jupyter/datascience-notebook:2025-10-27
-          lifecycle_hooks:
-            postStart:
-              exec:
-                command:
-                  - /bin/sh
-                  - -c
-                  - |
-                    cd /home/jovyan
-                    if [ ! -d demo ]; then
-                      git clone https://github.com/vivsoftorg/iris-flower-classifier-demo-notebook.git demo
-                    fi
-
-      - display_name: "Spark Environment"
-        description: "The Jupyter Stacks Spark image with demo notebooks"
-        kubespawner_override:
-          image: quay.io/jupyter/all-spark-notebook:2025-10-27
-          lifecycle_hooks:
-            postStart:
-              exec:
-                command:
-                  - /bin/sh
-                  - -c
-                  - |
-                    cd /home/jovyan
-                    if [ ! -d demo ]; then
-                      git clone https://github.com/vivsoftorg/iris-flower-classifier-demo-notebook.git demo
-                    fi
-
-## @section Keycloak (self-hosted SSO for platform login)
-## Renders <release>-keycloak Deployment/Service. The realm + bootstrap-admin
-## password come from an OPERATOR-PRE-CREATED Secret (keys: realm-enbuild.json,
-## KC_BOOTSTRAP_ADMIN_PASSWORD) — never from these values. Default OFF;
-## vendor13-ib enables it (adopts the live orphaned deployment).
-keycloak:
-  enabled: false
-  image: registry1.dso.mil/ironbank/opensource/keycloak/keycloak:25.0.6
-  hostname: http://localhost:8088
-  adminUser: admin
-  ## existingSecret: operator-created Secret holding realm-enbuild.json +
-  ## KC_BOOTSTRAP_ADMIN_PASSWORD. Empty => "<release>-keycloak-secrets".
-  existingSecret: ""
-  resources:
-    limits:
-      memory: 1Gi
-    requests:
-      cpu: 250m
-      memory: 512Mi
-
-## @section PKI (hub/spoke cert-manager — Design A self-signed, ADR-0004)
-## recreateHubIssuer: recreate enbuild-hub-issuer CA ClusterIssuer pointing at
-## the EXISTING CA secret (restores renewal; does NOT regenerate the CA).
-pki:
-  recreateHubIssuer: false
-  hubIssuerName: enbuild-hub-issuer
-  caSecretName: enbuild-ca-tls

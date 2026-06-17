@@ -1,209 +1,120 @@
-# ENBUILD Helm values for the P1 CCM vendor13-ib cluster.
+# =============================================================================
+# ENBUILD hub — vendor13-ib (P1 CCM) override   [chart >= 0.1.0, opinionated]
+# =============================================================================
+# Release: enbuild-ib   Namespace: enbuild
 #
-# This file extends examples/enbuild/quick_install_ib_headlamp.yaml with
-# vendor13-ib-specific settings. The baseline pulls ENBUILD + Headlamp from
-# Iron Bank (registry1.dso.mil) and was validated on a disposable GovCloud
-# EKS cluster.
+# This is the ENTIRE per-environment surface (~50 lines, down from the previous
+# 943-line override). Only environment bindings + references to operator-created
+# credential Secrets live here — NO secrets in values. Create the required
+# Secrets FIRST (see docs/OPERATOR-DEPLOYMENT-GUIDE.md), then:
 #
-# Install as Helm release "enbuild-ib" so the chart's generated image pull
-# secret lines up with the sub-chart pullSecrets references:
-#
-#   # Operator must docker login first so creds aren't in shell history:
-#   docker login registry1.dso.mil -u <user>
-#
-#   helm install enbuild-ib ./charts/enbuild \
-#     --namespace enbuild --create-namespace \
+#   helm upgrade --install enbuild-ib ./charts/enbuild \
+#     --namespace enbuild \
 #     --values examples/enbuild/values-vendor13-ib.yaml \
-#     --kube-context vendor13-ib \
-#     --set global.image.registry_credentials.username=<registry1 username> \
-#     --set global.image.registry_credentials.password=<registry1 password>
+#     --kube-context vendor13-ib
 #
-# Phase-5 deployment scope intentionally minimal: no DNS hostname, no SSO,
-# no IRSA. Access via `kubectl port-forward` and ENBUILD local-admin login.
-# Follow-on phases add DNS, Istio VirtualService, SSO, and Pod Identity for
-# the mq-consumer (the cluster's OIDC provider is already registered in IAM
-# at arn:aws-us-gov:iam::219533807077:oidc-provider/oidc.eks.us-gov-west-1.amazonaws.com/id/48EA4C3B972522B4A77C3643EAFE1512).
+# Reflects the live deployment: app images from the GitLab staging registry
+# (ahead of Iron Bank rebuilds), external HA Mongo, console exposed via an
+# externally-managed Istio VirtualService (so istio/ingress are off here).
+# =============================================================================
 
 global:
-  AppVersion: 1.0.30
-
-  # vendor13-ib storage: node groups are on EBS-backed EC2s. The cluster's
-  # default StorageClass needs to be confirmed — if absent or not gp3-compatible,
-  # leave this as gp2 (matches the GovCloud validation baseline).
-  # TODO: confirm default SC via: kubectl get sc
+  domain: ijuned.com                 # not used for routing here (console VS is external); kept = live
   storageClass: gp2
-
+  # vendor13-ib's private-registry admission webhook rewrites every pod's
+  # imagePullSecrets to "private-registry" (one Secret per namespace). Reference
+  # it directly so no registry credentials live in Helm values.
+  imagePullSecretName: private-registry
   image:
-    registry: registry1.dso.mil
+    registry: registry1.dso.mil      # default; per-service overrides below point at GitLab staging
     pullPolicy: Always
-    registry_credentials:
-      # Do NOT commit real credentials. Pass via --set on helm install:
-      #   --set global.image.registry_credentials.username=...
-      #   --set global.image.registry_credentials.password=...
-      username: REGISTRY1_USER_NAME
-      password: REGISTRY1_PASSWORD
-
-  # TODO: confirm the ingress/DNS hostname for ENBUILD on vendor13-ib.
-  # The existing public ingress gateway ELB is:
-  #   ib-vendor13-public-7cc82085da1ead0c.elb.us-gov-west-1.amazonaws.com
-  # A Route53 record or CNAME will need to point at that ELB.
-  # domain: enbuild.vendor13.<p1-domain>
-
-  # TODO: enable Istio integration once the DNS + VirtualService story is
-  # confirmed with Jeffrey. vendor13-ib has the public-ingressgateway at
-  # bigbang/public-ingressgateway ready to accept a VirtualService from
-  # the enbuild namespace.
-  # istio:
-  #   enabled: true
-  #   ingressGateway: bigbang/public-ingressgateway
+  istio:
+    enabled: false                   # console exposed via an externally-managed VirtualService
+  ingress:
+    enabled: false
 
 lightning_features:
   operations_lightning:
     headlamp: true
 
-mongodb:
-  enabled: true
-  mongo_root_username: "enbuild"
-  # WHY this is a sentinel string (DO NOT install with this value):
-  # The previous version of this file shipped mongo_root_password: "SuperSecret"
-  # as a placeholder. That placeholder was getting propagated into real
-  # installs (vendor13-ib initially shipped with it) because nothing made
-  # the operator aware they had to change it. The sentinel <REPLACE_BEFORE_INSTALL>
-  # is invalid for MongoDB and forces the install to fail loudly if the
-  # operator forgets to override it.
-  #
-  # Required at install time:
-  #   --set mongodb.mongo_root_password='<your secret>'
-  #
-  # For a longer-lived install, prefer wiring this to an externally-managed
-  # Kubernetes Secret (the chart's mongodb subchart supports existingSecret
-  # via additional values overrides; not enabled by default in this example).
-  mongo_root_password: "<REPLACE_BEFORE_INSTALL>"
-  image:
-    repository: ironbank/opensource/mongodb/mongodb
-    tag: 4.4.5
-
-rabbitmq:
-  image:
-    registry: registry1.dso.mil
-    repository: ironbank/bitnami/rabbitmq
-    tag: 3.12.14
-    pullSecrets:
-      - enbuild-ib-image-pull-secret
-
-enbuildUi:
-  image:
-    repository: ironbank/vivsoft/enbuild/frontend
-    tag: 1.0.30-5101868
-
+# --- App images ---------------------------------------------------------------
+# Currently pulled from the GitLab staging registry (ahead of the Iron Bank
+# rebuild cycle). Update the tags to the build under test at deploy time.
+# Iron Bank end-state: drop the per-service `registry:` overrides (uses the
+# global registry1.dso.mil) and switch repos to ironbank/vivsoft/enbuild/* via
+# the chart's internal image.repository.
 enbuildBk:
   image:
-    repository: ironbank/vivsoft/enbuild/backend
-    tag: 1.0.30-5101272
-  # P1 CCM Console — Headlamp K8sApiProxy fallback actor. alice@example.com
-  # is a member of the eks-final demo project, so requests with no
-  # X-Actor-Email/JWT pass TenancyGuard. Set explicitly here instead of
-  # relying on the controller hardcoded default so the operator-visible
-  # config matches the runtime behavior.
-  kubeProxyFallbackActor: "alice@example.com"
-  # clusterRpcTimeoutMs is set to "10000" by the chart default
-  # (charts/enbuild/values.yaml; lowered from 30000 in the 2026-06-11
-  # latency P0 — fail fast so one slow/dead agent RPC can't pin a console
-  # poll for 30s). Override here only to change it for this environment.
-  # bk probes off (2026-05-21) — until the BE RSS threshold bump
-  # (app.service.ts:30 250 MB -> 1 GB) ships in a new image, K8sApiProxy
-  # buffering of /openapi/v2 (11 MB Big Bang) climbs RSS past 250 MB and
-  # the probes fail, triggering a kubelet kill loop that breaks every
-  # spoke agent gRPC stream. Flip back to true once the source bump is
-  # live on this environment.
-  healthProbe:
-    enabled: false
-  # CCM-08b install-agent endpoint configuration (ADR-0029).
-  # Operator MUST pre-create the Secret before `helm install enbuild-ib`:
-  #   kubectl -n enbuild create secret generic enbuild-install-agent-creds \
-  #     --from-literal=GITLAB_TOKEN='<gitlab.com PAT>' \
-  #     --from-literal=ENBUILD_REPO1_USER='<repo1 user, e.g. cms553>' \
-  #     --from-literal=ENBUILD_REPO1_TOKEN='<repo1 token>'
-  # NOTES.txt prints this command at install time when existingSecret is unset.
+    registry: registry.gitlab.com
+    tag: c68767576146c0a011950ffaca2851c7031e0fdc
+  # --- operator credential Secret references (create these first) ---
+  encryptionKey:
+    existingSecret: enbuild-encryption-key      # key: ENCRYPTION_KEY
+  messaging:
+    existingSecret: enbuild-rabbitmq            # key: RABBIT_MQ_CONNECTION_STRING
   installAgent:
-    existingSecret: enbuild-install-agent-creds
+    existingSecret: enbuild-install-agent-creds # keys: GITLAB_TOKEN, ENBUILD_REPO1_USER/TOKEN
     hubUrl: "enbuild-ib-vendor13.staging.dso.mil:443"
-    # agentImageTag, chartRepo, chartRef — defaults from charts/enbuild/values.yaml
-    # apply (latest multi-engine agent SHA + platform-one-eks chart-skeleton ref).
-  # Hub-side gRPC ingress (closes #64). Host MUST match what the agent
-  # dials (ENBUILD_HUB_AGENT_TLS_SERVER_NAME). Empty default in values.yaml
-  # means no host attaches → agent dials get 404 from the UI catch-all.
+  # --- hub gRPC AgentGateway (how spoke agents reach this hub) ---
   grpcVirtualService:
     host: enbuild-ib-vendor13.staging.dso.mil
+    additionalHosts:
+      - enbuild-ib.staging.dso.mil
+      - enbuild-ib.vendor13.staging.dso.mil
+    gateway: istio-gateway/public-ingressgateway
+  kubeProxyFallbackActor: "devops@platform.one.mil"
+  # clusterRpcTimeoutMs not set → uses the chart default "10000" (2026-06-11
+  # latency P0 fail-fast). Override here only to change it for this environment.
+
+enbuildUi:
+  hostname: enbuild
+  image:
+    registry: registry.gitlab.com
+    tag: c68767576146c0a011950ffaca2851c7031e0fdc
 
 enbuildUser:
   image:
-    repository: ironbank/vivsoft/enbuild/enbuild-user
-    tag: 1.0.30-5098733
+    registry: registry.gitlab.com
+    tag: 8d473885fc7945166def7411dd1ba56954eb2404
 
 enbuildConsumer:
   image:
-    repository: ironbank/vivsoft/enbuild/enbuild-mq
-    tag: 1.0.30-5101532
-  # The Iron Bank MQ image works when npm resolves node from /usr/bin first.
-  # /opt/bitnami/git/bin must stay on PATH so createStack.js's shelled-out
-  # `git init && git push` (used to seed each new GitLab deployment project)
-  # resolves the git binary. Without it, every GitLab-flavored stack create
-  # fails with `/bin/sh: line 2: git: command not found` and
-  # `Gitlab couln't initialize project after 100 tries`. Surfaced 2026-05-11
-  # during CCM-05c RKE2 verification; see
-  # p1-cluster-mgmt/evidence/ccm-05c/06-enbuild-bugs-discovered-2026-05-11.md.
-  command:
-    - /bin/sh
-    - -lc
-  args:
-    - export PATH=/opt/bitnami/git/bin:/usr/bin:/usr/sbin:/bin:/sbin:/usr/local/bin && exec /usr/bin/npm run run:mq:all
-  # NOTE: no livenessProbe override needed — chart's default is now IB-safe
-  # (uses shell wrapper + /usr/bin/node). See enbuild-mq.yaml template comment
-  # for the full WHY. Set livenessProbe here only if you want a different
-  # shape (httpGet, tcpSocket, longer timeouts, etc.).
+    registry: registry.gitlab.com
+    tag: 2176a559c5979c7feccf0a2054bb25a5da481efa
+
+mongodb:
+  enabled: false
+  existingSecret: enbuild-mongo                 # keys: MONGO_INITDB_ROOT_USERNAME/PASSWORD/DATABASE, MONGO_SERVER
+  # External HA Mongo (the separate enbuild-ib-mongodb StatefulSet). The
+  # password is referenced via the env placeholder so no secret appears here.
+  mongo_endpoint_override: "mongodb://$(MONGO_INITDB_ROOT_USERNAME):$(MONGO_INITDB_ROOT_PASSWORD)@enbuild-ib-mongodb-0.enbuild-ib-mongo-headless.enbuild.svc.cluster.local:27017,enbuild-ib-mongodb-1.enbuild-ib-mongo-headless.enbuild.svc.cluster.local:27017,enbuild-ib-mongodb-2.enbuild-ib-mongo-headless.enbuild.svc.cluster.local:27017/?replicaSet=rs0&w=majority&readPreference=primaryPreferred&authSource=admin"
+
+rabbitmq:
+  enabled: true
+  auth:
+    username: admin                             # matches the existing broker PVC — do NOT change in place
+    existingPasswordSecret: enbuild-rabbitmq    # key: rabbitmq-password
+    existingErlangSecret: enbuild-rabbitmq      # key: rabbitmq-erlang-cookie
+  # image.* (registry1.dso.mil/ironbank/bitnami/rabbitmq:3.12.14) from chart defaults.
 
 headlamp:
   image:
     registry: registry1.dso.mil
     repository: ironbank/opensource/headlamp-k8s/headlamp
     tag: v0.36.0
-    pullPolicy: Always
   imagePullSecrets:
-    - name: enbuild-ib-image-pull-secret
-  # Spoke clusters surfaced in the Headlamp cluster picker. Each renders
-  # as a kubeconfig context routed through the BE K8sApiProxy
-  # (templates/headlamp-kubeconfigs-configmap.yaml). The agent on the
-  # spoke must be heartbeating for the proxy to reach it.
+    - name: private-registry
+  # Spoke clusters surfaced in the Headlamp picker (routed via BE K8sApiProxy).
   spokes:
     - ccm-vendor13-eks-final
-  # NOTE: the create-kubeconfig init container + emptyDir kubeconfig
-  # volume were removed 2026-05-19. Both are now chart-managed via
-  # templates/headlamp-kubeconfigs-configmap.yaml (covers `main` +
-  # every entry in `spokes` above). The headlamp subchart's
-  # parent-values volumes/volumeMounts in charts/enbuild/values.yaml
-  # mount the CM at /home/headlamp/.config/Headlamp/kubeconfigs/config.
-  config:
-    inCluster: true
-    baseURL: /headlamp
-    pluginsDir: ""
-    watchPlugins: false
-    extraArgs:
-      - -enable-dynamic-clusters
-  persistentVolumeClaim:
-    enabled: false
 
-# TODO: AWS credentials for the mq-consumer to call the AWS API when
-# provisioning downstream clusters. Options:
-#   1. Static keys from the ccm-vendor13-svc account stored in a
-#      Kubernetes Secret and mounted as env vars in enbuildConsumer.
-#   2. Pod Identity association on the enbuildConsumer ServiceAccount
-#      (requires eks:CreatePodIdentityAssociation — already in our
-#      ccm-vendor13-eks policy) with a role that has equivalent perms.
-# The second path is preferred for production; the first is the quickest
-# unblock. Revisit before the Phase 7 provisioning test.
+# Self-hosted SSO. The realm + bootstrap-admin password come from the
+# operator-created Secret enbuild-ib-keycloak-secrets (the default name for this
+# release; keys realm-enbuild.json + KC_BOOTSTRAP_ADMIN_PASSWORD) — never in git.
+keycloak:
+  enabled: true
 
-# TODO: GitLab token for ENBUILD to create/trigger repos. Interim: use
-# the in-cluster GitLab in the `gitlab` namespace on vendor13-ib.
-# Final: repo1.dso.mil once a P1 namespace is provisioned for us
-# (follow-up item with Jeffrey).
+# Hub/spoke mTLS — recreate the enbuild-hub-issuer CA ClusterIssuer pointing at
+# the existing CA secret (restores cert renewal; does NOT rotate the CA).
+pki:
+  recreateHubIssuer: true

@@ -68,9 +68,9 @@ spec:
           name: headlamp-brand
           readOnly: true
 {{- end }}
-{{- if .Values.global.image.registry_credentials }}
+{{- if or .Values.global.imagePullSecretName .Values.global.image.registry_credentials }}
       imagePullSecrets:
-        - name: {{ .Release.Name }}-image-pull-secret
+        - name: {{ .Values.global.imagePullSecretName | default (printf "%s-image-pull-secret" .Release.Name) }}
 {{- end }}
       volumes:
       - configMap:

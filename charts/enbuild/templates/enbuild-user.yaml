@@ -29,10 +29,19 @@ spec:
           value: mongodb://$(MONGO_INITDB_ROOT_USERNAME):$(MONGO_INITDB_ROOT_PASSWORD)@$(MONGO_SERVER)
           {{- end }}
         envFrom:
+        {{- /* Mongo creds: operator Secret when mongodb.existingSecret set, else chart Secret. */}}
         - secretRef:
-            name: {{ .Release.Name }}-mongo-secrets
+            name: {{ .Values.mongodb.existingSecret | default (printf "%s-mongo-secrets" .Release.Name) }}
         - secretRef:
             name: {{ .Release.Name }}-backend-secret
+        {{- with (default (dict) .Values.enbuildBk.encryptionKey).existingSecret }}
+        - secretRef:
+            name: {{ . }}
+        {{- end }}
+        {{- with (default (dict) .Values.enbuildBk.messaging).existingSecret }}
+        - secretRef:
+            name: {{ . }}
+        {{- end }}
         # Image registry: per-service `enbuildUser.image.registry` override
         # wins over the chart-wide `global.image.registry`. Unset by default →
         # falls back to global. See enbuild-mq.yaml for the use-case writeup.
@@ -69,9 +78,9 @@ spec:
           runAsGroup: 1000
           runAsNonRoot: true
           runAsUser: 1000
-{{- if .Values.global.image.registry_credentials }}
+{{- if or .Values.global.imagePullSecretName .Values.global.image.registry_credentials }}
       imagePullSecrets:
-        - name: {{ .Release.Name }}-image-pull-secret
+        - name: {{ .Values.global.imagePullSecretName | default (printf "%s-image-pull-secret" .Release.Name) }}
 {{- end }}
 ---
 apiVersion: v1
