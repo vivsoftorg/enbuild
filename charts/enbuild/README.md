@@ -1,213 +1,112 @@
-# [ENBUILD HELM CHART](https://github.com/vivsoftorg/enbuild_helm_chart.git)
+# ENBUILD Helm Chart
 
-This helm chart installs the [ENBUILD application](https://gitlab.com/enbuild-staging/vivsoft-platform-ui).
+Installs the [ENBUILD hub platform](https://gitlab.com/enbuild-staging/vivsoft-platform-ui) —
+the control plane for ENBUILD's hub-and-spoke multi-cluster manager: the backend
+gRPC API, the console UI, the mq launch worker, the user service, MongoDB and
+RabbitMQ, the embedded Headlamp cluster console, and (optionally) self-hosted
+Keycloak SSO and the hub/spoke PKI ClusterIssuer.
 
-> **Branches & release channels:** P1 CCM consumers iterate on the
-> long-lived trunk branch `feat/p1ccm-enbuild-helm-trunk`, which
-> publishes chart artifacts as GitHub Release assets under
-> `enbuild-trunk-<version>` tags — separate from this `main` channel.
-> See [`docs/P1CCM-TRUNK.md`](../../docs/P1CCM-TRUNK.md) for the
-> trunk model + how to consume those releases.
+> **This chart is opinionated (0.1.0+).** The platform decides *how* it runs; you
+> bind only *where* it runs. The customer-facing surface is ~30 values — the
+> entries tagged `[CUSTOMER]` in [`values.yaml`](values.yaml). Everything tagged
+> `[INTERNAL]` is platform wiring with one correct value; don't override it.
+> Full deploy walkthrough + the exact `kubectl` Secret commands:
+> [`docs/OPERATOR-DEPLOYMENT-GUIDE.md`](../../docs/OPERATOR-DEPLOYMENT-GUIDE.md).
+> Why the surface is small: [`docs/VALUES-OPINIONATION-AUDIT.md`](../../docs/VALUES-OPINIONATION-AUDIT.md).
+
+> **Branches & release channels:** P1 CCM consumers track the long-lived trunk
+> branch `feat/p1ccm-enbuild-helm-trunk`, published as GitHub Release assets
+> tagged `enbuild-trunk-<version>` — separate from the `main` channel. See
+> [`docs/P1CCM-TRUNK.md`](../../docs/P1CCM-TRUNK.md).
 >
-> **Hitting a problem?** See [TROUBLESHOOTING.md](TROUBLESHOOTING.md) — covers the most common install issues (UI proxy returning HTML 404 to API calls, mq-consumer restart loop, ImagePullBackOff, MongoDB password sentinel, etc.) and which of them are chart-side vs cluster-side.
->
-> **Verify a fresh install:** after `helm install`, run `helm test <release> -n <namespace>` to exercise the nginx reverse-proxy chain end to end.
+> **Hitting a problem?** See [TROUBLESHOOTING.md](TROUBLESHOOTING.md).
 
-# Installing the Chart
+---
 
-This Helm chart repository enables you to install a ENBUILD
-Helm chart directly from it into your Kubernetes cluster. Please refer to the
-[ENBUILD documentation](https://vivsoftorg.github.io/enbuild/) for all
-the additional details required.
+## 1. Prerequisites — create the bootstrap Secrets first
+
+Credentials are **never** placed in Helm values. Pre-create these Kubernetes
+Secrets in the release namespace **before** installing. (Operational credentials —
+GitLab/SCM connections for catalogs, cloud creds for cluster launches — are
+entered later **in the ENBUILD admin UI**, not in this chart.)
+
+| Secret (default name) | Keys | Powers | Required |
+|---|---|---|---|
+| `enbuild-encryption-key` | `ENCRYPTION_KEY` | at-rest data encryption | yes |
+| `enbuild-mongo` | `MONGO_INITDB_ROOT_USERNAME/PASSWORD/DATABASE`, `MONGO_SERVER` | MongoDB auth | yes |
+| `enbuild-rabbitmq` | `rabbitmq-password`, `rabbitmq-erlang-cookie`, `RABBIT_MQ_CONNECTION_STRING` | broker auth | yes (bundled broker) |
+| `enbuild-install-agent-creds` | `GITLAB_TOKEN`, `ENBUILD_REPO1_USER`, `ENBUILD_REPO1_TOKEN` | agent installs onto spokes + Iron Bank pulls | yes |
+| image pull secret (`global.imagePullSecretName`) | `.dockerconfigjson` | pulling images from a private/Iron Bank registry | yes (private registry) |
+| `<release>-keycloak-secrets` | `realm-enbuild.json`, `KC_BOOTSTRAP_ADMIN_PASSWORD` | self-hosted Keycloak SSO | only if `keycloak.enabled` |
+
+`kubectl create secret` commands for each are in
+[`docs/OPERATOR-DEPLOYMENT-GUIDE.md`](../../docs/OPERATOR-DEPLOYMENT-GUIDE.md).
+
+## 2. Installing
+
+**P1 CCM (trunk channel):**
 
 ```shell
-# Let helm the command line tool know about a Helm chart repository
-# that we decide to name enbuild.
-❯ helm repo add vivsoft https://vivsoftorg.github.io/enbuild
+# download the published chart artifact
+gh release download enbuild-trunk-<version> \
+  --repo vivsoftorg/enbuild --pattern '*.tgz' -D /tmp
 
-# Update the Helm chart repository.
-❯ helm repo update vivsoft
-
-# Search for the ENBUILD Helm chart in the enbuild Helm chart repository.
-❯ helm search repo  vivsoft/enbuild
-NAME           	CHART VERSION	APP VERSION	DESCRIPTION
-vivsoft/enbuild	0.0.12        	1.0.10      	A Helm chart for ENBUILD
-
-# Simplified example on how to install a Helm chart from a Helm chart repository
-# named vivsoft in a namespace named enbuild. See the Helm chart's documentation for additional details
-# required.
-❯ helm upgrade --install  enbuild vivsoft/enbuild --namespace enbuild --create-namespace 
-
-# To install a specific version of the Helm chart.
-❯ helm upgrade --install  enbuild vivsoft/enbuild --namespace enbuild --create-namespace  --version 0.0.12
+# install / upgrade
+helm upgrade --install enbuild-ib /tmp/enbuild-<version>.tgz \
+  --namespace enbuild --create-namespace \
+  --values my-values.yaml
 ```
 
-Iron Bank examples:
+Verify the reverse-proxy chain end to end after install:
 
-- Base Iron Bank install: `examples/enbuild/quick_install_ib.yaml`
-- Iron Bank install with Headlamp enabled: `examples/enbuild/quick_install_ib_headlamp.yaml`
-- Headlamp example notes: `examples/enbuild/quick_install_ib_headlamp.md`
-
-The Iron Bank examples assume the Helm release name is `enbuild-ib`, which means the generated image pull secret is `enbuild-ib-image-pull-secret`. If you install with a different release name, update the RabbitMQ and Headlamp pull secret references in the example values accordingly.
-
-# Uninstalling the Chart
-
-To uninstall/delete the `enbuild` deployment:
-
-```bash
-❯ helm delete --namespace enbuild enbuild
+```shell
+helm test <release> -n <namespace>
 ```
 
-## Parameters
+## 3. Configuration — the customer surface
 
-### Global parameters
+Set only what binds the platform to your environment; everything else has a
+correct default baked in. The complete, authoritative list is the `[CUSTOMER]`
+entries in [`values.yaml`](values.yaml). The essential ones:
 
-| Name                                         | Description                                                                                                                                                                                      | Value                 |
-| -------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | --------------------- |
-| `global.AppVersion`                          | [default: ""] Provide custom appVersion, to override the default one. All the ENBUILD images will be of the same version. To use indidual tag for each service set the tag on per service basis. | `""`                  |
-| `global.domain`                              | What domain to use to expose the ENBUILD using istio or Ingress                                                                                                                                  | `ijuned.com`          |
-| `global.disable_tls_gitlab`                  | Set to true if you are using self-signed certificates                                                                                                                                            | `false`               |
-| `global.ingress.enabled`                     | Should we create the Ingress Resources ?                                                                                                                                                         | `false`               |
-| `global.ingress.tls`                         | Is Ingress TLS enabled ?                                                                                                                                                                         | `false`               |
-| `global.ingress.tls_secret`                  | If Ingress is TLS enabled, Provide the Secret for the TLS Certificate.                                                                                                                           | `""`                  |
-| `global.ingress.classname`                   | Ingress classname if enabled.                                                                                                                                                                    | `""`                  |
-| `global.ingress.annotations`                 | Ingress annotations if enabled.                                                                                                                                                                  | `[]`                  |
-| `global.istio.enabled`                       | Should we create the Istio Resources ?                                                                                                                                                           | `false`               |
-| `global.istio.gateway`                       | Istio gateway to use for creating Virtual Service.                                                                                                                                               | `istio-system/main`   |
-| `global.image.registry`                      | Container registry to pull images from                                                                                                                                                           | `registry.gitlab.com` |
-| `global.image.pullPolicy`                    | Container imagePullPolicy                                                                                                                                                                        | `Always`              |
-| `global.storageClass`                        | Explicit StorageClass to use for stateful dependencies when the cluster has no default StorageClass                                                                                              | `""`                  |
-| `global.image.registry_credentials`          | if the image.registry is private container registry, provide the credentials                                                                                                                     | `{}`                  |
-| `global.image.registry_credentials.username` | Container registry Username                                                                                                                                                                      | `""`                  |
-| `global.image.registry_credentials.password` | Container registry password                                                                                                                                                                      | `""`                  |
+| Path | What it binds | Example |
+|---|---|---|
+| `global.domain` | external DNS suffix for hub hosts + cert SANs | `apps.example.mil` |
+| `global.istio.enabled` / `.gateway` | mesh edge (or use `global.ingress.*`) | `true` / `istio-system/main` |
+| `global.image.registry` | registry first-party images pull from (air-gap) | `registry1.dso.mil` |
+| `global.imagePullSecretName` | pre-created `dockerconfigjson` Secret for private pulls | `private-registry` |
+| `global.storageClass` | StorageClass for stateful deps (if no cluster default) | `gp2` |
+| `enbuildUi.hostname` | console FQDN = `hostname.domain` | `enbuild` |
+| `enbuildBk.grpcVirtualService.host` / `.gateway` | how spoke agents reach this hub's gRPC | `enbuild.apps.example.mil` / `istio-gateway/public-ingressgateway` |
+| `enbuildBk.installAgent.hubUrl` / `.existingSecret` | `host:443` agents dial back to + the admin-creds Secret | `enbuild.apps.example.mil:443` / `enbuild-install-agent-creds` |
+| `enbuildBk.encryptionKey.existingSecret` | at-rest key Secret | `enbuild-encryption-key` |
+| `enbuildBk.messaging.existingSecret` | broker connection Secret | `enbuild-rabbitmq` |
+| `mongodb.enabled` / `.existingSecret` / `.mongo_endpoint_override` | bundle vs external Mongo (always required either way) + creds | `false` / `enbuild-mongo` / external URI |
+| `rabbitmq.auth.existingPasswordSecret` / `.existingErlangSecret` | broker creds | `enbuild-rabbitmq` |
+| `keycloak.enabled` | deploy bundled SSO (else use an external IdP) | `true` |
+| `pki.recreateHubIssuer` | one-shot restore of a missing hub mTLS ClusterIssuer | `false` |
+| `<svc>.image.tag` | pin a service image; empty tracks the chart appVersion | unset |
 
-### ENBUILD Lightning Features to be enabled
+A complete filled-out example for a real environment:
+[`examples/enbuild/values-vendor13-ib.yaml`](../../examples/enbuild/values-vendor13-ib.yaml).
 
-| Name                                                  | Description                      | Value   |
-| ----------------------------------------------------- | -------------------------------- | ------- |
-| `lightning_features.develop_lightning.application`    | Enable Bolt deployment           | `false` |
-| `lightning_features.develop_lightning.models`         | Enable JupyterHub deployment     | `false` |
-| `lightning_features.secure_lightning.ctf`             | Enable CTF deployment            | `false` |
-| `lightning_features.deploy_lightning.infra_lightning` | Enable Data Lightning deployment | `false` |
-| `lightning_features.deploy_lightning.data_lightning`  | Enable Data Lightning deployment | `false` |
-| `lightning_features.deploy_lightning.ai_lightning`    | Enable AI Lightning deployment   | `false` |
-| `lightning_features.operations_lightning.headlamp`    | Enable Headlamp deployment       | `false` |
-| `lightning_features.operations_lightning.monitoring`  | Enable Loki Stack deployment     | `false` |
+## 4. What this chart deploys
 
-### ENBUILD RabbitMQ parameters
+backend (gRPC API) · console UI · mq launch worker · user service · MongoDB
+(bundled single-node *or* point at external/HA) · RabbitMQ · Headlamp cluster
+console (optional, `lightning_features.operations_lightning.headlamp`) · Keycloak
+SSO (optional, `keycloak.enabled`) · hub PKI ClusterIssuer (optional,
+`pki.recreateHubIssuer`).
 
-| Name                         | Description                                                          | Value                  |
-| ---------------------------- | -------------------------------------------------------------------- | ---------------------- |
-| `rabbitmq.enabled`           | Set to false to use existing RabbitMQ                                | `true`                 |
-| `rabbitmq.replicaCount`      | RabbitMQ replicaCount                                                | `1`                    |
-| `rabbitmq.auth.username`     | RabbitMQ username                                                    | `admin`                |
-| `rabbitmq.auth.password`     | RabbitMQ password                                                    | `SuperSecret`          |
-| `rabbitmq.auth.erlangCookie` | RabbitMQ erlangCookie                                                | `lamba`                |
-| `rabbitmq.host`              | If `rabbitmq.enabled` is false , provide the right rabbitmq endpoint | `""`                   |
-| `rabbitmq.queue_prefix`      | Queue Prefix for all RabbitMQ Queues                                 | `enbuild`              |
-| `rabbitmq.image.registry`    | RabbitMQ image registry                                              | `public.ecr.aws`       |
-| `rabbitmq.image.repository`  | RabbitMQ image repository                                            | `bitnami/rabbitmq`     |
-| `rabbitmq.image.tag`         | RabbitMQ image tag                                                   | `3.11.13-debian-11-r0` |
+> Removed in 0.1.0: JupyterHub, open-webui/Ollama, the AI proxy, CTF, Bolt, and
+> loki-stack (they were disabled in every environment). Deploy any of those as
+> separate charts if needed.
 
-### ENBUILD Database parameters
+## 5. Uninstalling
 
-| Name                          | Description                                                                                                                    | Value                                         |
-| ----------------------------- | ------------------------------------------------------------------------------------------------------------------------------ | --------------------------------------------- |
-| `mongodb.enabled`             | Set to true to Deploy the MongoDB.                                                                                             | `false`                                       |
-| `mongodb.mongo_root_username` | DB username. If `mongodb.enabled` this is used to to set the username. Else this is username for existing Cosmos or DocumentDB | `""`                                          |
-| `mongodb.mongo_root_password` | DB Password. If `mongodb.enabled` this is used to to set the password. Else this is password for existing Cosmos or DocumentDB | `""`                                          |
-| `mongodb.mongo_server`        | If `mongodb.enabled` is false , provide the right cosmosDB/DocumentDB endpoint                                                 | `""`                                          |
-| `mongodb.image.repository`    | Container repository for mongodb Container                                                                                     | `enbuild-staging/vivsoft-platform-ui/mongodb` |
-| `mongodb.image.tag`           | Container tag for mongodb Container                                                                                            | `4.4.5`                                       |
-| `mongodb.storageClassName`    | Explicit StorageClass for MongoDB PVCs. If empty, uses `global.storageClass`                                                   | `""`                                          |
+```shell
+helm uninstall <release> --namespace <namespace>
+```
 
-### ENBUILD UI Services parameters
-
-| Name                         | Description                                                                      | Value                                                         |
-| ---------------------------- | -------------------------------------------------------------------------------- | ------------------------------------------------------------- |
-| `enbuildUi.image.repository` | Container repository for enbuildUi                                               | `enbuild-staging/vivsoft-platform-ui/enbuild-frontend`        |
-| `enbuildUi.image.tag`        | Container image tag. Skip to use the HelmChart appVersion as Image Tag           | `undefined`                                                   |
-| `enbuildUi.replicas`         | Container enbuildUI Replicas                                                     | `1`                                                           |
-| `enbuildUi.service_type`     | enbuildUI service_type                                                           | `ClusterIP`                                                   |
-| `enbuildUi.node_port`        | enbuildUI node_port                                                              | `30080`                                                       |
-| `enbuildUi.hostname`         | enbuild service hostname. `enbuildUi.hostname`.`global.domain` becomes your FQDN | `enbuild`                                                     |
-| `enbuildUi.kiali_url`        | kiali_url                                                                        | `/kiali/`                                                     |
-| `enbuildUi.grafana_url`      | grafana_url                                                                      | `/grafana/d/os6Bh8Omk/kubernetes-cluster?orgId=1&refresh=30s` |
-| `enbuildUi.loki_url`         | loki_url                                                                         | `/grafana/d/liz0yRCZz/logs-app?orgId=1`                       |
-| `enbuildUi.kubecost_url`     | kubecost_url                                                                     | `kubecost/overview.html`                                      |
-
-### ENBUILD Backend Services parameters
-
-| Name                         | Description                                                            | Value                                                 |
-| ---------------------------- | ---------------------------------------------------------------------- | ----------------------------------------------------- |
-| `enbuildBk.image.repository` | Container repository for enbuildBk                                     | `enbuild-staging/vivsoft-platform-ui/enbuild-backend` |
-| `enbuildBk.image.tag`        | Container image tag. Skip to use the HelmChart appVersion as Image Tag | `undefined`                                           |
-| `enbuildBk.replicas`         | Container enbuildBk Replicas                                           | `1`                                                   |
-| `enbuildBk.service_type`     | enbuildBk service_type                                                 | `ClusterIP`                                           |
-| `enbuildBk.encryption_key`   | encryption_key to be used by Backend                                   | `encryption_key`                                      |
-
-### ENBUILD USER Services parameters
-
-| Name                           | Description                                                            | Value                                              |
-| ------------------------------ | ---------------------------------------------------------------------- | -------------------------------------------------- |
-| `enbuildUser.image.repository` | Container repository for enbuildUser                                   | `enbuild-staging/vivsoft-platform-ui/enbuild-user` |
-| `enbuildUser.image.tag`        | Container image tag. Skip to use the HelmChart appVersion as Image Tag | `undefined`                                        |
-| `enbuildUser.replicas`         | Container enbuildUser Replicas                                         | `1`                                                |
-| `enbuildUser.service_type`     | enbuildUser service_type                                               | `ClusterIP`                                        |
-
-### ENBUILD Consumer Services parameters
-
-| Name                               | Description                                                            | Value                                                     |
-| ---------------------------------- | ---------------------------------------------------------------------- | --------------------------------------------------------- |
-| `enbuildConsumer.image.repository` | Container repository for enbuildConsumer                               | `enbuild-staging/vivsoft-platform-ui/enbuild-mq-consumer` |
-| `enbuildConsumer.image.tag`        | Container image tag. Skip to use the HelmChart appVersion as Image Tag | `undefined`                                               |
-| `enbuildConsumer.replicas`         | Container enbuildConsumer Replicas                                     | `1`                                                       |
-| `enbuildConsumer.command`          | Command override for the MQ consumer container                         | `["npm"]`                                                 |
-| `enbuildConsumer.args`             | Args override for the MQ consumer container                            | `["run","run:mq:all"]`                                    |
-
-### ENBUILD AI Services parameters
-
-| Name                                   | Description                                                                         | Value                                            |
-| -------------------------------------- | ----------------------------------------------------------------------------------- | ------------------------------------------------ |
-| `enbuildAI.image.repository`           | Container repository for enbuildAI                                                  | `enbuild-staging/vivsoft-platform-ui/enbuild-ai` |
-| `enbuildAI.image.tag`                  | Container image tag. Skip to use the HelmChart appVersion as Image Tag              | `undefined`                                      |
-| `enbuildAI.replicas`                   | Container enbuilAI Replicas                                                         | `1`                                              |
-| `enbuildAI.service_type`               | enbuildAI service_type                                                              | `ClusterIP`                                      |
-| `enbuildAI.api_key`                    | api_key [default: "dummy"] for OpenAI service if you planning to use OpenAI service | `dummy`                                          |
-| `enbuildAI.ollama.enabled`             | model_name for OpenAI service.                                                      | `"ollama/llama3.2"`                              |
-| `enbuildAI.model_name`                 | model_name for OpenAI service.                                                      | `"ollama/llama3.2"`                              |
-| `enbuildAI.ollama_endpoint`            | ollama_endpoint for OpenAI service.                                                 | `"http://open-webui-ollama:11434"`               |
-| `enbuildAI.serviceAccount.create`      | Create a dedicated service account for AI pod                                       | `false`                                          |
-| `enbuildAI.serviceAccount.name`        | Name of service account. If empty, uses release name pattern                        | `""`                                             |
-| `enbuildAI.serviceAccount.annotations` | Annotations for AI service account (e.g., for IRSA)                                 | `{}`                                             |
-
-### enbuildBolt Services parameters
-
-| Name                           | Description                                                            | Value                              |
-| ------------------------------ | ---------------------------------------------------------------------- | ---------------------------------- |
-| `enbuildBolt.image.repository` | Container repository for enbuildBolt                                   | `ghcr.io/vivsoftorg/dev-lightning` |
-| `enbuildBolt.image.tag`        | Container image tag. Skip to use the HelmChart appVersion as Image Tag | `v1.0.0`                           |
-| `enbuildBolt.replicas`         | Container enbuildBolt Replicas                                         | `1`                                |
-| `enbuildBolt.service_type`     | enbuildBolt service_type                                               | `ClusterIP`                        |
-
-### enbuildCTF Services parameters
-
-| Name                                    | Description                                                            | Value                                                                       |
-| --------------------------------------- | ---------------------------------------------------------------------- | --------------------------------------------------------------------------- |
-| `enbuildCTF.image.repository`           | Container repository for enbuildCTF                                    | `enbuild-staging/vivsoft-platform-ui/enbuild-ctf`                           |
-| `enbuildCTF.image.tag`                  | Container image tag. Skip to use the HelmChart appVersion as Image Tag | `undefined`                                                                 |
-| `enbuildCTF.replicas`                   | Container enbuildCTF Replicas                                          | `1`                                                                         |
-| `enbuildCTF.service_type`               | enbuildCTF service_type                                                | `ClusterIP`                                                                 |
-| `enbuildCTF.debug`                      | Set to true to enable debug mode in CTF backend                        | `true`                                                                      |
-| `enbuildCTF.cors_origins`               | Allowed CORS origins for CTF backend                                   | `['http://localhost:5173','http://localhost:5000','http://localhost:3000']` |
-| `enbuildCTF.log_level`                  | Log level for CTF backend                                              | `DEBUG`                                                                     |
-| `enbuildCTF.aws_region`                 | AWS region for CTF backend to use AWS services like S3                 | `us-east-1`                                                                 |
-| `enbuildCTF.resources.requests.memory`  | Memory resource request for CTF backend                                | `1Gi`                                                                       |
-| `enbuildCTF.resources.requests.cpu`     | CPU resource request for CTF backend                                   | `500m`                                                                      |
-| `enbuildCTF.resources.limits.memory`    | Memory resource limit for CTF backend                                  | `1Gi`                                                                       |
-| `enbuildCTF.resources.limits.cpu`       | CPU resource limit for CTF backend                                     | `1`                                                                         |
-| `enbuildCTF.serviceAccount.create`      | Create a dedicated service account for CTF pod                         | `false`                                                                     |
-| `enbuildCTF.serviceAccount.name`        | Name of service account. If empty, uses release name pattern           | `""`                                                                        |
-| `enbuildCTF.serviceAccount.annotations` | Annotations for CTF service account (e.g., for IRSA)                   | `{}`                                                                        |
-
-<!-- # ------ ---------->
+Stateful data (MongoDB/RabbitMQ volumes, operator Secrets) is intentionally not
+removed; clean those up separately if you mean to fully tear down.

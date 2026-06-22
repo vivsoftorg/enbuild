@@ -103,10 +103,15 @@ rabbitmq:
   queue_prefix: enbuild
 
 ## @section Database (MongoDB)
-# Launch/catalog state store. Live runs EXTERNAL HA Mongo (enabled=false) via
-# mongo_endpoint_override; enabled=true gives a dev single-node StatefulSet.
+# The platform ALWAYS needs MongoDB (launch/catalog state store). `enabled` does
+# NOT turn Mongo on/off — it only chooses WHERE it runs:
+#   enabled: true  -> the chart deploys a bundled single-node Mongo (dev/small).
+#   enabled: false -> you run Mongo yourself (managed / HA replica set / DocumentDB)
+#                     and point at it via `mongo_endpoint_override` below.
+# Either way Mongo must exist. Live vendor13-ib uses false (external 3-node HA).
 mongodb:
-  # [CUSTOMER] false = external/managed Mongo (prod HA); true = bundled dev Mongo.
+  # [CUSTOMER] true = bundle a single-node Mongo; false = use external Mongo (set
+  # existingSecret + mongo_endpoint_override). NOT a Mongo on/off switch.
   enabled: false
   # [CUSTOMER] Operator Secret with MONGO_INITDB_ROOT_USERNAME /
   # MONGO_INITDB_ROOT_PASSWORD / MONGO_INITDB_DATABASE / MONGO_SERVER. REQUIRED.
@@ -249,7 +254,12 @@ enbuildConsumer:
 # Renders <release>-keycloak Deployment/Service when enabled. The realm + admin
 # password come from an OPERATOR-PRE-CREATED Secret — never from these values.
 keycloak:
-  # [CUSTOMER] Deploy the bundled Keycloak (SSO login). Default off; enable per-env.
+  # [CUSTOMER] Run the platform's own SSO?
+  #   true  -> the chart deploys a bundled Keycloak (<release>-keycloak) used for
+  #            console login; requires the realm/admin Secret below.
+  #   false -> NO bundled SSO is deployed. You must then either point the platform
+  #            at an EXTERNAL Keycloak/IdP, or use the dev-only local-account mode
+  #            (global.auth_plugin: local). With neither, console SSO login won't work.
   enabled: false
   # [CUSTOMER] Air-gap / Iron Bank image rebind + version pin.
   image: registry1.dso.mil/ironbank/opensource/keycloak/keycloak:25.0.6
@@ -269,9 +279,13 @@ keycloak:
 
 ## @section PKI (hub/spoke cert-manager — Design A self-signed, ADR-0004)
 pki:
-  # [CUSTOMER] One-shot: recreate the enbuild-hub-issuer CA ClusterIssuer pointing
-  # at the EXISTING CA secret (restores cert renewal; does NOT regenerate the CA).
-  # Set true for one roll when the issuer is missing, then back to false.
+  # [CUSTOMER] Leave FALSE in normal operation — the cert-manager
+  # `enbuild-hub-issuer` ClusterIssuer (which renews the hub/spoke mTLS certs)
+  # already exists and the chart leaves it alone (no-op).
+  # Set TRUE for a SINGLE roll ONLY if that ClusterIssuer has gone missing: the
+  # chart then re-creates it pointing at the EXISTING CA secret (caSecretName) to
+  # restore cert renewal. It does NOT regenerate the CA or rotate any cert. After
+  # that one roll, set it back to false.
   recreateHubIssuer: false
   # [INTERNAL] fixed cert-manager object names for the hub gRPC/pull-agent mTLS fabric.
   hubIssuerName: enbuild-hub-issuer
