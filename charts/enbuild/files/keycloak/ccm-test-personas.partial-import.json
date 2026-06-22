@@ -1,0 +1,199 @@
+{
+  "_comment": "CCM RBAC/tenancy TEST PERSONAS \u2014 Keycloak partial import for realm 'enbuild'. Non-secret eval artifact. Apply with: kcadm.sh create partialImport -r enbuild -s ifResourceExists=SKIP -f ccm-test-personas.partial-import.json. All personas share the documented test password (see docs/TEST-PERSONAS.md) \u2014 CHANGE before any non-eval use.",
+  "ifResourceExists": "SKIP",
+  "groups": [
+    {
+      "name": "enbuild",
+      "path": "/enbuild",
+      "subGroups": [
+        {
+          "name": "platform-admins",
+          "path": "/enbuild/platform-admins"
+        },
+        {
+          "name": "projects",
+          "path": "/enbuild/projects",
+          "subGroups": [
+            {
+              "name": "alpha",
+              "path": "/enbuild/projects/alpha",
+              "subGroups": [
+                {
+                  "name": "viewer",
+                  "path": "/enbuild/projects/alpha/viewer"
+                },
+                {
+                  "name": "member",
+                  "path": "/enbuild/projects/alpha/member"
+                },
+                {
+                  "name": "maintainer",
+                  "path": "/enbuild/projects/alpha/maintainer"
+                },
+                {
+                  "name": "owner",
+                  "path": "/enbuild/projects/alpha/owner"
+                }
+              ]
+            },
+            {
+              "name": "bravo",
+              "path": "/enbuild/projects/bravo",
+              "subGroups": [
+                {
+                  "name": "viewer",
+                  "path": "/enbuild/projects/bravo/viewer"
+                },
+                {
+                  "name": "member",
+                  "path": "/enbuild/projects/bravo/member"
+                },
+                {
+                  "name": "maintainer",
+                  "path": "/enbuild/projects/bravo/maintainer"
+                },
+                {
+                  "name": "owner",
+                  "path": "/enbuild/projects/bravo/owner"
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "users": [
+    {
+      "username": "ccm-admin@p1.mil",
+      "email": "ccm-admin@p1.mil",
+      "firstName": "CCM",
+      "lastName": "PlatformAdmin",
+      "emailVerified": true,
+      "enabled": true,
+      "credentials": [
+        {
+          "type": "password",
+          "value": "CcmRole!Demo2026",
+          "temporary": false
+        }
+      ],
+      "groups": [
+        "/enbuild/platform-admins"
+      ],
+      "realmRoles": []
+    },
+    {
+      "username": "ccm-alpha-viewer@p1.mil",
+      "email": "ccm-alpha-viewer@p1.mil",
+      "firstName": "Alpha",
+      "lastName": "Viewer",
+      "emailVerified": true,
+      "enabled": true,
+      "credentials": [
+        {
+          "type": "password",
+          "value": "CcmRole!Demo2026",
+          "temporary": false
+        }
+      ],
+      "groups": [
+        "/enbuild/projects/alpha/viewer"
+      ],
+      "realmRoles": []
+    },
+    {
+      "username": "ccm-alpha-member@p1.mil",
+      "email": "ccm-alpha-member@p1.mil",
+      "firstName": "Alpha",
+      "lastName": "Member",
+      "emailVerified": true,
+      "enabled": true,
+      "credentials": [
+        {
+          "type": "password",
+          "value": "CcmRole!Demo2026",
+          "temporary": false
+        }
+      ],
+      "groups": [
+        "/enbuild/projects/alpha/member"
+      ],
+      "realmRoles": []
+    },
+    {
+      "username": "ccm-alpha-maintainer@p1.mil",
+      "email": "ccm-alpha-maintainer@p1.mil",
+      "firstName": "Alpha",
+      "lastName": "Maintainer",
+      "emailVerified": true,
+      "enabled": true,
+      "credentials": [
+        {
+          "type": "password",
+          "value": "CcmRole!Demo2026",
+          "temporary": false
+        }
+      ],
+      "groups": [
+        "/enbuild/projects/alpha/maintainer"
+      ],
+      "realmRoles": []
+    },
+    {
+      "username": "ccm-alpha-owner@p1.mil",
+      "email": "ccm-alpha-owner@p1.mil",
+      "firstName": "Alpha",
+      "lastName": "Owner",
+      "emailVerified": true,
+      "enabled": true,
+      "credentials": [
+        {
+          "type": "password",
+          "value": "CcmRole!Demo2026",
+          "temporary": false
+        }
+      ],
+      "groups": [
+        "/enbuild/projects/alpha/owner"
+      ],
+      "realmRoles": []
+    },
+    {
+      "username": "ccm-bravo-owner@p1.mil",
+      "email": "ccm-bravo-owner@p1.mil",
+      "firstName": "Bravo",
+      "lastName": "Owner",
+      "emailVerified": true,
+      "enabled": true,
+      "credentials": [
+        {
+          "type": "password",
+          "value": "CcmRole!Demo2026",
+          "temporary": false
+        }
+      ],
+      "groups": [
+        "/enbuild/projects/bravo/owner"
+      ],
+      "realmRoles": []
+    },
+    {
+      "username": "ccm-no-access@p1.mil",
+      "email": "ccm-no-access@p1.mil",
+      "firstName": "No",
+      "lastName": "Access",
+      "emailVerified": true,
+      "enabled": true,
+      "credentials": [
+        {
+          "type": "password",
+          "value": "CcmRole!Demo2026",
+          "temporary": false
+        }
+      ],
+      "groups": [],
+      "realmRoles": []
+    }
+  ]
+}
