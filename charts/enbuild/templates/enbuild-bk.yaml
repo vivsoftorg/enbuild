@@ -180,6 +180,16 @@ spec:
             name: {{ . }}
         {{- end }}
         {{- /*
+          SSO / Keycloak SECRET auth keys. Operator pre-creates a Secret with
+          KEYCLOAK_CLIENT_SECRET + KEYCLOAK_ADMIN_CLIENT_SECRET (and optionally
+          KEYCLOAK_REALM_PUBLIC_KEY). Non-secret Keycloak config rides
+          backend-secret. Recommended for production (authMechanism=keycloak).
+        */ -}}
+        {{- with (default (dict) .Values.enbuildBk.keycloak).existingSecret }}
+        - secretRef:
+            name: {{ . }}
+        {{- end }}
+        {{- /*
           P1 CCM Console — cosign export signing key (EN-1237). Operator
           pre-creates a Secret with key SIEM_SIGNING_KEY (PEM-encoded
           ECDSA P-256 private key). Strongly preferred over the inline

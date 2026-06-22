@@ -180,6 +180,30 @@ enbuildBk:
   exportSigning:
     existingSecret: ""
     privateKeyPem: ""             # dev/test inline path only
+
+  # --- [CUSTOMER] SSO / authentication (Keycloak) ---
+  # P1 is Keycloak-only. authMechanism defaults to "keycloak"; the chart wires the
+  # backend's JWT-verifier config from the keycloak block below. The chart FAILS the
+  # render (backend-secret.yaml) if authMechanism=keycloak but no realm public key is
+  # supplied here OR via keycloak.existingSecret — so a misconfigured install errors
+  # loudly instead of silently booting in spoofable "local" mode / unverified tokens.
+  # Set "local" ONLY for dev/test with no SSO.
+  authMechanism: "keycloak"       # keycloak | local
+  adminEmails: ""                 # break-glass platform admins (comma-sep). Durable admin = the /enbuild/platform-admins Keycloak group.
+  keycloak:
+    realm: "enbuild"              # [CUSTOMER] realm name
+    url: ""                       # [CUSTOMER] browser-facing Keycloak base URL (KEYCLOAK_URL)
+    backendUrl: ""                # [CUSTOMER] in-cluster Keycloak URL the backend calls (KEYCLOAK_BACKEND_URL)
+    issuer: ""                    # [CUSTOMER] token issuer (KEYCLOAK_ISSUER); defaults to <url>/realms/<realm> if your IdP follows the standard
+    clientId: "enbuild"           # confidential backend client id
+    adminBaseUrl: ""              # admin REST base URL (KEYCLOAK_ADMIN_BASE_URL) for group/user management
+    adminClientId: ""             # admin client id (KEYCLOAK_ADMIN_CLIENT_ID)
+    # Realm RSA PUBLIC key (PEM body, no headers) used to VERIFY login tokens. Public, not secret,
+    # but coupled to the realm signing key — do not rotate casually. Supply here OR via existingSecret.
+    realmPublicKey: ""
+    # Operator Secret carrying the SECRET auth keys. Recommended for production. Expected keys:
+    #   KEYCLOAK_CLIENT_SECRET, KEYCLOAK_ADMIN_CLIENT_SECRET, and (optionally) KEYCLOAK_REALM_PUBLIC_KEY.
+    existingSecret: ""
   # --- [CUSTOMER] Hub gRPC AgentGateway (how spoke agents reach this hub) ---
   grpcVirtualService:
     enabled: true

@@ -52,6 +52,20 @@ enbuildBk:
     existingSecret: enbuild-encryption-key      # key: ENCRYPTION_KEY
   messaging:
     existingSecret: enbuild-rabbitmq            # key: RABBIT_MQ_CONNECTION_STRING
+  # --- SSO (Keycloak) — authMechanism defaults to "keycloak"; the chart fails the
+  #     render if no realm key is supplied, so a misconfigured install can't boot
+  #     unverified. Non-secret config below; the SECRET keys ride the existingSecret. ---
+  adminEmails: "admin@p1.mil"                   # break-glass; durable admin = /enbuild/platform-admins group
+  keycloak:
+    realm: "enbuild"
+    url: "https://enbuild-ib-vendor13.staging.dso.mil"
+    backendUrl: "http://enbuild-ib-keycloak:8080"
+    adminBaseUrl: "http://enbuild-ib-keycloak:8080"
+    clientId: "enbuild"
+    # Operator Secret carrying KEYCLOAK_REALM_PUBLIC_KEY + KEYCLOAK_CLIENT_SECRET +
+    # KEYCLOAK_ADMIN_CLIENT_SECRET. (The realm public key is public but coupled to the
+    # realm signing key — keep it with the client secret in one operator-managed Secret.)
+    existingSecret: enbuild-ib-keycloak-auth
   installAgent:
     existingSecret: enbuild-install-agent-creds # keys: GITLAB_TOKEN, ENBUILD_REPO1_USER/TOKEN
     hubUrl: "enbuild-ib-vendor13.staging.dso.mil:443"
