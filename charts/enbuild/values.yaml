@@ -219,7 +219,7 @@ enbuildBk:
   clusterRpcTimeoutMs: "10000"    # 2026-06-11 latency P0 — fail fast so one slow/dead agent RPC can't pin a console poll; the serial-dispatch bottleneck that motivated 30000 is gone
   snapshotIngestEnabled: "true"   # ADR-0035 fleet snapshot store (permanent)
   snapshotReadFromStore: "true"
-  kubeProxyFallbackActor: ""      # console K8sApiProxy demo fallback (empty = controller default)
+  kubeProxyFallbackActor: ""      # console K8sApiProxy header-less fallback identity; empty = controller default (least-privilege, non-admin headlamp-proxy@platform.one.mil)
   healthProbe:
     enabled: true
   kubeProxyCache:

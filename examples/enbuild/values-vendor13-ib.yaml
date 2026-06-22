@@ -62,7 +62,14 @@ enbuildBk:
       - enbuild-ib.staging.dso.mil
       - enbuild-ib.vendor13.staging.dso.mil
     gateway: istio-gateway/public-ingressgateway
-  kubeProxyFallbackActor: "devops@platform.one.mil"
+  # Header-less Headlamp/kube-proxy fallback identity (least-privilege, NON-admin).
+  # Was "devops@platform.one.mil"; switched to the dedicated least-privilege
+  # service identity that matches the backend default. It is NOT in adminEmails,
+  # so TenancyGuard authorizes it only for unscoped-read or where it holds viewer
+  # membership — grant headlamp-proxy@platform.one.mil VIEWER membership on the
+  # projects whose clusters are browsed via Headlamp before/at the next roll,
+  # else header-less proxy calls to project-scoped clusters return 403.
+  kubeProxyFallbackActor: "headlamp-proxy@platform.one.mil"
   # clusterRpcTimeoutMs not set → uses the chart default "10000" (2026-06-11
   # latency P0 fail-fast). Override here only to change it for this environment.
 
