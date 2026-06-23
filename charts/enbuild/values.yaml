@@ -297,9 +297,20 @@ keycloak:
     requests:
       cpu: 250m
       memory: 512Mi
-  # [INTERNAL] in-cluster issuer URL the backend validates tokens against.
+  # [CUSTOMER] KC_HOSTNAME — the frontend/issuer URL Keycloak stamps into tokens
+  # and OIDC discovery. Default localhost:8088 = the port-forward dev model. For
+  # browser SSO / Headlamp OIDC, set this to the gateway-exposed URL (see
+  # virtualService) and align the backend KEYCLOAK_ISSUER to the SAME value.
   hostname: http://localhost:8088
   adminUser: admin
+  # [CUSTOMER] ADR-0046 CA-4 — expose Keycloak on the platform's Istio gateway so
+  # a browser (gateway ELB + /etc/hosts) can complete the OIDC flow. Default OFF;
+  # enable at the CONSOLE_AUTH_STRICT cutover. `host` MUST sit directly under the
+  # gateway's wildcard-cert domain (e.g. <name>.staging.dso.mil) to keep TLS valid.
+  virtualService:
+    enabled: false
+    host: ""
+    gateway: istio-gateway/public-ingressgateway
 
 ## @section PKI (hub/spoke cert-manager — Design A self-signed, ADR-0004)
 pki:

@@ -1,0 +1,31 @@
+{{- /*
+  ADR-0046 CA-4 — expose the bundled Keycloak on the platform's existing Istio
+  gateway so a browser (reaching the env via the gateway ELB + /etc/hosts, the
+  vendor13-ib access model — no Appgate needed) can complete the Headlamp/console
+  OIDC flow. Routing PROVEN 2026-06-23: the gateway already serves hosts:['*'] on
+  443 with the *.staging.dso.mil cert, so a host directly under staging.dso.mil
+  (e.g. keycloak-ib-vendor13.staging.dso.mil) routes here with a valid cert.
+  Default OFF — enable at the CONSOLE_AUTH_STRICT cutover, together with
+  keycloak.hostname (KC_HOSTNAME) + the backend KEYCLOAK_ISSUER set to the SAME
+  URL (jwt.verify is exact-match). See runbooks/console-auth-strict-cutover.md.
+*/ -}}
+{{- if and .Values.keycloak.enabled (default (dict) .Values.keycloak.virtualService).enabled }}
+apiVersion: networking.istio.io/v1beta1
+kind: VirtualService
+metadata:
+  name: {{ .Release.Name }}-keycloak
+  namespace: {{ .Release.Namespace }}
+  labels:
+  {{- include "enbuild-helm-chart.labels" . | nindent 4 }}
+spec:
+  hosts:
+    - {{ required "keycloak.virtualService.host is required when keycloak.virtualService.enabled=true" .Values.keycloak.virtualService.host | quote }}
+  gateways:
+    - {{ .Values.keycloak.virtualService.gateway | default "istio-gateway/public-ingressgateway" }}
+  http:
+    - route:
+        - destination:
+            host: {{ .Release.Name }}-keycloak.{{ .Release.Namespace }}.svc.cluster.local
+            port:
+              number: 8080
+{{- end }}
