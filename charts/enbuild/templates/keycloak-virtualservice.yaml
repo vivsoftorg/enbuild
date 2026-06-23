@@ -23,7 +23,18 @@ spec:
   gateways:
     - {{ .Values.keycloak.virtualService.gateway | default "istio-gateway/public-ingressgateway" }}
   http:
-    - route:
+    # SECURITY (do not widen): expose ONLY the OIDC + login-UI paths on the public
+    # gateway. The admin console + admin REST (/admin/), metrics (/metrics) and
+    # health (/health/*) are DELIBERATELY NOT routed here — anything outside this
+    # allowlist gets a gateway 404, never reaching Keycloak. Operators reach the
+    # admin console via `kubectl -n {{ .Release.Namespace }} port-forward svc/{{ .Release.Name }}-keycloak 8080:8080`
+    # (in-cluster only), never the public gateway. See runbooks/console-auth-strict-cutover.md.
+    - match:
+        - uri: { prefix: /realms/ }                 # OIDC discovery/auth/token/userinfo + login pages
+        - uri: { prefix: /resources/ }              # login-theme static assets (CSS/JS/images)
+        - uri: { prefix: /js/ }                     # keycloak.js adapter
+        - uri: { exact: /robots.txt }
+      route:
         - destination:
             host: {{ .Release.Name }}-keycloak.{{ .Release.Namespace }}.svc.cluster.local
             port:
