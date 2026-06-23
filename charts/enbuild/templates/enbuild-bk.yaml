@@ -68,6 +68,37 @@ spec:
           value: {{ . | quote }}
         {{- end }}
         {{- /*
+          ADR-0046 console-auth cutover (audit finding F4 — previously the flag
+          was readable only via `kubectl set env`, so the chart could not express
+          "ship with strict on" and the cutover risked being a silent no-op).
+          CONSOLE_AUTH_STRICT flips the production posture: deny tokenless
+          console/proxy requests, authorize ONLY from the verified Keycloak token
+          (no header/body/query fallback, no ADMIN_EMAILS data-path self-grant).
+          Default unset = OFF (legacy least-privilege fallback) so the chart stays
+          safe to roll before the coordinated cutover. Set
+          enbuildBk.consoleAuthStrict=true IN THE SAME roll that enables Headlamp
+          OIDC + exposes Keycloak at a real URL, else the console locks out. Pair
+          with AUTH_MECHANISM=keycloak (enbuildBk.keycloak.*) — strict assumes
+          verified tokens. See runbooks/console-auth-strict-cutover.md.
+        */ -}}
+        {{- if .Values.enbuildBk.consoleAuthStrict }}
+        - name: CONSOLE_AUTH_STRICT
+          value: "true"
+        {{- end }}
+        {{- /*
+          ADR-0046 CA-10 spoke per-user impersonation. When true the proxy
+          forwards Impersonate-User/-Group (verb-matched) from the VERIFIED token
+          so the spoke apiserver's RBAC + audit attribute to the real user instead
+          of the shared agent SA. MUST pair with the agent chart's
+          rbac.consoleImpersonation.enabled=true (the spoke half) — without that
+          grant + binding the impersonated identity is deny-all and the proxy
+          breaks. Default unset = OFF.
+        */ -}}
+        {{- if .Values.enbuildBk.spokeImpersonation }}
+        - name: SPOKE_IMPERSONATION
+          value: "true"
+        {{- end }}
+        {{- /*
           ClusterRpcService timeout (ms) for hub→agent RPCs. Chart default
           10000 (2026-06-11 latency P0 — fail fast so one slow/dead agent
           RPC can't pin a console poll for 30s; the agent's old

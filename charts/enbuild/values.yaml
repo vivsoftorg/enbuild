@@ -244,6 +244,18 @@ enbuildBk:
   snapshotIngestEnabled: "true"   # ADR-0035 fleet snapshot store (permanent)
   snapshotReadFromStore: "true"
   kubeProxyFallbackActor: ""      # console K8sApiProxy header-less fallback identity; empty = controller default (least-privilege, non-admin headlamp-proxy@platform.one.mil)
+  # ADR-0046 console-auth cutover (audit finding F4). Default OFF — flip to true
+  # ONLY in the coordinated cutover roll (together with Headlamp OIDC + Keycloak
+  # exposed at a real URL + AUTH_MECHANISM=keycloak), else the console locks out.
+  # When true: deny tokenless console/proxy requests; authorize ONLY from the
+  # verified Keycloak token (no header/body/query fallback, ADMIN_EMAILS data-path
+  # retired). See runbooks/console-auth-strict-cutover.md.
+  consoleAuthStrict: false
+  # ADR-0046 CA-10 spoke per-user impersonation. Default OFF. When true the proxy
+  # forwards Impersonate-User/-Group (verb-matched) from the verified token so the
+  # spoke RBAC + audit attribute to the real user. MUST pair with the agent chart
+  # rbac.consoleImpersonation.enabled=true (the spoke half) — they flip together.
+  spokeImpersonation: false
   healthProbe:
     enabled: true
   kubeProxyCache:
