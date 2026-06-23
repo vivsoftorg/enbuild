@@ -418,15 +418,24 @@ headlamp:
       #     issuerURL: "issuerURL"
       #     scopes: "scopes"
 
-      # -- OIDC client ID
+      # ADR-0046 CA-4 — SET THESE to make Headlamp forward the user's verified
+      # Keycloak JWT to the hub backend proxy (the precondition for the
+      # CONSOLE_AUTH_STRICT cutover: with strict on, a token-less console request
+      # is denied, so Headlamp MUST authenticate the user via OIDC). The realm
+      # needs a client whose redirect URI is the Headlamp callbackURL, and
+      # `scopes` MUST include `groups` so TenancyGuard receives the user's
+      # /enbuild/projects/<slug>/<role> + /enbuild/platform-admins claims.
+      # `issuerURL` MUST equal the backend's KEYCLOAK_ISSUER exactly (jwt.verify
+      # is exact-match). Example in examples/enbuild/values-vendor13-ib.yaml.
+      # -- OIDC client ID (e.g. enbuild-ui)
       clientID: ""
-      # -- OIDC client secret
+      # -- OIDC client secret (operator Secret; empty for a public/PKCE client)
       clientSecret: ""
-      # -- OIDC issuer URL
+      # -- OIDC issuer URL — MUST equal the backend KEYCLOAK_ISSUER
       issuerURL: ""
-      # -- OIDC scopes to be used
+      # -- OIDC scopes — MUST include `groups` for tenancy
       scopes: ""
-      # -- OIDC callback URL
+      # -- OIDC callback URL — register this as a redirect URI on the realm client
       callbackURL: ""
 
       # -- OIDC client to be used during token validation
