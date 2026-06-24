@@ -5,6 +5,38 @@ metadata:
   labels:
   {{- include "enbuild-helm-chart.labels" . | nindent 4 }}
 data:
+  {{- /*
+    P1 CCM Console — runtime config.json (WORKSTREAM D1 / ADR-0046 CA-4).
+    Served by the enbuild-ui nginx at /p1-ccm-console/config.json (it falls
+    under the existing `location /p1-ccm-console/` static block; `try_files
+    $uri ...` resolves this file on disk before the SPA index.html fallback,
+    so NO nginx location change is needed). The SPA fetches it at boot and
+    stashes the parsed object on `window.__P1CCM_CONFIG`.
+
+    These four keys are the SHARED CONTRACT all three repos agree on:
+      keycloakUrl      — browser-facing Keycloak base URL (SPA builds the
+                         OIDC authority <url>/realms/<realm>)
+      keycloakRealm    — realm name (matches backend KEYCLOAK_REALM)
+      keycloakClientId — public PKCE client the SPA + Headlamp share
+                         (matches backend KEYCLOAK_CLIENT_ID = enbuild-ui)
+      apiBase          — base path the SPA prefixes onto hub API calls
+
+    Sourced from enbuildUi.keycloak.{url,realm,clientId} + enbuildUi.apiBase.
+    Keycloak realm defaults to the backend's realm (enbuildBk.keycloak.realm)
+    so a single override keeps SPA + backend on the same realm.
+  */}}
+  {{- $uiKc := default (dict) .Values.enbuildUi.keycloak }}
+  {{- $bkKc := default (dict) .Values.enbuildBk.keycloak }}
+  {{- $kcRealm := default (default "enbuild" $bkKc.realm) $uiKc.realm }}
+  {{- $kcClientId := default "enbuild-ui" $uiKc.clientId }}
+  {{- $apiBase := default "/enbuild-bk/api/v1" .Values.enbuildUi.apiBase }}
+  config.json: |
+    {
+      "keycloakUrl": "{{ $uiKc.url }}",
+      "keycloakRealm": "{{ $kcRealm }}",
+      "keycloakClientId": "{{ $kcClientId }}",
+      "apiBase": "{{ $apiBase }}"
+    }
   config.js: |
     window.ENV_VAR = {
     {{- if .Values.lightning_features.operations_lightning.headlamp }}

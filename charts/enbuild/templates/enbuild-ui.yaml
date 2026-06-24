@@ -24,6 +24,10 @@ spec:
         # this checksum a chart-only nginx edit upgrades the ConfigMap but the
         # running pod keeps serving the old config forever.
         checksum/nginx-conf: {{ include (print $.Template.BasePath "/nginx-conf.yaml") . | sha256sum }}
+        # Same subPath-mount staleness applies to config.json (WORKSTREAM D1):
+        # a chart edit to the runtime Keycloak config updates the ConfigMap but
+        # kubelet won't live-update the subPath file, so roll the pod on change.
+        checksum/frontend-config: {{ include (print $.Template.BasePath "/frontend-config.yaml") . | sha256sum }}
       labels:
         app: ui
         app.kubernetes.io/component: ui
@@ -49,6 +53,17 @@ spec:
         name: enbuild-ui
         resources: {}
         volumeMounts:
+        # P1 CCM Console runtime config (WORKSTREAM D1). The SPA static root is
+        # /etc/nginx/html (same root config.js/featureFlags.json mount into), and
+        # the Vite build bakes the console under /etc/nginx/html/p1-ccm-console/.
+        # Mounting config.json there makes nginx serve it at
+        # /p1-ccm-console/config.json via the existing `location /p1-ccm-console/`
+        # try_files ($uri resolves the on-disk file before the index.html
+        # fallback) — no nginx location change required. subPath so it drops a
+        # single file beside the baked index.html without masking the directory.
+        - mountPath: /etc/nginx/html/p1-ccm-console/config.json
+          name: frontend-config
+          subPath: config.json
         - mountPath: /etc/nginx/html/config.js
           name: frontend-config
           subPath: config.js

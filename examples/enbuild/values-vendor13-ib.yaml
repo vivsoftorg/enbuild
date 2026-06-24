@@ -58,7 +58,16 @@ enbuildBk:
   adminEmails: "admin@p1.mil"                   # break-glass; durable admin = /enbuild/platform-admins group
   keycloak:
     realm: "enbuild"
+    # browser-facing Keycloak base URL (KEYCLOAK_URL). KEYCLOAK_ISSUER defaults
+    # to <url>/realms/<realm>; set `issuer` explicitly only if the gateway host
+    # differs from this url (it does once Keycloak is exposed on its own
+    # keycloak-* host at the cutover — then issuer = https://keycloak-ib-vendor13.staging.dso.mil/realms/enbuild).
     url: "https://enbuild-ib-vendor13.staging.dso.mil"
+    # issuer: "https://keycloak-ib-vendor13.staging.dso.mil/realms/enbuild"  # browser issuer; MUST match SPA + Headlamp issuerURL
+    # IN-CLUSTER Keycloak base the backend uses for JWKS + OIDC discovery
+    # (KEYCLOAK_BACKEND_URL). DIFFERENT from the browser url above by design —
+    # the issuer-alignment invariant: verify keys fetched here, iss pinned to the
+    # browser issuer.
     backendUrl: "http://enbuild-ib-keycloak:8080"
     adminBaseUrl: "http://enbuild-ib-keycloak:8080"
     clientId: "enbuild"
@@ -92,6 +101,19 @@ enbuildUi:
   image:
     registry: registry.gitlab.com
     tag: c68767576146c0a011950ffaca2851c7031e0fdc
+  # P1 CCM Console runtime config (WORKSTREAM D1 / ADR-0046 CA-4). Emitted as
+  # /p1-ccm-console/config.json and consumed by the SPA at boot (window.__P1CCM_CONFIG).
+  # This is the BROWSER OIDC config — `url` is the gateway-exposed Keycloak the
+  # user's browser reaches; the backend independently fetches JWKS in-cluster
+  # (enbuildBk.keycloak.backendUrl) while pinning this same browser issuer.
+  # Enable at the CONSOLE_AUTH_STRICT cutover (together with backend
+  # consoleAuthStrict=true + headlamp OIDC below). Until then leave url empty so
+  # the SPA stays on the non-strict fallback path.
+  keycloak:
+    url: ""                                       # e.g. https://keycloak-ib-vendor13.staging.dso.mil  (set at cutover)
+    realm: "enbuild"                              # matches enbuildBk.keycloak.realm
+    clientId: "enbuild-ui"                        # shared public PKCE client (SPA + Headlamp)
+  # apiBase omitted → chart default "/enbuild-bk/api/v1"
 
 enbuildUser:
   image:
@@ -128,16 +150,22 @@ headlamp:
   # Spoke clusters surfaced in the Headlamp picker (routed via BE K8sApiProxy).
   spokes:
     - ccm-vendor13-eks-final
-  # ADR-0046 CA-4 — Headlamp OIDC. ENABLE THIS AS PART OF THE CONSOLE_AUTH_STRICT
-  # CUTOVER (not before — until strict is on, the non-admin fallback still works
-  # and forcing OIDC login early would break the demo). When the cutover lands:
-  # set the backend env CONSOLE_AUTH_STRICT=true AND uncomment below, AND register
-  # the callbackURL as a redirect URI on the realm's `enbuild-ui` client.
+  # ADR-0046 CA-4 / WORKSTREAM D3 — Headlamp OIDC. ENABLE AS PART OF THE
+  # CONSOLE_AUTH_STRICT CUTOVER (not before — until strict is on the non-admin
+  # fallback still works and forcing OIDC login early would break the demo).
+  # When the cutover lands, do ALL of these in one roll:
+  #   1. set enbuildBk.consoleAuthStrict: true
+  #   2. set enbuildUi.keycloak.url to the gateway-exposed Keycloak (above)
+  #   3. uncomment the block below (all four fields together — partial = broken)
+  #   4. register the callbackURL as a redirect URI on the realm's enbuild-ui client
+  # issuerURL MUST equal the backend KEYCLOAK_ISSUER EXACTLY (the browser issuer
+  # the SPA also uses). The backend independently fetches JWKS from the in-cluster
+  # enbuildBk.keycloak.backendUrl — these two are SUPPOSED to differ.
   # config:
   #   oidc:
-  #     clientID: enbuild-ui
-  #     issuerURL: "http://localhost:8088/realms/enbuild"   # MUST equal backend KEYCLOAK_ISSUER (prod = public FQDN)
-  #     scopes: "openid email groups"                        # `groups` is required for tenancy
+  #     clientID: enbuild-ui                                  # shared public PKCE client (== SPA, == backend KEYCLOAK_CLIENT_ID)
+  #     issuerURL: "https://keycloak-ib-vendor13.staging.dso.mil/realms/enbuild"  # == backend KEYCLOAK_ISSUER (browser FQDN)
+  #     scopes: "openid email groups"                         # `groups` is REQUIRED for tenancy
   #     callbackURL: "https://<console-host>/headlamp/oidc-callback"
 
 # Self-hosted SSO. The realm + bootstrap-admin password come from the

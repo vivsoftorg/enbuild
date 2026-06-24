@@ -143,6 +143,27 @@ enbuildUi:
   grafana_url: "/grafana/d/os6Bh8Omk/kubernetes-cluster?orgId=1&refresh=30s"
   loki_url: "/grafana/d/liz0yRCZz/logs-app?orgId=1"
   kubecost_url: "kubecost/overview.html"
+  # --- [CUSTOMER] P1 CCM Console runtime config (WORKSTREAM D1, ADR-0046 CA-4) ---
+  # Emitted as config.json (frontend-config ConfigMap) and served by the console
+  # nginx at /p1-ccm-console/config.json; the SPA fetches it at boot and stashes
+  # it on window.__P1CCM_CONFIG. SHARED CONTRACT keys: keycloakUrl, keycloakRealm,
+  # keycloakClientId, apiBase. These configure the BROWSER's OIDC login (the SPA
+  # is a PUBLIC PKCE client) — no secrets here.
+  keycloak:
+    # Browser-facing Keycloak base URL the SPA redirects to for login. The SPA
+    # builds the OIDC authority as <url>/realms/<realm>. Empty = no SSO wired
+    # (set this + clientId at the cutover). e.g. https://keycloak-ib-vendor13.staging.dso.mil
+    url: ""
+    # Realm name. Empty → inherits enbuildBk.keycloak.realm (default "enbuild"),
+    # so SPA + backend stay on the same realm from a single override.
+    realm: ""
+    # Public OIDC client the SPA (and Headlamp) share. Empty → defaults to
+    # "enbuild-ui" (the public PKCE client; MUST match backend KEYCLOAK_CLIENT_ID
+    # and headlamp.config.oidc.clientID). Distinct from the CONFIDENTIAL backend
+    # client enbuildBk.keycloak.clientId ("enbuild").
+    clientId: ""
+  # Base path the SPA prefixes onto hub API calls. Empty → "/enbuild-bk/api/v1".
+  apiBase: ""
   image:
     tag: ""                       # [CUSTOMER] pin console image; empty = appVersion
     # [INTERNAL]
@@ -441,24 +462,48 @@ headlamp:
       #     issuerURL: "issuerURL"
       #     scopes: "scopes"
 
-      # ADR-0046 CA-4 — SET THESE to make Headlamp forward the user's verified
+      # ADR-0046 CA-4 / WORKSTREAM D3 — Headlamp forwards the user's verified
       # Keycloak JWT to the hub backend proxy (the precondition for the
-      # CONSOLE_AUTH_STRICT cutover: with strict on, a token-less console request
-      # is denied, so Headlamp MUST authenticate the user via OIDC). The realm
-      # needs a client whose redirect URI is the Headlamp callbackURL, and
-      # `scopes` MUST include `groups` so TenancyGuard receives the user's
-      # /enbuild/projects/<slug>/<role> + /enbuild/platform-admins claims.
-      # `issuerURL` MUST equal the backend's KEYCLOAK_ISSUER exactly (jwt.verify
-      # is exact-match). Example in examples/enbuild/values-vendor13-ib.yaml.
-      # -- OIDC client ID (e.g. enbuild-ui)
+      # CONSOLE_AUTH_STRICT cutover: with strict on a token-less console request
+      # is denied, so Headlamp MUST authenticate the user via OIDC).
+      #
+      # SHARED CONTRACT (must match the SPA + backend):
+      #   clientID  = the public PKCE client "enbuild-ui" (same client the SPA
+      #               uses; realm "enbuild"). NO clientSecret (public/PKCE).
+      #   issuerURL = MUST equal the backend KEYCLOAK_ISSUER EXACTLY — the
+      #               BROWSER-facing issuer (e.g.
+      #               https://keycloak-ib-vendor13.staging.dso.mil/realms/enbuild).
+      #               jwt.verify pins iss exact-match; a mismatch fails every
+      #               proxied request. ENVIRONMENT-SPECIFIC → left empty here.
+      #   scopes    = "openid email groups" — `groups` is REQUIRED so the hub
+      #               TenancyGuard receives /enbuild/projects/<slug>/<role> +
+      #               /enbuild/platform-admins claims.
+      #   callbackURL = https://<console-host>/headlamp/oidc-callback — register
+      #               this as a redirect URI on the realm's enbuild-ui client.
+      #               ENVIRONMENT-SPECIFIC → left empty here.
+      #
+      # OFF-by-default / cutover discipline: the upstream Headlamp subchart emits
+      # a `-oidc-<flag>` for EACH non-empty field INDEPENDENTLY, so setting only
+      # some fields ships a PARTIAL (broken) OIDC config — Headlamp would start
+      # with `-oidc-client-id`/`-oidc-scopes` but no issuer and fail login. To
+      # keep a default install fully OFF (until the coordinated CONSOLE_AUTH_STRICT
+      # cutover), ALL FOUR fields are left EMPTY here and enabled together as one
+      # block. The canonical values to set (verbatim) are:
+      #   clientID:  enbuild-ui            (shared public PKCE client; == backend KEYCLOAK_CLIENT_ID)
+      #   scopes:    "openid email groups" (`groups` REQUIRED for tenancy)
+      #   issuerURL: <browser KEYCLOAK_ISSUER, EXACT>
+      #   callbackURL: https://<console-host>/headlamp/oidc-callback
+      # See the (commented, ready-to-uncomment) full block in
+      # examples/enbuild/values-vendor13-ib.yaml.
+      # -- OIDC client ID — set to enbuild-ui at cutover (shared public PKCE client)
       clientID: ""
-      # -- OIDC client secret (operator Secret; empty for a public/PKCE client)
+      # -- OIDC client secret — EMPTY (public/PKCE client; no secret)
       clientSecret: ""
-      # -- OIDC issuer URL — MUST equal the backend KEYCLOAK_ISSUER
+      # -- OIDC issuer URL — MUST equal the backend KEYCLOAK_ISSUER (exact). Set at cutover.
       issuerURL: ""
-      # -- OIDC scopes — MUST include `groups` for tenancy
+      # -- OIDC scopes — set to "openid email groups" at cutover (`groups` REQUIRED for tenancy)
       scopes: ""
-      # -- OIDC callback URL — register this as a redirect URI on the realm client
+      # -- OIDC callback URL (https://<console-host>/headlamp/oidc-callback). Set at cutover.
       callbackURL: ""
 
       # -- OIDC client to be used during token validation
