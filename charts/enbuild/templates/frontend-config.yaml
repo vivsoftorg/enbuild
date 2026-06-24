@@ -30,12 +30,17 @@ data:
   {{- $kcRealm := default (default "enbuild" $bkKc.realm) $uiKc.realm }}
   {{- $kcClientId := default "enbuild-ui" $uiKc.clientId }}
   {{- $apiBase := default "/enbuild-bk/api/v1" .Values.enbuildUi.apiBase }}
+  {{- /* Impact-level enclave this hub represents (e.g. "IL5"); the SPA header
+         self-identifies its enclave. Empty → null → no badge. A legibility tag,
+         NOT the isolation boundary (hub-per-IL is — ADR-0044). */}}
+  {{- $impactLevel := default "" .Values.enbuildUi.impactLevel }}
   config.json: |
     {
       "keycloakUrl": "{{ $uiKc.url }}",
       "keycloakRealm": "{{ $kcRealm }}",
       "keycloakClientId": "{{ $kcClientId }}",
-      "apiBase": "{{ $apiBase }}"
+      "apiBase": "{{ $apiBase }}",
+      "impactLevel": {{ if $impactLevel }}"{{ $impactLevel }}"{{ else }}null{{ end }}
     }
   config.js: |
     window.ENV_VAR = {

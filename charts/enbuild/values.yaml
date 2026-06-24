@@ -164,6 +164,11 @@ enbuildUi:
     clientId: ""
   # Base path the SPA prefixes onto hub API calls. Empty → "/enbuild-bk/api/v1".
   apiBase: ""
+  # Impact-level enclave this hub represents (e.g. "IL5"). Rendered as a header
+  # badge so the pane self-identifies its enclave. Empty → null → no badge. Set
+  # this per-enclave at deploy. A legibility tag, NOT the isolation boundary —
+  # the hub-per-IL deployment IS (ADR-0044). vendor13-ib demo override: "IL5".
+  impactLevel: ""
   image:
     tag: ""                       # [CUSTOMER] pin console image; empty = appVersion
     # [INTERNAL]
