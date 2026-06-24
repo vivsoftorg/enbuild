@@ -322,7 +322,43 @@ keycloak:
   image: registry1.dso.mil/ironbank/opensource/keycloak/keycloak:25.0.6
   # [CUSTOMER] Operator Secret holding `realm-enbuild.json` + `KC_BOOTSTRAP_ADMIN_PASSWORD`.
   # Empty => "<release>-keycloak-secrets". See docs/OPERATOR-DEPLOYMENT-GUIDE.md.
+  # NOTE: setting this DISABLES the demoRealm auto-seed below (operator realm wins).
   existingSecret: ""
+  # --- [DEMO] Chart-shipped demo realm AUTO-SEED ---------------------------------
+  # When enabled (AND keycloak.existingSecret is empty), the chart renders the
+  # `<release>-keycloak-secrets` Secret from the bundled files/demo-realm-enbuild.json
+  # so the bundled Keycloak boots a WORKING SSO login (console + Headlamp OIDC +
+  # tenancy groups) with ZERO operator realm prep. The realm ships NO real signing
+  # keys/certs/secrets — Keycloak generates the RSA key + hashes the demo passwords
+  # on import. DEMO-ONLY: change every persona password + the enbuild client secret
+  # (or use keycloak.existingSecret with your own realm) before any non-demo use.
+  #
+  # ONE-HOST CONTRACT — to wire a clean browser SSO demo a customer sets only these,
+  # ALL pointing at the SAME Keycloak browser host https://<host> (do NOT hand-edit
+  # any per-URL list — the chart derives them):
+  #   1. keycloak.demoRealm.enabled: true
+  #   2. keycloak.hostname:            https://<host>   (KC_HOSTNAME — the issuer Keycloak mints)
+  #   3. enbuildUi.keycloak.url:       https://<host>   (FE config.json keycloakUrl)
+  #   4. enbuildBk.keycloak.url:       https://<host>   (→ KEYCLOAK_ISSUER = https://<host>/realms/enbuild)
+  #      enbuildBk.keycloak.backendUrl: http://<release>-keycloak:8080  (in-cluster JWKS fetch)
+  # The realm's enbuild-ui redirectUris/webOrigins are auto-populated with the
+  # browser CONSOLE URL the SPA logs in from — sourced (in priority) from:
+  #   a. keycloak.demoRealm.consoleUrl override, else
+  #   b. https://<enbuildUi.hostname>.<global.domain> (set these when the console FQDN
+  #      IS the host above — the common bundled case where Keycloak rides the same
+  #      gateway FQDN), else
+  #   c. http://localhost:8081 (the port-forward demo).
+  # If your Keycloak browser host differs from the console FQDN, set consoleUrl to the
+  # console FQDN so the realm trusts the SPA origin. localhost:8081 is ALWAYS included
+  # too (port-forward testing). realm == "enbuild" everywhere. For a pure port-forward
+  # demo, leave 2-4 + a/b unset and reach the console at http://localhost:8081.
+  demoRealm:
+    enabled: false                # [DEMO] true => auto-seed the demo realm Secret
+    adminPassword: "ChangeMe123!" # [DEMO] KC_BOOTSTRAP_ADMIN_PASSWORD — change for prod
+    consoleUrl: ""                # [DEMO] override browser console URL baked into the realm's
+                                  # enbuild-ui redirectUris/webOrigins. Empty =>
+                                  # https://<enbuildUi.hostname>.<global.domain>, else
+                                  # http://localhost:8081 (port-forward demo).
   # [CUSTOMER] Keycloak capacity.
   resources:
     limits:

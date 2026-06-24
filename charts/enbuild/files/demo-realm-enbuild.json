@@ -1,0 +1,233 @@
+{
+  "_comment": "DEMO-ONLY enbuild realm shipped by the chart for auto-seed (keycloak.demoRealm.enabled=true). Contains NO real signing keys, certs, client secrets, or password hashes — Keycloak GENERATES the realm RSA signing key on import and HASHES the plaintext demo passwords. The literal __CONSOLE_URL__ is substituted by templates/keycloak-demo-realm-secret.yaml with the browser console URL at render time. CHANGE ALL PASSWORDS + the enbuild client secret before any non-demo use. Groups match backend auth/tenancy-groups.ts byte-for-byte: /enbuild/platform-admins and /enbuild/projects/<slug>/<role> with role in {viewer,member,maintainer,owner}.",
+  "realm": "enbuild",
+  "enabled": true,
+  "sslRequired": "none",
+  "registrationAllowed": false,
+  "resetPasswordAllowed": true,
+  "editUsernameAllowed": false,
+  "loginWithEmailAllowed": true,
+  "duplicateEmailsAllowed": false,
+  "accessTokenLifespan": 1800,
+  "ssoSessionIdleTimeout": 7200,
+  "ssoSessionMaxLifespan": 36000,
+  "roles": {
+    "realm": [
+      {
+        "name": "admin",
+        "description": "RolesGuard route gate — platform admin routes (@Roles('admin'))"
+      },
+      {
+        "name": "devops",
+        "description": "RolesGuard route gate — operator routes"
+      },
+      {
+        "name": "viewer",
+        "description": "RolesGuard route gate — read persona (absent from write @Roles lists by design)"
+      }
+    ]
+  },
+  "groups": [
+    {
+      "name": "enbuild",
+      "path": "/enbuild",
+      "subGroups": [
+        {
+          "name": "platform-admins",
+          "path": "/enbuild/platform-admins",
+          "subGroups": []
+        },
+        {
+          "name": "projects",
+          "path": "/enbuild/projects",
+          "subGroups": [
+            {
+              "name": "iron-bank",
+              "path": "/enbuild/projects/iron-bank",
+              "subGroups": [
+                { "name": "viewer", "path": "/enbuild/projects/iron-bank/viewer" },
+                { "name": "member", "path": "/enbuild/projects/iron-bank/member" },
+                { "name": "maintainer", "path": "/enbuild/projects/iron-bank/maintainer" },
+                { "name": "owner", "path": "/enbuild/projects/iron-bank/owner" }
+              ]
+            },
+            {
+              "name": "big-bang",
+              "path": "/enbuild/projects/big-bang",
+              "subGroups": [
+                { "name": "viewer", "path": "/enbuild/projects/big-bang/viewer" },
+                { "name": "member", "path": "/enbuild/projects/big-bang/member" },
+                { "name": "maintainer", "path": "/enbuild/projects/big-bang/maintainer" },
+                { "name": "owner", "path": "/enbuild/projects/big-bang/owner" }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "users": [
+    {
+      "username": "admin@p1.mil",
+      "enabled": true,
+      "email": "admin@p1.mil",
+      "emailVerified": true,
+      "firstName": "Platform",
+      "lastName": "Admin",
+      "credentials": [
+        { "type": "password", "temporary": false, "value": "ChangeMe123!" }
+      ],
+      "groups": [
+        "/enbuild/platform-admins"
+      ],
+      "realmRoles": [
+        "admin"
+      ]
+    },
+    {
+      "username": "owner-ib@p1.mil",
+      "enabled": true,
+      "email": "owner-ib@p1.mil",
+      "emailVerified": true,
+      "firstName": "Iron",
+      "lastName": "Owner",
+      "credentials": [
+        { "type": "password", "temporary": false, "value": "ChangeMe123!" }
+      ],
+      "groups": [
+        "/enbuild/projects/iron-bank/owner"
+      ],
+      "realmRoles": [
+        "devops"
+      ]
+    },
+    {
+      "username": "viewer-ib@p1.mil",
+      "enabled": true,
+      "email": "viewer-ib@p1.mil",
+      "emailVerified": true,
+      "firstName": "Iron",
+      "lastName": "Viewer",
+      "credentials": [
+        { "type": "password", "temporary": false, "value": "ChangeMe123!" }
+      ],
+      "groups": [
+        "/enbuild/projects/iron-bank/viewer"
+      ],
+      "realmRoles": [
+        "viewer"
+      ]
+    },
+    {
+      "username": "owner-bb@p1.mil",
+      "enabled": true,
+      "email": "owner-bb@p1.mil",
+      "emailVerified": true,
+      "firstName": "BigBang",
+      "lastName": "Owner",
+      "credentials": [
+        { "type": "password", "temporary": false, "value": "ChangeMe123!" }
+      ],
+      "groups": [
+        "/enbuild/projects/big-bang/owner"
+      ],
+      "realmRoles": [
+        "devops"
+      ]
+    },
+    {
+      "username": "service-account-enbuild",
+      "enabled": true,
+      "serviceAccountClientId": "enbuild",
+      "clientRoles": {
+        "realm-management": [
+          "manage-users",
+          "manage-clients",
+          "view-users",
+          "query-users",
+          "query-groups"
+        ]
+      }
+    }
+  ],
+  "clients": [
+    {
+      "clientId": "enbuild-ui",
+      "name": "enbuild-ui",
+      "description": "P1 CCM Console SPA — PUBLIC OIDC client (PKCE S256). KEYCLOAK_PUBLIC_CLIENT_ID; token azp for the SPA + Headlamp. ADR-0022.",
+      "enabled": true,
+      "protocol": "openid-connect",
+      "publicClient": true,
+      "standardFlowEnabled": true,
+      "implicitFlowEnabled": false,
+      "directAccessGrantsEnabled": true,
+      "serviceAccountsEnabled": false,
+      "rootUrl": "__CONSOLE_URL__",
+      "baseUrl": "/",
+      "redirectUris": [
+        "__CONSOLE_URL__/*",
+        "http://localhost:8081/*",
+        "http://127.0.0.1:8081/*"
+      ],
+      "webOrigins": [
+        "__CONSOLE_URL__",
+        "http://localhost:8081",
+        "http://127.0.0.1:8081",
+        "+"
+      ],
+      "attributes": {
+        "pkce.code.challenge.method": "S256",
+        "post.logout.redirect.uris": "+"
+      },
+      "protocolMappers": [
+        {
+          "name": "groups",
+          "protocol": "openid-connect",
+          "protocolMapper": "oidc-group-membership-mapper",
+          "consentRequired": false,
+          "config": {
+            "full.path": "true",
+            "id.token.claim": "true",
+            "access.token.claim": "true",
+            "userinfo.token.claim": "true",
+            "claim.name": "groups"
+          }
+        }
+      ]
+    },
+    {
+      "clientId": "enbuild",
+      "name": "enbuild",
+      "description": "P1 CCM backend CONFIDENTIAL client + service account (Keycloak Admin API). KEYCLOAK_CLIENT_ID. DEMO secret — CHANGE for prod. ADR-0022.",
+      "enabled": true,
+      "protocol": "openid-connect",
+      "publicClient": false,
+      "standardFlowEnabled": true,
+      "directAccessGrantsEnabled": true,
+      "serviceAccountsEnabled": true,
+      "secret": "CHANGE-ME-demo-enbuild-client-secret",
+      "redirectUris": [
+        "__CONSOLE_URL__/*",
+        "http://localhost:8081/*"
+      ],
+      "webOrigins": [
+        "+"
+      ],
+      "protocolMappers": [
+        {
+          "name": "groups",
+          "protocol": "openid-connect",
+          "protocolMapper": "oidc-group-membership-mapper",
+          "consentRequired": false,
+          "config": {
+            "full.path": "true",
+            "id.token.claim": "true",
+            "access.token.claim": "true",
+            "userinfo.token.claim": "true",
+            "claim.name": "groups"
+          }
+        }
+      ]
+    }
+  ]
+}
