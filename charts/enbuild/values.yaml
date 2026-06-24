@@ -352,6 +352,16 @@ keycloak:
   # console FQDN so the realm trusts the SPA origin. localhost:8081 is ALWAYS included
   # too (port-forward testing). realm == "enbuild" everywhere. For a pure port-forward
   # demo, leave 2-4 + a/b unset and reach the console at http://localhost:8081.
+  # [DEMO] Bundled-Keycloak demo realm auto-seed — the "deploy & log in in minutes"
+  # path. See README.md §3a "Console login & multi-tenancy" for the full walkthrough
+  # + the persona table. ONE-HOST CONTRACT (set all to the same browser-facing
+  # Keycloak URL, else login silently fails on an issuer mismatch):
+  #   keycloak.hostname == enbuildUi.keycloak.url == enbuildBk.keycloak.url == https://<kc-host>
+  #   enbuildBk.keycloak.backendUrl = http://<release>-keycloak:8080  (in-cluster JWKS)
+  # Personas (all password ChangeMe123!): admin@p1.mil (whole fleet), owner-bb@p1.mil
+  # (big-bang only), owner-ib@p1.mil (iron-bank only — proves cross-project denial),
+  # viewer-ib@p1.mil (read-only). Production: use Path B (your own realm) or change
+  # every default here.
   demoRealm:
     enabled: false                # [DEMO] true => auto-seed the demo realm Secret
     adminPassword: "ChangeMe123!" # [DEMO] KC_BOOTSTRAP_ADMIN_PASSWORD — change for prod

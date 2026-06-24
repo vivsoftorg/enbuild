@@ -37,7 +37,7 @@ entered later **in the ENBUILD admin UI**, not in this chart.)
 | `enbuild-rabbitmq` | `rabbitmq-password`, `rabbitmq-erlang-cookie`, `RABBIT_MQ_CONNECTION_STRING` | broker auth | yes (bundled broker) |
 | `enbuild-install-agent-creds` | `GITLAB_TOKEN`, `ENBUILD_REPO1_USER`, `ENBUILD_REPO1_TOKEN` | agent installs onto spokes + Iron Bank pulls | yes |
 | image pull secret (`global.imagePullSecretName`) | `.dockerconfigjson` | pulling images from a private/Iron Bank registry | yes (private registry) |
-| `<release>-keycloak-secrets` | `realm-enbuild.json`, `KC_BOOTSTRAP_ADMIN_PASSWORD` | self-hosted Keycloak SSO | only if `keycloak.enabled` |
+| `<release>-keycloak-secrets` | `realm-enbuild.json`, `KC_BOOTSTRAP_ADMIN_PASSWORD` | bundled Keycloak SSO realm import | only if `keycloak.enabled` **and** you bring your own realm — `keycloak.demoRealm.enabled=true` auto-creates this for you (see §3a) |
 
 `kubectl create secret` commands for each are in
 [`docs/OPERATOR-DEPLOYMENT-GUIDE.md`](../../docs/OPERATOR-DEPLOYMENT-GUIDE.md).
@@ -89,6 +89,72 @@ entries in [`values.yaml`](values.yaml). The essential ones:
 
 A complete filled-out example for a real environment:
 [`examples/enbuild/values-vendor13-ib.yaml`](../../examples/enbuild/values-vendor13-ib.yaml).
+
+## 3a. Console login & multi-tenancy (Keycloak SSO)
+
+The console authenticates every user through **Keycloak** (OIDC Authorization-Code
++ PKCE, full-page redirect) and derives **per-project tenancy from Keycloak group
+membership** — no platform-specific user store. The backend verifies tokens via
+**JWKS** fetched from Keycloak in-cluster, so there is **no realm public key to
+paste anywhere**. Pick one of two paths:
+
+### Path A — bundled Keycloak + demo realm (deploy & log in in minutes)
+
+For evaluating the platform. The chart deploys Keycloak *and* auto-imports a demo
+realm with ready-made personas and projects — set **one host** and a flag:
+
+```yaml
+keycloak:
+  enabled: true
+  demoRealm:
+    enabled: true                 # auto-seed the demo realm (personas + groups)
+  hostname: https://kc.<domain>    # browser-reachable Keycloak URL (KC_HOSTNAME)
+enbuildUi:
+  hostname: enbuild                # console FQDN = enbuild.<global.domain>
+  keycloak:
+    url: https://kc.<domain>        # same host → the SPA's config.json
+enbuildBk:
+  keycloak:
+    url: https://kc.<domain>        # same host → backend issuer auto-derives to <url>/realms/enbuild
+    backendUrl: http://<release>-keycloak:8080   # in-cluster Keycloak service (JWKS/discovery)
+```
+
+`helm install`, open the console, log in (all personas password `ChangeMe123!`):
+
+| Persona | Sees | Proves |
+|---|---|---|
+| `admin@p1.mil` | the whole fleet | platform admin (`/enbuild/platform-admins`) |
+| `owner-bb@p1.mil` | **only** the `big-bang` project | project-scoped owner |
+| `owner-ib@p1.mil` | **only** `iron-bank` | cross-project isolation (denied `big-bang`) |
+| `viewer-ib@p1.mil` | `iron-bank`, read-only | viewer can read, not write |
+
+> **Demo only.** `demoRealm` ships no signing keys/secrets (Keycloak generates the
+> key; the backend uses JWKS) but the persona passwords + bootstrap admin are
+> well-known defaults — **change them, or use Path B, before production.** Setting
+> `enbuildBk.keycloak.existingSecret` (your own realm) disables the demo seed.
+
+### Path B — bring your own Keycloak / IdP (production, incl. P1 SSO / CAC)
+
+Point the same values at *your* Keycloak instead of the bundled one (set
+`keycloak.enabled: false`), then in your realm create:
+
+- a **public** client `enbuild-ui` — standard-flow + direct-access + PKCE(S256), a
+  **group-membership protocol mapper** emitting **full group paths** in a `groups`
+  claim (mandatory — without it tenancy sees no groups), and the console host in
+  `redirectUris`/`webOrigins`;
+- a **confidential** client `enbuild` for the backend service account;
+- groups `/enbuild/platform-admins` and `/enbuild/projects/<project>/<role>`
+  (`role` ∈ `viewer|member|maintainer|owner`), and assign your users.
+
+The backend verifies via JWKS at `enbuildBk.keycloak.backendUrl` — nothing to pin.
+This is the path you use to integrate ENBUILD with an existing enterprise IdP.
+
+**Why it works the same everywhere:** one Keycloak (bundled or yours), the SPA
+redirects to it at its own host, the backend verifies its tokens via JWKS, and
+tenancy comes from the `groups` claim. The only hard rule is **host alignment** —
+`keycloak.hostname`, `enbuildUi.keycloak.url`, and `enbuildBk.keycloak.url` must be
+the same browser-facing Keycloak URL (the backend issuer is `<url>/realms/enbuild`,
+matched exactly).
 
 ## 4. What this chart deploys
 
