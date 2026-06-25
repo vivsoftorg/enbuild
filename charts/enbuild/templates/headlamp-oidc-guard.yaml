@@ -8,6 +8,13 @@
   guard turns both into a clear `helm install` failure instead of a broken
   console. A default install (all four OIDC fields empty → Headlamp OIDC off)
   trips nothing. See README.md §3a.
+
+  SCOPE: this guards the INLINE OIDC fields — the path both shipped configs
+  (bundled demo + bring-your-own Keycloak) use. If you instead source OIDC from a
+  Secret (config.oidc.secret.create / externalSecret), the four inline fields are
+  empty so this guard is a deliberate no-op (verified: no `-oidc-*` flag renders →
+  Headlamp OIDC simply off, no half-wired state); on that path keeping issuerURL
+  byte-equal to the backend KEYCLOAK_ISSUER is the operator's responsibility.
 */ -}}
 {{- if (default (dict) (default (dict) .Values.lightning_features).operations_lightning).headlamp }}
 {{- $o := default (dict) (default (dict) .Values.headlamp.config).oidc }}
@@ -22,7 +29,10 @@
 {{- if ne (default "" $o.issuerURL) "" }}
 {{- $kc := default (dict) .Values.enbuildBk.keycloak }}
 {{- $beIssuer := $kc.issuer }}
-{{- if and (not $beIssuer) $kc.url }}{{- $beIssuer = printf "%s/realms/%s" $kc.url (default "enbuild" $kc.realm) }}{{- end }}
+{{- /* Derive EXACTLY as templates/backend-secret.yaml does (trimSuffix "/" on url) so the
+       guard's computed issuer byte-matches the backend KEYCLOAK_ISSUER — a trailing slash on
+       url would otherwise make the guard reject a correctly-aligned config (false-fail). */ -}}
+{{- if and (not $beIssuer) $kc.url }}{{- $beIssuer = printf "%s/realms/%s" (trimSuffix "/" $kc.url) (default "enbuild" $kc.realm) }}{{- end }}
 {{- if and (ne (default "" $beIssuer) "") (ne $o.issuerURL $beIssuer) }}
 {{- fail (printf "headlamp.config.oidc.issuerURL (%s) MUST equal the backend token issuer (%s) EXACTLY — Headlamp tokens are verified against the backend KEYCLOAK_ISSUER, so a mismatch fails login silently. Set headlamp.config.oidc.issuerURL: %s" $o.issuerURL $beIssuer $beIssuer) }}
 {{- end }}
