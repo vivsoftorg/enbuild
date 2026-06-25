@@ -156,6 +156,34 @@ tenancy comes from the `groups` claim. The only hard rule is **host alignment** 
 the same browser-facing Keycloak URL (the backend issuer is `<url>/realms/enbuild`,
 matched exactly).
 
+### Headlamp cluster console (OIDC)
+
+The embedded **Headlamp** console browses spoke clusters by forwarding *the logged-in
+user's* Keycloak token to the hub proxy — so under `CONSOLE_AUTH_STRICT` it needs the
+same OIDC identity as the SPA. It is **off by OIDC default** (all four fields empty);
+enable it by setting **all four together**:
+
+```yaml
+lightning_features:
+  operations_lightning:
+    headlamp: true                  # embedded cluster console (default on)
+headlamp:
+  config:
+    oidc:
+      clientID: enbuild-ui          # SAME public PKCE client the console uses
+      scopes: "openid email groups"  # `groups` is REQUIRED — Headlamp tenancy reads it
+      issuerURL: https://kc.<domain>/realms/enbuild     # MUST byte-match the backend KEYCLOAK_ISSUER
+      callbackURL: https://enbuild.<domain>/headlamp/oidc-callback   # console-host + /headlamp/oidc-callback
+```
+
+Also register that `callbackURL` as a redirect URI on the realm's `enbuild-ui` client
+(Path A's demo realm already includes it for the demo console host).
+
+> **Fail-closed:** the chart refuses to install on the two silent misconfigurations
+> that would otherwise break login with no error — a **partial** config (some but not
+> all four fields set) and an `issuerURL` that doesn't equal the backend
+> `KEYCLOAK_ISSUER` exactly. Leave all four empty to run Headlamp without SSO.
+
 ## 4. What this chart deploys
 
 backend (gRPC API) · console UI · mq launch worker · user service · MongoDB

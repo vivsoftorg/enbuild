@@ -1,0 +1,30 @@
+{{- /*
+  ADR-0046 — Headlamp OIDC fail-closed guard (render-time, output-less).
+  Headlamp browses spoke clusters by forwarding the USER's OIDC token, so its
+  OIDC config must be correct or cluster-browsing fails AT LOGIN (silently). The
+  upstream subchart emits one `-oidc-<flag>` per NON-EMPTY field, so two mistakes
+  break it with no error: (1) a PARTIAL config (e.g. clientID set, issuer empty),
+  and (2) an issuer that doesn't byte-match the backend KEYCLOAK_ISSUER. This
+  guard turns both into a clear `helm install` failure instead of a broken
+  console. A default install (all four OIDC fields empty → Headlamp OIDC off)
+  trips nothing. See README.md §3a.
+*/ -}}
+{{- if (default (dict) (default (dict) .Values.lightning_features).operations_lightning).headlamp }}
+{{- $o := default (dict) (default (dict) .Values.headlamp.config).oidc }}
+{{- $fields := list "clientID" "issuerURL" "scopes" "callbackURL" }}
+{{- $setCount := 0 }}
+{{- range $f := $fields }}{{- if ne (default "" (get $o $f)) "" }}{{- $setCount = add1 $setCount }}{{- end }}{{- end }}
+{{- if and (gt $setCount 0) (lt $setCount 4) }}
+{{- $missing := list }}
+{{- range $f := $fields }}{{- if eq (default "" (get $o $f)) "" }}{{- $missing = append $missing $f }}{{- end }}{{- end }}
+{{- fail (printf "headlamp.config.oidc is PARTIALLY configured — set ALL of clientID/issuerURL/scopes/callbackURL together, or leave all four empty to disable Headlamp SSO. Missing: %s. Canonical values: clientID=enbuild-ui, scopes=\"openid email groups\", issuerURL=<the same value as the backend KEYCLOAK_ISSUER>, callbackURL=https://<console-host>/headlamp/oidc-callback. See README.md §3a." (join ", " $missing)) }}
+{{- end }}
+{{- if ne (default "" $o.issuerURL) "" }}
+{{- $kc := default (dict) .Values.enbuildBk.keycloak }}
+{{- $beIssuer := $kc.issuer }}
+{{- if and (not $beIssuer) $kc.url }}{{- $beIssuer = printf "%s/realms/%s" $kc.url (default "enbuild" $kc.realm) }}{{- end }}
+{{- if and (ne (default "" $beIssuer) "") (ne $o.issuerURL $beIssuer) }}
+{{- fail (printf "headlamp.config.oidc.issuerURL (%s) MUST equal the backend token issuer (%s) EXACTLY — Headlamp tokens are verified against the backend KEYCLOAK_ISSUER, so a mismatch fails login silently. Set headlamp.config.oidc.issuerURL: %s" $o.issuerURL $beIssuer $beIssuer) }}
+{{- end }}
+{{- end }}
+{{- end }}
