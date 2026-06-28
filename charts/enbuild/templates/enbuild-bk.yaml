@@ -168,7 +168,7 @@ spec:
         - name: ENBUILD_AGENT_CHART_REPO
           value: {{ default "https://gitlab.com/enbuild-staging/iac-templates/platform-one-eks.git" $ia.chartRepo | quote }}
         - name: ENBUILD_AGENT_CHART_REF
-          value: {{ default "feat/p1ccm-agent-chart-skeleton" $ia.chartRef | quote }}
+          value: {{ default "main" $ia.chartRef | quote }}
         envFrom:
         {{- /*
           MongoDB credentials. When mongodb.existingSecret is set the operator

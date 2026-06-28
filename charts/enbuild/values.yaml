@@ -248,7 +248,14 @@ enbuildBk:
     # [INTERNAL] agent image + chart source pins (fleet-moves-together, ADR-0034).
     agentImageTag: "ac99ae1830c427a65db31a6874e5d4414d90133f"
     chartRepo: "https://gitlab.com/enbuild-staging/iac-templates/platform-one-eks.git"
-    chartRef: "feat/p1ccm-agent-chart-skeleton"
+    # MUST track `main` — the maintained branch whose install-agent-core.sh lib and
+    # enbuild-core/enbuild-stack charts are kept consistent together. The old
+    # `feat/p1ccm-agent-chart-skeleton` branch was a migration-era pin that went
+    # stale: its lib lacked iac_ensure_namespace + IAC_EXISTING_STACK and its
+    # enbuild-core chart still templated the agent namespace (conflicting with the
+    # lib that now creates it) — so EVERY UI import failed mid-Job. `main` carries
+    # the current, co-designed lib+charts (no namespace conflict). See ADR-0049.
+    chartRef: "main"
   image:
     tag: ""                       # [CUSTOMER] pin backend image; empty = appVersion
     # [INTERNAL]
