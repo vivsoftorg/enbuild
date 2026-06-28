@@ -262,6 +262,22 @@ spec:
         - secretRef:
             name: {{ . }}
         {{- end }}
+        {{- /*
+          REAPER_SVC delete credential (CCM orphan-ELB permanent fix, 2026-06-28).
+          REAPER_SVC_AWS_ACCESS_KEY_ID / REAPER_SVC_AWS_SECRET_ACCESS_KEY for the
+          teardown Reaper's cloud-release GATE (AWS Describe poll) and its
+          tag-then-delete residual SWEEP. WITHOUT this wired, teardown-creds
+          forDelete returns null → cloudReleased() never confirms release (times
+          out and hands off to terraform destroy with the ELB still live) and the
+          sweep is a no-op → EVERY cluster destroy orphans the Istio gateway ELB.
+          Same operator-managed existingSecret idiom as installAgent above;
+          nil-safe (unset = pre-fix behavior). Rotation = recreate Secret +
+          rollout restart BE (envFrom read at pod start).
+        */}}
+        {{- with (default (dict) .Values.enbuildBk.reaperSvc).existingSecret }}
+        - secretRef:
+            name: {{ . }}
+        {{- end }}
         # Image registry: per-service `enbuildBk.image.registry` override
         # wins over the chart-wide `global.image.registry`. Unset by default →
         # falls back to global, preserving every existing deploy's behavior.
