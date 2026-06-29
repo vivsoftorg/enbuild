@@ -20,12 +20,16 @@
 # names are derived from it and the generated secret names match):
 #   1.  REPO1_USER=... REPO1_TOKEN=... GITLAB_USER=... GITLAB_TOKEN=... \
 #         scripts/create-bootstrap-secrets.sh          # creates the secrets below
-#   2.  helm dependency build .
-#   3.  helm upgrade --install enbuild-ib . -n enbuild --create-namespace \
+#   2.  helm upgrade --install enbuild-ib . -n enbuild --create-namespace \
 #         -f examples/values-quickstart.yaml
-#   4.  kubectl -n enbuild port-forward svc/enbuild-ib-enbuild-ui      8081:80   &
+#       # NOTE: do NOT run `helm dependency build` — the rabbitmq + headlamp
+#       # subcharts are already vendored under charts/*.tgz (see Chart.lock), so
+#       # install renders fully OFFLINE. `helm dependency build` would FAIL in a
+#       # clean room (it wants `helm repo add bitnami`/`headlamp` first) and is
+#       # unnecessary.
+#   3.  kubectl -n enbuild port-forward svc/enbuild-ib-enbuild-ui      8081:80   &
 #       kubectl -n enbuild port-forward svc/enbuild-ib-keycloak        8088:8080 &
-#   5.  Open http://localhost:8081  → log in as admin@p1.mil / ChangeMe123!
+#   4.  Open http://localhost:8081  → log in as admin@p1.mil / ChangeMe123!
 #
 # DEMO PERSONAS (all password ChangeMe123! — CHANGE before any non-demo use):
 #   admin@p1.mil (platform admin) · owner-ib@p1.mil · viewer-ib@p1.mil · owner-bb@p1.mil

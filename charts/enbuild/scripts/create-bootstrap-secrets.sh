@@ -48,7 +48,7 @@ IA_REPO1_USER="${IA_REPO1_USER:-${REPO1_USER}}"
 IA_REPO1_TOKEN="${IA_REPO1_TOKEN:-${REPO1_TOKEN}}"
 
 log()  { printf '  %s\n' "$*"; }
-head() { printf '\n== %s ==\n' "$*"; }
+section() { printf '\n== %s ==\n' "$*"; }
 
 rand() { # rand <chars> -> URI-safe alphanumeric (no amqp:// / URI-breaking chars)
   local n="${1:-32}"
@@ -73,14 +73,14 @@ apply_secret() { # apply_secret <name> <kubectl-create-secret-args...>
   log "created: $name"
 }
 
-head "ENBUILD hub bootstrap secrets → ns/$NAMESPACE (release $RELEASE)"
+section "ENBUILD hub bootstrap secrets → ns/$NAMESPACE (release $RELEASE)"
 kubectl get namespace "$NAMESPACE" >/dev/null 2>&1 || { log "creating namespace $NAMESPACE"; kubectl create namespace "$NAMESPACE" >/dev/null; }
 
 # 1) MongoDB root credentials --------------------------------------------------
 # Bundled Mongo (mongodb.enabled=true) hardcodes envFrom <release>-mongo-secrets,
 # so the name MUST be exactly this. The backend assembles MONGODB_ENDPOINT from
 # these fields. MONGO_SERVER points at the bundled single-node service.
-head "1/6 MongoDB credentials"
+section "1/6 MongoDB credentials"
 if secret_exists "${RELEASE}-mongo-secrets" && [ "$FORCE" != "1" ]; then
   log "exists, kept: ${RELEASE}-mongo-secrets"
 else
@@ -93,14 +93,14 @@ else
 fi
 
 # 2) At-rest encryption key ----------------------------------------------------
-head "2/6 Backend at-rest ENCRYPTION_KEY"
+section "2/6 Backend at-rest ENCRYPTION_KEY"
 apply_secret "${RELEASE}-encryption-key" generic "${RELEASE}-encryption-key" \
   --from-literal=ENCRYPTION_KEY="$(rand 48)"
 
 # 3+4) RabbitMQ broker password + erlang cookie + backend connection string ----
 # ONE password drives both the broker (rabbitmq-password) and the backend's
 # RABBIT_MQ_CONNECTION_STRING — they can never diverge.
-head "3/6 RabbitMQ credentials (broker) + 4/6 backend connection string"
+section "3/6 RabbitMQ credentials (broker) + 4/6 backend connection string"
 if secret_exists "${RELEASE}-rabbitmq-creds" && [ "$FORCE" != "1" ]; then
   log "exists, kept: ${RELEASE}-rabbitmq-creds (reusing its password for messaging)"
   RMQ_PW="$(kubectl -n "$NAMESPACE" get secret "${RELEASE}-rabbitmq-creds" -o jsonpath='{.data.rabbitmq-password}' | base64 -d)"
@@ -117,7 +117,7 @@ kubectl -n "$NAMESPACE" create secret generic "${RELEASE}-messaging" \
 log "created/updated: ${RELEASE}-messaging"
 
 # 5) Image pull secret (combined registries) -----------------------------------
-head "5/6 Image-pull secret (${GITLAB_REGISTRY} + ${REPO1_REGISTRY})"
+section "5/6 Image-pull secret (${GITLAB_REGISTRY} + ${REPO1_REGISTRY})"
 if secret_exists "${RELEASE}-image-pull-secret" && [ "$FORCE" != "1" ]; then
   log "exists, kept: ${RELEASE}-image-pull-secret"
 elif [ -n "$REPO1_USER$REPO1_TOKEN$GITLAB_USER$GITLAB_TOKEN" ]; then
@@ -129,12 +129,15 @@ elif [ -n "$REPO1_USER$REPO1_TOKEN$GITLAB_USER$GITLAB_TOKEN" ]; then
   }
   add_auth "$GITLAB_REGISTRY" "$GITLAB_USER" "$GITLAB_TOKEN"
   add_auth "$REPO1_REGISTRY"  "$REPO1_USER"  "$REPO1_TOKEN"
-  printf '{"auths":{%s}}' "$auths" > /tmp/.enbuild-dockercfg.$$
+  # Write the dockerconfigjson to a 0600 temp file (never world-readable in /tmp).
+  dockercfg="$(mktemp "${TMPDIR:-/tmp}/.enbuild-dockercfg.XXXXXX")"
+  chmod 600 "$dockercfg"
+  printf '{"auths":{%s}}' "$auths" > "$dockercfg"
   kubectl -n "$NAMESPACE" create secret generic "${RELEASE}-image-pull-secret" \
     --type=kubernetes.io/dockerconfigjson \
-    --from-file=.dockerconfigjson=/tmp/.enbuild-dockercfg.$$ \
+    --from-file=.dockerconfigjson="$dockercfg" \
     --dry-run=client -o yaml | kubectl apply -f - >/dev/null
-  rm -f /tmp/.enbuild-dockercfg.$$
+  rm -f "$dockercfg"
   log "created: ${RELEASE}-image-pull-secret"
 else
   log "SKIPPED — no registry creds given. Set REPO1_USER/REPO1_TOKEN + GITLAB_USER/GITLAB_TOKEN,"
@@ -142,7 +145,7 @@ else
 fi
 
 # 6) install-agent secret (OPTIONAL — only for catalog launches) ---------------
-head "6/6 install-agent secret (optional — catalog launches)"
+section "6/6 install-agent secret (optional — catalog launches)"
 if [ -n "$IA_GITLAB_TOKEN" ]; then
   apply_secret "${RELEASE}-install-agent" generic "${RELEASE}-install-agent" \
     --from-literal=GITLAB_TOKEN="$IA_GITLAB_TOKEN" \
@@ -153,7 +156,7 @@ else
   log "catalog LAUNCHES need it (enbuildBk.installAgent.existingSecret)."
 fi
 
-head "Done. Secrets in ns/$NAMESPACE:"
+section "Done. Secrets in ns/$NAMESPACE:"
 kubectl -n "$NAMESPACE" get secret | grep -E "^${RELEASE}-(mongo-secrets|encryption-key|messaging|rabbitmq-creds|image-pull-secret|install-agent)" || true
 cat <<EOF
 
