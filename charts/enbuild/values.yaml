@@ -264,6 +264,15 @@ enbuildBk:
     # lib that now creates it) — so EVERY UI import failed mid-Job. `main` carries
     # the current, co-designed lib+charts (no namespace conflict). See ADR-0049.
     chartRef: "main"
+    # --- [CUSTOMER] Portability knobs (ADR-0049 follow-up) ---
+    # All empty/registry1 by default → a stock P1/Iron Bank deploy is unchanged.
+    # An AF P1 / non-enbuild-staging customer overrides these (or sets them at
+    # runtime via admin-settings) so the import pulls the agent image + the spoke
+    # private-registry pull-secret from THEIR registry, with no code fork.
+    repo1Registry: ""             # spoke private-registry docker-server (empty → registry1.dso.mil)
+    agentImageRegistry: ""        # registry host for the agent image (composed with agentImageRepository)
+    agentImageRepository: ""      # agent image path; full path, or path-after-registry when agentImageRegistry set
+    agentImagePullSecret: ""      # name of the imagePullSecret for the agent image (image.pullSecrets[0].name)
   image:
     tag: ""                       # [CUSTOMER] pin backend image; empty = appVersion
     # [INTERNAL]

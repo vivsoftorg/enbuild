@@ -169,6 +169,25 @@ spec:
           value: {{ default "https://gitlab.com/enbuild-staging/iac-templates/platform-one-eks.git" $ia.chartRepo | quote }}
         - name: ENBUILD_AGENT_CHART_REF
           value: {{ default "main" $ia.chartRef | quote }}
+        {{- /*
+          Portability knobs (ADR-0049 follow-up). All default empty/registry1 so a
+          stock P1/Iron Bank deploy is unchanged; a customer (e.g. AF P1 against
+          repo1.dso.mil + their own registry) overrides these to make the import
+          pull the agent image + the spoke private-registry secret from THEIR
+          registry, with no code change. These are ALSO admin-settable at runtime
+          (admin-settings → process.env), so this block is the deploy-time default.
+          - repo1Registry         → spoke private-registry docker-server + pull-probe
+          - agentImageRegistry/Repository → compose the agent image.repository override
+          - agentImagePullSecret  → image.pullSecrets[0].name on the agent
+        */}}
+        - name: ENBUILD_REPO1_REGISTRY
+          value: {{ default "registry1.dso.mil" $ia.repo1Registry | quote }}
+        - name: ENBUILD_AGENT_IMAGE_REGISTRY
+          value: {{ default "" $ia.agentImageRegistry | quote }}
+        - name: ENBUILD_AGENT_IMAGE_REPOSITORY
+          value: {{ default "" $ia.agentImageRepository | quote }}
+        - name: ENBUILD_AGENT_IMAGE_PULL_SECRET
+          value: {{ default "" $ia.agentImagePullSecret | quote }}
         envFrom:
         {{- /*
           MongoDB credentials. When mongodb.existingSecret is set the operator
