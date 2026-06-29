@@ -182,8 +182,23 @@ spec:
         */}}
         - name: ENBUILD_REPO1_REGISTRY
           value: {{ default "registry1.dso.mil" $ia.repo1Registry | quote }}
+        {{- /*
+          ADR-0049 P2 — registry inheritance. When the operator configures the
+          agent image PATH for a non-default registry (e.g. Iron Bank), the
+          registry HOST defaults to the chart-wide `global.image.registry`. So
+          `global.image.registry` becomes the SINGLE deploy-time lever for both
+          the hub images AND the imported agent — set it once, the agent follows.
+          An explicit `agentImageRegistry` still wins. With neither set (stock
+          deploy) this stays empty → BE keeps the agent chart's own default, so a
+          stock P1/Iron Bank deploy is unchanged and no "registry without repo"
+          warning is emitted.
+        */}}
         - name: ENBUILD_AGENT_IMAGE_REGISTRY
-          value: {{ default "" $ia.agentImageRegistry | quote }}
+          {{- if or $ia.agentImageRegistry $ia.agentImageRepository }}
+          value: {{ $ia.agentImageRegistry | default .Values.global.image.registry | quote }}
+          {{- else }}
+          value: ""
+          {{- end }}
         - name: ENBUILD_AGENT_IMAGE_REPOSITORY
           value: {{ default "" $ia.agentImageRepository | quote }}
         - name: ENBUILD_AGENT_IMAGE_PULL_SECRET
