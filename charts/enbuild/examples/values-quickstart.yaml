@@ -1,0 +1,171 @@
+# =============================================================================
+# ENBUILD hub — QUICKSTART (greenfield "deploy & log in in minutes")
+# =============================================================================
+# A self-contained profile that brings up a FULLY FUNCTIONAL hub on a vanilla
+# Kubernetes cluster using ONLY this chart + the generated bootstrap secrets —
+# no external Mongo, no operator realm, no live-environment coupling.
+#
+#   • Mongo, RabbitMQ, Keycloak are all BUNDLED in-cluster.
+#   • Keycloak boots the chart-shipped DEMO realm (working SSO, personas below).
+#   • No edge is assumed (no Istio / Ingress) — you reach the console by
+#     port-forward. For a real URL, see "PRODUCTION EDGE" at the bottom.
+#
+# PREREQUISITES on the target cluster:
+#   • A default StorageClass (bundled Mongo/RabbitMQ need PVCs). global.storageClass
+#     empty = cluster default; set it if your cluster has no default SC.
+#   • Image-pull entitlements for the ENBUILD app images (registry.gitlab.com) and
+#     the Iron Bank base images (registry1.dso.mil).
+#
+# DEPLOY (release name MUST be enbuild-ib — bundled Mongo/Keycloak/RabbitMQ service
+# names are derived from it and the generated secret names match):
+#   1.  REPO1_USER=... REPO1_TOKEN=... GITLAB_USER=... GITLAB_TOKEN=... \
+#         scripts/create-bootstrap-secrets.sh          # creates the secrets below
+#   2.  helm dependency build .
+#   3.  helm upgrade --install enbuild-ib . -n enbuild --create-namespace \
+#         -f examples/values-quickstart.yaml
+#   4.  kubectl -n enbuild port-forward svc/enbuild-ib-enbuild-ui      8081:80   &
+#       kubectl -n enbuild port-forward svc/enbuild-ib-keycloak        8088:8080 &
+#   5.  Open http://localhost:8081  → log in as admin@p1.mil / ChangeMe123!
+#
+# DEMO PERSONAS (all password ChangeMe123! — CHANGE before any non-demo use):
+#   admin@p1.mil (platform admin) · owner-ib@p1.mil · viewer-ib@p1.mil · owner-bb@p1.mil
+# =============================================================================
+
+global:
+  # No public DNS in the port-forward profile — leave empty (the demo realm then
+  # trusts http://localhost:8081). Set both for a real FQDN (see PRODUCTION EDGE).
+  domain: ""
+  # Edge OFF — reach the console via `kubectl port-forward`. Turn one of these on
+  # for a real URL (see bottom).
+  istio:
+    enabled: false
+  ingress:
+    enabled: false
+  # ENBUILD first-party app images (BE/FE/UI/MQ/user) live on GitLab.
+  image:
+    registry: registry.gitlab.com
+    pullPolicy: IfNotPresent
+  # Combined dockerconfigjson Secret (registry.gitlab.com + registry1.dso.mil),
+  # created by scripts/create-bootstrap-secrets.sh. Used by the ENBUILD first-party
+  # workloads + bundled Mongo (enbuild convention: a single secret NAME).
+  imagePullSecretName: enbuild-ib-image-pull-secret
+  # The BUNDLED bitnami RabbitMQ subchart reads the Helm-standard
+  # `global.imagePullSecrets` (an ARRAY) instead of `imagePullSecretName`, so the
+  # same pull secret must ALSO be listed here or its Iron Bank image
+  # (registry1.dso.mil/ironbank/bitnami/rabbitmq) hits ImagePullBackOff. (On the
+  # live hub a private-registry mutating webhook injects it; a vanilla cluster has
+  # no such webhook, so list it explicitly.)
+  imagePullSecrets:
+    - enbuild-ib-image-pull-secret
+  # Empty = use the cluster's default StorageClass. Set e.g. "gp3"/"ebs-sc" if none.
+  storageClass: ""
+
+# IMPORTANT — first-party app image tags are PINNED below (enbuildBk/enbuildUi/
+# enbuildUser/enbuildConsumer .image.tag). The chart's per-service image.tag
+# defaults to "" → Chart.yaml appVersion, which is NOT guaranteed to be a
+# deployable tag: the real published builds are git-SHA-tagged, and a stale
+# appVersion (e.g. 1.0.30) resolves to an OLD image whose /api/health/* probe
+# routes don't exist → the liveness probe kills the backend in a CrashLoop. Per
+# ADR-0034 (the live hub pins SHAs via image-tags.pin, never appVersion), pin
+# every first-party service to a known-good published build. The SHAs used here
+# are the current vendor13-ib production build — bump them to roll forward.
+
+# Embedded cluster console (Headlamp). Keep on — it's part of the platform.
+lightning_features:
+  operations_lightning:
+    headlamp: true
+
+# --- Bundled MongoDB (single-node) -------------------------------------------
+mongodb:
+  enabled: true
+  # Root creds + MONGO_SERVER come from the generated Secret (NOT from values).
+  existingSecret: enbuild-ib-mongo-secrets
+  # Iron Bank Mongo image (the bundled StatefulSet pulls the IB base image, which
+  # lives on registry1.dso.mil — NOT on global.image.registry/GitLab).
+  image:
+    registry: registry1.dso.mil
+    repository: ironbank/opensource/mongodb/mongodb_7.x
+    tag: "7.0.34"
+
+# --- Bundled RabbitMQ broker --------------------------------------------------
+rabbitmq:
+  enabled: true
+  auth:
+    username: enbuild
+    # Broker password + erlang cookie from the generated Secret. The SAME password
+    # is in enbuild-ib-messaging (backend connection string) so they cannot diverge.
+    existingPasswordSecret: enbuild-ib-rabbitmq-creds
+    existingErlangSecret: enbuild-ib-rabbitmq-creds
+
+# --- ENBUILD backend (control plane) -----------------------------------------
+enbuildBk:
+  image:
+    tag: "71e400c2fabea831b4ead98e1243391ce75cf66f"   # known-good build (see note above)
+  authMechanism: keycloak
+  encryptionKey:
+    existingSecret: enbuild-ib-encryption-key       # ENCRYPTION_KEY (at-rest)
+  messaging:
+    existingSecret: enbuild-ib-messaging            # RABBIT_MQ_CONNECTION_STRING
+  keycloak:
+    realm: enbuild
+    # Browser-facing Keycloak URL (port-forward). KEYCLOAK_ISSUER = <url>/realms/enbuild.
+    url: http://localhost:8088
+    # In-cluster Keycloak for JWKS/discovery (the backend verifies tokens here).
+    backendUrl: http://enbuild-ib-keycloak:8080
+    clientId: enbuild
+  # No spoke agents dial in for the eval hub — no Istio gateway, so disable the
+  # gRPC VirtualService. (Re-enable + set host/gateway when onboarding spokes.)
+  grpcVirtualService:
+    enabled: false
+  # installAgent.existingSecret intentionally unset: the hub logs in + the dashboard
+  # works without it; only catalog LAUNCHES need it. Add it (and re-enable the gRPC
+  # VS + an edge) to onboard real spoke clusters.
+
+enbuildUi:
+  image:
+    tag: "71e400c2fabea831b4ead98e1243391ce75cf66f"   # frontend built from the same commit as backend
+  # Browser OIDC config the SPA uses (public PKCE client). Same Keycloak host as the
+  # backend issuer above; realm inherits enbuild.
+  keycloak:
+    url: http://localhost:8088
+    realm: enbuild
+    clientId: enbuild-ui
+
+# --- ENBUILD user service + mq consumer (pin to known-good builds) ------------
+enbuildUser:
+  image:
+    tag: "8d473885fc7945166def7411dd1ba56954eb2404"
+enbuildConsumer:
+  image:
+    tag: "b4cc492236fe19c44585855d5947f19a3e29da2c"
+
+# --- Bundled Keycloak + chart demo realm (working SSO from the repo alone) -----
+keycloak:
+  enabled: true
+  demoRealm:
+    enabled: true
+    # adminPassword: ChangeMe123!  (default) — override for anything non-demo.
+  # hostname (KC_HOSTNAME) defaults to http://localhost:8088 — the issuer Keycloak
+  # stamps, matching enbuildBk/enbuildUi keycloak.url above. The demo realm's
+  # redirect URIs default to http://localhost:8081 (the console port-forward).
+
+# =============================================================================
+# PRODUCTION EDGE (real URL instead of port-forward) — pick ONE:
+#
+# A) Istio (if the cluster runs Istio + a Gateway):
+#      global.istio.enabled: true
+#      global.domain: example.com
+#      enbuildUi.hostname: enbuild
+#      keycloak.hostname / enbuildBk.keycloak.url / enbuildUi.keycloak.url:
+#        https://keycloak.example.com   (all identical — issuer alignment)
+#      keycloak.virtualService.enabled: true (+ host)
+#      enbuildBk.grpcVirtualService.enabled: true (+ host, gateway) to onboard spokes
+#
+# B) Plain Ingress (install ingress-nginx first):
+#      global.ingress.enabled: true ; global.ingress.className: nginx
+#      global.ingress.tls: true ; global.ingress.tls_secret: <cert-secret>
+#      global.domain + enbuildUi.hostname as above; Keycloak URLs identical.
+#
+# Either way, a public TLS cert covering the console/Keycloak hosts is required
+# (cert-manager + a ClusterIssuer is the usual source).
+# =============================================================================

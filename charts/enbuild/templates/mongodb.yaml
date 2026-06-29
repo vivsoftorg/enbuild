@@ -23,7 +23,7 @@ spec:
       - envFrom:
         - secretRef:
             name: {{ .Release.Name }}-mongo-secrets
-        image: {{ .Values.global.image.registry }}/{{ .Values.mongodb.image.repository }}:{{ .Values.mongodb.image.tag }}
+        image: {{ .Values.mongodb.image.registry | default .Values.global.image.registry }}/{{ .Values.mongodb.image.repository }}:{{ .Values.mongodb.image.tag }}
         imagePullPolicy: {{ .Values.global.image.pullPolicy }}
         name: mongo
         ports:

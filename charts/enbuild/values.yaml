@@ -125,7 +125,11 @@ mongodb:
   # [CUSTOMER] StorageClass for the bundled Mongo PVC (enabled=true only).
   storageClassName: ""
   image:
-    # [INTERNAL] bundled-Mongo image (enabled=true only); air-gap via global.image.registry.
+    # [CUSTOMER] bundled-Mongo image (enabled=true only). The Mongo base image is an
+    # Iron Bank image on registry1.dso.mil, which is usually a DIFFERENT registry
+    # from the ENBUILD app images (global.image.registry). Set registry here so the
+    # bundled Mongo pulls from the right place independently. Empty → global.image.registry.
+    registry: ""
     repository: ironbank/opensource/mongodb/mongodb
     tag: 4.4.5
   # [INTERNAL] inline creds EMPTY by design — provide via mongodb.existingSecret.

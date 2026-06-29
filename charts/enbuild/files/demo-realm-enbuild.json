@@ -1,5 +1,4 @@
 {
-  "_comment": "DEMO-ONLY enbuild realm shipped by the chart for auto-seed (keycloak.demoRealm.enabled=true). Contains NO real signing keys, certs, client secrets, or password hashes — Keycloak GENERATES the realm RSA signing key on import and HASHES the plaintext demo passwords. The literal __CONSOLE_URL__ is substituted by templates/keycloak-demo-realm-secret.yaml with the browser console URL at render time. CHANGE ALL PASSWORDS + the enbuild client secret before any non-demo use. Groups match backend auth/tenancy-groups.ts byte-for-byte: /enbuild/platform-admins and /enbuild/projects/<slug>/<role> with role in {viewer,member,maintainer,owner}.",
   "realm": "enbuild",
   "enabled": true,
   "sslRequired": "none",
@@ -45,20 +44,44 @@
               "name": "iron-bank",
               "path": "/enbuild/projects/iron-bank",
               "subGroups": [
-                { "name": "viewer", "path": "/enbuild/projects/iron-bank/viewer" },
-                { "name": "member", "path": "/enbuild/projects/iron-bank/member" },
-                { "name": "maintainer", "path": "/enbuild/projects/iron-bank/maintainer" },
-                { "name": "owner", "path": "/enbuild/projects/iron-bank/owner" }
+                {
+                  "name": "viewer",
+                  "path": "/enbuild/projects/iron-bank/viewer"
+                },
+                {
+                  "name": "member",
+                  "path": "/enbuild/projects/iron-bank/member"
+                },
+                {
+                  "name": "maintainer",
+                  "path": "/enbuild/projects/iron-bank/maintainer"
+                },
+                {
+                  "name": "owner",
+                  "path": "/enbuild/projects/iron-bank/owner"
+                }
               ]
             },
             {
               "name": "big-bang",
               "path": "/enbuild/projects/big-bang",
               "subGroups": [
-                { "name": "viewer", "path": "/enbuild/projects/big-bang/viewer" },
-                { "name": "member", "path": "/enbuild/projects/big-bang/member" },
-                { "name": "maintainer", "path": "/enbuild/projects/big-bang/maintainer" },
-                { "name": "owner", "path": "/enbuild/projects/big-bang/owner" }
+                {
+                  "name": "viewer",
+                  "path": "/enbuild/projects/big-bang/viewer"
+                },
+                {
+                  "name": "member",
+                  "path": "/enbuild/projects/big-bang/member"
+                },
+                {
+                  "name": "maintainer",
+                  "path": "/enbuild/projects/big-bang/maintainer"
+                },
+                {
+                  "name": "owner",
+                  "path": "/enbuild/projects/big-bang/owner"
+                }
               ]
             }
           ]
@@ -75,7 +98,11 @@
       "firstName": "Platform",
       "lastName": "Admin",
       "credentials": [
-        { "type": "password", "temporary": false, "value": "ChangeMe123!" }
+        {
+          "type": "password",
+          "temporary": false,
+          "value": "ChangeMe123!"
+        }
       ],
       "groups": [
         "/enbuild/platform-admins"
@@ -92,7 +119,11 @@
       "firstName": "Iron",
       "lastName": "Owner",
       "credentials": [
-        { "type": "password", "temporary": false, "value": "ChangeMe123!" }
+        {
+          "type": "password",
+          "temporary": false,
+          "value": "ChangeMe123!"
+        }
       ],
       "groups": [
         "/enbuild/projects/iron-bank/owner"
@@ -109,7 +140,11 @@
       "firstName": "Iron",
       "lastName": "Viewer",
       "credentials": [
-        { "type": "password", "temporary": false, "value": "ChangeMe123!" }
+        {
+          "type": "password",
+          "temporary": false,
+          "value": "ChangeMe123!"
+        }
       ],
       "groups": [
         "/enbuild/projects/iron-bank/viewer"
@@ -126,7 +161,11 @@
       "firstName": "BigBang",
       "lastName": "Owner",
       "credentials": [
-        { "type": "password", "temporary": false, "value": "ChangeMe123!" }
+        {
+          "type": "password",
+          "temporary": false,
+          "value": "ChangeMe123!"
+        }
       ],
       "groups": [
         "/enbuild/projects/big-bang/owner"
