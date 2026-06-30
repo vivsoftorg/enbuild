@@ -95,6 +95,21 @@ enbuildBk:
   kubeProxyFallbackActor: "headlamp-proxy@platform.one.mil"
   # clusterRpcTimeoutMs not set → uses the chart default "10000" (2026-06-11
   # latency P0 fail-fast). Override here only to change it for this environment.
+  # --- Observability & SIEM (SOO §1.5) — see docs/OPERATOR-DEPLOYMENT-GUIDE.md §3b.
+  # Spoke perf/security metrics need NO config (the agent auto-routes the spoke's
+  # Prometheus). Uncomment to wire SIEM forwarding + in-console log tailing:
+  # observability:
+  #   existingSecret: enbuild-ib-observability   # keys: SIEM_AUTH_HEADER / LOKI_TOKEN / PROMETHEUS_TOKEN (subset)
+  #   siem:
+  #     forwardingEnabled: "true"
+  #     endpoint: "https://<p1-siem-collector>/services/collector/raw"
+  #     format: "json"
+  #   loki:
+  #     host: "http://logging-loki-gateway.logging.svc.cluster.local"
+  #     tenant: "enbuild"
+  #   grafana:
+  #     base: "https://<grafana-host>"
+  #     lokiDatasource: "loki"
 
 enbuildUi:
   hostname: enbuild

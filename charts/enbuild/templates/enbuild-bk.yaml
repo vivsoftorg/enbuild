@@ -312,6 +312,19 @@ spec:
         - secretRef:
             name: {{ . }}
         {{- end }}
+        {{- /*
+          Observability & SIEM bearer tokens (SOO §1.5) from an operator-managed
+          Secret. Expected keys (any subset): SIEM_AUTH_HEADER, PROMETHEUS_TOKEN,
+          LOKI_TOKEN. Same operator-managed-secret idiom as keycloak/exportSigning
+          above — keeps the SIEM/Prometheus/Loki credentials out of Helm values
+          and rotatable out-of-band (recreate Secret + rollout restart BE; envFrom
+          is read at pod start). The non-secret endpoints/toggles ride
+          backend-secret. nil-safe under `helm upgrade --reuse-values`.
+        */}}
+        {{- with (default (dict) .Values.enbuildBk.observability).existingSecret }}
+        - secretRef:
+            name: {{ . }}
+        {{- end }}
         # Image registry: per-service `enbuildBk.image.registry` override
         # wins over the chart-wide `global.image.registry`. Unset by default →
         # falls back to global, preserving every existing deploy's behavior.

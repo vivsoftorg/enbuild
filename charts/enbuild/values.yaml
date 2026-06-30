@@ -211,6 +211,41 @@ enbuildBk:
     existingSecret: ""
     privateKeyPem: ""             # dev/test inline path only
 
+  # --- [CUSTOMER] Observability & SIEM data sources (SOO §1.5) ---
+  # Declarative, GitOps-repeatable config for the three observability surfaces so
+  # the client never hand-edits the Deployment env (which a helm upgrade wipes).
+  # NON-SECRET endpoints below render into the backend env; the SECRET bearer
+  # tokens ride enbuildBk.observability.existingSecret via envFrom — same
+  # operator-managed-secret idiom as keycloak/exportSigning. EVERYTHING here is
+  # OPTIONAL and defaults empty → a stock deploy is unchanged:
+  #   • SIEM ships OFF (forwardingEnabled empty) until an endpoint is set;
+  #   • spoke Prometheus auto-routes through the connected agent (leave
+  #     prometheus.host EMPTY — it is ONLY the hub-self direct path);
+  #   • Loki pod-log tailing + Grafana deep-link fall back to a synthetic
+  #     zero-state until host(s) are set.
+  # For SIEM specifically, the admin UI (/admin/siem-settings) remains the LIVE
+  # per-field override (encrypted, hot-reload); these values are the GitOps floor
+  # (and the only air-gap-seedable path). REQUIRES enbuildBk.encryptionKey.
+  # existingSecret to persist any admin-UI overrides across redeploy (see NOTES).
+  observability:
+    # Operator Secret carrying the observability bearer tokens. Expected keys
+    # (any subset): SIEM_AUTH_HEADER, PROMETHEUS_TOKEN, LOKI_TOKEN. Keeps the
+    # SIEM/Prometheus/Loki credentials out of Helm values + rotatable out-of-band.
+    existingSecret: ""
+    siem:                          # SOO §1.5(i) — solution audit stream → P1 SIEM
+      forwardingEnabled: ""        # "true" to ship; empty/"false" = OFF
+      endpoint: ""                 # https URL of the P1 SIEM HTTP(S) collector
+      format: ""                   # json (ECS, default) | cef
+      timeoutMs: ""                # per-POST timeout ms; empty = 5000
+    prometheus:                    # SOO §1.5(iii) — performance tuning
+      host: ""                     # HUB-SELF Prometheus base URL ONLY; spokes auto-route via the agent (leave empty)
+    loki:                          # SOO §1.5(iii) — efficient troubleshooting (pod-log tailing)
+      host: ""                     # Loki gateway base URL (e.g. http://logging-loki-gateway.logging.svc.cluster.local)
+      tenant: ""                   # X-Scope-OrgID tenant (multi-tenant Loki)
+    grafana:                       # deep-link fallback for log search
+      base: ""                     # Grafana base URL for the Explore deep-link
+      lokiDatasource: ""           # Loki datasource UID for the deep-link
+
   # --- [CUSTOMER] SSO / authentication (Keycloak) ---
   # P1 is Keycloak-only. authMechanism defaults to "keycloak"; the chart wires the
   # backend's JWT-verifier config from the keycloak block below. The chart FAILS the

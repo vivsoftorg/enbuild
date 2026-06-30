@@ -125,6 +125,29 @@ enbuildBk:
   # works without it; only catalog LAUNCHES need it. Add it (and re-enable the gRPC
   # VS + an edge) to onboard real spoke clusters.
 
+  # --- Observability & SIEM (SOO §1.5) — OPTIONAL, off by default --------------
+  # Spoke performance/security metrics work with NO config here (the connected
+  # agent auto-routes the spoke's in-cluster Prometheus). Turn the rest on
+  # declaratively here (GitOps-repeatable) instead of the admin UI:
+  #   1) Put the bearer tokens in a Secret (any subset of the three keys):
+  #        kubectl -n enbuild create secret generic enbuild-ib-observability \
+  #          --from-literal=SIEM_AUTH_HEADER='Bearer <p1-siem-token>' \
+  #          --from-literal=LOKI_TOKEN='<loki-token>'
+  #   2) Reference it + set the non-secret endpoints:
+  # observability:
+  #   existingSecret: enbuild-ib-observability
+  #   siem:
+  #     forwardingEnabled: "true"
+  #     endpoint: "https://siem.p1.example.mil/services/collector/raw"
+  #     format: "json"            # ECS JSON; use "cef" for Splunk/ArcSight
+  #   loki:                       # in-console pod-log tailing (troubleshooting)
+  #     host: "http://logging-loki-gateway.logging.svc.cluster.local"
+  #     tenant: "enbuild"
+  #   grafana:                    # deep-link fallback
+  #     base: "https://grafana.p1.example.mil"
+  #     lokiDatasource: "loki"
+  #   # prometheus.host: only for HUB-SELF metrics; leave empty for spokes.
+
 enbuildUi:
   image:
     tag: "71e400c2fabea831b4ead98e1243391ce75cf66f"   # frontend built from the same commit as backend

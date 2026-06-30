@@ -126,6 +126,73 @@ helm template <release> ./charts/enbuild -n enbuild -f my-values.yaml | less
 
 ---
 
+## 3b. Observability & SIEM (SOO §1.5) — repeatable, resilient config
+
+The three observability surfaces have **three different** config models. All are
+declarable in values (GitOps-repeatable) so you never hand-edit the Deployment
+(which a `helm upgrade` wipes). Secrets ride one operator-managed Secret; the
+non-secret endpoints are plain values.
+
+| Capability | Test cell | How to configure | Notes |
+|---|---|---|---|
+| **Performance — managed clusters** | 3.5-5 | **Nothing.** The connected spoke agent auto-discovers the cluster's Big Bang/kube-prometheus and routes metrics over the existing mTLS link. | Leave `enbuildBk.observability.prometheus.host` EMPTY. If the Performance tab shows synthetic, check BB monitoring is Running on that spoke + the agent is connected — **not** a hub setting. |
+| **SIEM forwarding** | 3.5-1 | `enbuildBk.observability.siem.*` (endpoint/format/toggle) + `SIEM_AUTH_HEADER` in the Secret. | Ships **OFF** until `forwardingEnabled: "true"` + an `endpoint`. Forwards the **solution audit stream** (CCM-32 platform actions), *not* aggregated cluster/pod logs — those ship from each cluster's Big Bang Fluentbit (see §3c). Admin UI `/admin/siem-settings` is the **live per-field override**; these values are the GitOps floor + the only air-gap-seedable path. |
+| **Troubleshooting (pod logs)** | 3.5-4 | `enbuildBk.observability.loki.{host,tenant}` + `LOKI_TOKEN` in the Secret; optional `grafana.{base,lokiDatasource}` deep-link. | Without a host, in-console log tailing falls back to a synthetic zero-state + the Grafana deep-link. |
+
+**Step 1 — create the bearer-token Secret** (any subset of the three keys; the
+SIEM/Loki tokens are customer-furnished, so this is NOT auto-generated):
+
+```bash
+kubectl -n enbuild create secret generic enbuild-ib-observability \
+  --from-literal=SIEM_AUTH_HEADER='Bearer <p1-siem-collector-token>' \
+  --from-literal=LOKI_TOKEN='<loki-token>'
+# (or: OBS_SIEM_AUTH_HEADER=... OBS_LOKI_TOKEN=... scripts/create-bootstrap-secrets.sh)
+```
+
+**Step 2 — set the non-secret endpoints in your values:**
+
+```yaml
+enbuildBk:
+  observability:
+    existingSecret: enbuild-ib-observability   # SIEM_AUTH_HEADER / PROMETHEUS_TOKEN / LOKI_TOKEN
+    siem:
+      forwardingEnabled: "true"
+      endpoint: "https://siem.p1.example.mil/services/collector/raw"
+      format: "json"                # ECS JSON (default); "cef" for Splunk/ArcSight
+    loki:
+      host: "http://logging-loki-gateway.logging.svc.cluster.local"
+      tenant: "enbuild"
+    grafana:
+      base: "https://grafana.p1.example.mil"
+      lokiDatasource: "loki"
+    # prometheus.host: only for HUB-SELF metrics; leave empty for spoke clusters.
+```
+
+**Repeatability lynchpin — pin the at-rest key.** Admin-UI settings (incl. SIEM
+entered at `/admin/siem-settings`) are encrypted with `ENCRYPTION_KEY`. If that
+key regenerates on a redeploy, those settings become unreadable and silently
+revert. ALWAYS set `enbuildBk.encryptionKey.existingSecret` to a persistent
+Secret (the chart NOTES warns at install if it is empty). Declaring SIEM/Loki/
+Prometheus in values as above is unaffected by the key — that is the resilient,
+audit-reviewable path and is recommended over admin-UI click-ops for production.
+
+**Resilience built in:** SIEM POSTs retry on 5xx/network failure (queue + cron,
+exponential backoff, dead-letter cap) and hot-reload from the admin UI within
+~15s; the hub-self Prometheus client has a 5s per-attempt timeout + one bounded
+retry; every surface fails safe to a labeled synthetic zero-state, never
+fabricated data.
+
+## 3c. Managed-resource logs → SIEM (SOO §1.5(i), "and managed resources")
+
+The §3b SIEM toggle ships the **solution** audit stream. The SOO also requires
+**managed-resource/cluster logs** in the P1 SIEM. Those are shipped per managed
+cluster by Big Bang's log collector (Fluentbit/Promtail) configured with the P1
+SIEM as an output — set in the Big Bang catalog values, not this hub chart. See
+the platform-one-bigbang catalog (`bigbang/envs/<env>/values/`) Fluentbit output
+config. (Tracked as the remaining SOO §1.5(i) "Stream B" delivery item.)
+
+---
+
 ## 4. Migrating the live vendor13-ib release (943-line override → lean)
 
 The chart is backwards-compatible, so this is value-preserving if you create the

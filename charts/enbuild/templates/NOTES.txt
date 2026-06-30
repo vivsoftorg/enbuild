@@ -34,3 +34,28 @@
     The wizard's cluster-import flow exercises this endpoint; without the
     Secret the wizard's "Continue — install agent" click fails.
 {{- end }}
+{{- if not (default (dict) .Values.enbuildBk.encryptionKey).existingSecret }}
+
+⚠️  AdminSettings at-rest ENCRYPTION_KEY is NOT pinned to a persistent Secret.
+
+    enbuildBk.encryptionKey.existingSecret is empty, so the backend booted with
+    an inline/ephemeral key. Settings entered in the admin UI and encrypted at
+    rest — including the SIEM destination (/admin/siem-settings) and saved
+    credentials — become UNREADABLE and silently revert to OFF if that key
+    changes on a redeploy/re-key. For repeatable, resilient operation (SOO §1.5
+    "repeatable, auditable, automated"), pin a persistent key:
+
+    1) Create a persistent key Secret (idempotent — keeps the key on re-run;
+       or run scripts/create-bootstrap-secrets.sh):
+         kubectl -n {{ .Release.Namespace }} create secret generic {{ .Release.Name }}-encryption-key \
+           --from-literal=ENCRYPTION_KEY="$(openssl rand -hex 24)"
+
+    2) Pin it and roll:
+         helm upgrade {{ .Release.Name }} . --reuse-values \
+           --set enbuildBk.encryptionKey.existingSecret={{ .Release.Name }}-encryption-key
+
+    Rotating ENCRYPTION_KEY later re-keys stored data — treat as a migration,
+    not a config change. (Configuring SIEM/Loki/Prometheus declaratively via
+    enbuildBk.observability.* in values is unaffected by the key — see
+    docs/OPERATOR-DEPLOYMENT-GUIDE.md.)
+{{- end }}
