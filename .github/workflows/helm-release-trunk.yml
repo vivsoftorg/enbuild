@@ -39,7 +39,33 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
         with:
-          fetch-depth: 1
+          fetch-depth: 0  # full history so the version-bump gate can diff vs the previous push
+
+      # GATE (CI-02, landed-not-shipped): the release step below CLOBBERS an existing
+      # tag's asset, so editing chart renderable content WITHOUT bumping Chart.yaml
+      # `version:` silently overwrites the OLD version's release with new content
+      # (version number then lies about what's inside). Fail here instead. Fail-OPEN
+      # on any ambiguity; CHART_BUMP_OVERRIDE=true bypasses.
+      - name: Chart version-bump gate
+        env:
+          BASE: ${{ github.event.before }}   # a commit SHA; passed via env (never inline in run:) per GH Actions injection guidance
+        run: |
+          set -uo pipefail
+          if [ "${CHART_BUMP_OVERRIDE:-false}" = "true" ]; then echo "[chart-bump-gate] override — skipping"; exit 0; fi
+          case "${BASE:-}" in ""|0000000000000000000000000000000000000000) echo "[chart-bump-gate] no comparable base — skipping (fail-open)"; exit 0;; esac
+          if ! git cat-file -e "${BASE}^{commit}" 2>/dev/null; then echo "[chart-bump-gate] base $BASE not present — skipping (fail-open)"; exit 0; fi
+          CH=$(git diff --name-only "$BASE" "$GITHUB_SHA" -- charts/enbuild/templates/ charts/enbuild/values.yaml charts/enbuild/values.schema.json charts/enbuild/Chart.yaml 2>/dev/null || true)
+          if [ -n "$CH" ]; then
+            WAS=$(git show "$BASE:charts/enbuild/Chart.yaml" 2>/dev/null | awk '/^version:/{print $2; exit}')
+            NOW=$(awk '/^version:/{print $2; exit}' charts/enbuild/Chart.yaml)
+            if [ -n "$WAS" ] && [ "$WAS" = "$NOW" ]; then
+              echo "::error::enbuild chart renderable files changed but Chart.yaml version is UNCHANGED ($NOW) — the release step would CLOBBER the existing $NOW release. Bump charts/enbuild/Chart.yaml version:."
+              exit 1
+            fi
+            echo "[chart-bump-gate] OK: enbuild version ${WAS:-?} -> $NOW"
+          else
+            echo "[chart-bump-gate] no renderable chart change — nothing to gate"
+          fi
 
       - name: Add helm repos (for subchart deps)
         run: |
