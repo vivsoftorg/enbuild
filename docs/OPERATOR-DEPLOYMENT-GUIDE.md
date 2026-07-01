@@ -168,6 +168,37 @@ enbuildBk:
     # prometheus.host: only for HUB-SELF metrics; leave empty for spoke clusters.
 ```
 
+**Step 3 — SIEM TLS trust (CA). REQUIRED for a self-signed SIEM.** The forwarder
+**always verifies TLS and has no insecure-skip** (by design — a gov posture that
+refuses to ship audit logs to an untrusted endpoint). So the hub must trust the
+SIEM's CA, and the SIEM's serving cert **must have a SAN matching the endpoint
+host you configure** (e.g. `opensearch.siem.svc.cluster.local`). Wire the CA via
+the `siem-opensearch-ca` Secret (mounted at `/etc/siem-ca`, exported as
+`NODE_EXTRA_CA_CERTS`) — **it is read at pod boot, so a new CA needs a BE
+restart**:
+
+```bash
+kubectl -n enbuild create secret generic siem-opensearch-ca \
+  --from-file=ca.crt=/path/to/siem-root-ca.pem --dry-run=client -o yaml | kubectl apply -f -
+kubectl -n enbuild rollout restart deploy/<release>-enbuild-backend   # loads NODE_EXTRA_CA_CERTS
+```
+
+Symptoms if unset/wrong: **Test Connection returns `status 0 / "fetch failed"`**
+(TLS handshake refused) — that is the forwarder working correctly, not a bug. A
+publicly-trusted SIEM cert needs no CA secret.
+
+**Step 4 — endpoint format (OpenSearch/Elastic).** The forwarder POSTs one
+ECS-JSON doc per event. For OpenSearch/Elastic **include the index in the path**:
+- `…:9200/<index>/_doc` — single document (returns 201), or
+- `…:9200/<index>/_bulk` — the forwarder auto-wraps as NDJSON (validated).
+
+A **bare `…:9200/_bulk`** (no index) 400s ("must be terminated by a newline" /
+"explicit index missing"). Splunk HEC (`/services/collector/raw`) and
+syslog-over-HTTP take the raw URL. Verify with **Test Connection** (`{ok,status,
+latencyMs}`). *(Validated live 2026-07-01 against the OpenSearch analog: bare
+object→400; NDJSON→200 + doc landed. The `_bulk` NDJSON fix rides the
+`feat/p1ccm-observability-config` backend branch.)*
+
 **Repeatability lynchpin — pin the at-rest key.** Admin-UI settings (incl. SIEM
 entered at `/admin/siem-settings`) are encrypted with `ENCRYPTION_KEY`. If that
 key regenerates on a redeploy, those settings become unreadable and silently
