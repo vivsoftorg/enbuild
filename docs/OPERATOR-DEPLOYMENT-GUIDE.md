@@ -168,24 +168,34 @@ enbuildBk:
     # prometheus.host: only for HUB-SELF metrics; leave empty for spoke clusters.
 ```
 
-**Step 3 — SIEM TLS trust (CA). REQUIRED for a self-signed SIEM.** The forwarder
-**always verifies TLS and has no insecure-skip** (by design — a gov posture that
-refuses to ship audit logs to an untrusted endpoint). So the hub must trust the
-SIEM's CA, and the SIEM's serving cert **must have a SAN matching the endpoint
-host you configure** (e.g. `opensearch.siem.svc.cluster.local`). Wire the CA via
-the `siem-opensearch-ca` Secret (mounted at `/etc/siem-ca`, exported as
-`NODE_EXTRA_CA_CERTS`) — **it is read at pod boot, so a new CA needs a BE
+**Step 3 — SIEM TLS trust (CA). REQUIRED for a self-signed / private-CA SIEM.**
+The forwarder **always verifies TLS and has no insecure-skip** (by design — a gov
+posture that refuses to ship audit logs to an untrusted endpoint). So the hub
+must trust the SIEM's CA, and the SIEM's serving cert **must have a SAN matching
+the `endpoint` host** you set (e.g. `opensearch.siem.svc.cluster.local`). Create
+a Secret with your SIEM's CA under key **`ca.crt`** and reference it — the chart
+mounts it at `/etc/siem-ca` and exports `NODE_EXTRA_CA_CERTS=/etc/siem-ca/ca.crt`
+(**fixed filename, no drift**). It is read at pod boot → **a CA change needs a BE
 restart**:
 
 ```bash
-kubectl -n enbuild create secret generic siem-opensearch-ca \
-  --from-file=ca.crt=/path/to/siem-root-ca.pem --dry-run=client -o yaml | kubectl apply -f -
-kubectl -n enbuild rollout restart deploy/<release>-enbuild-backend   # loads NODE_EXTRA_CA_CERTS
+kubectl -n enbuild create secret generic enbuild-ib-siem-ca \
+  --from-file=ca.crt=/path/to/your-siem-root-ca.pem --dry-run=client -o yaml | kubectl apply -f -
+```
+```yaml
+enbuildBk:
+  observability:
+    siem:
+      caExistingSecret: enbuild-ib-siem-ca   # key must be ca.crt
 ```
 
-Symptoms if unset/wrong: **Test Connection returns `status 0 / "fetch failed"`**
+Symptoms if missing/wrong: **Test Connection returns `status 0 / "fetch failed"`**
 (TLS handshake refused) — that is the forwarder working correctly, not a bug. A
-publicly-trusted SIEM cert needs no CA secret.
+**publicly-trusted** SIEM cert needs no CA secret. *(Chart `caExistingSecret`
+lands in `0.1.0-p1ccm-trunk.18`; before that the CA was a hand-patched Deployment
+env — which on the live hub pointed at `ca.pem` while the secret key was `ca.crt`,
+so the CA silently never loaded. The value wiring fixes that filename-drift
+class.)*
 
 **Step 4 — endpoint format (OpenSearch/Elastic).** The forwarder POSTs one
 ECS-JSON doc per event. For OpenSearch/Elastic **include the index in the path**:

@@ -203,6 +203,21 @@ spec:
           value: {{ default "" $ia.agentImageRepository | quote }}
         - name: ENBUILD_AGENT_IMAGE_PULL_SECRET
           value: {{ default "" $ia.agentImagePullSecret | quote }}
+        {{- /*
+          SIEM CA trust (SOO §1.5). When the customer supplies their SIEM's CA in
+          enbuildBk.observability.siem.caExistingSecret (key `ca.crt`), mount it
+          (volume below) and point Node's trust bundle at it via a FIXED filename
+          — /etc/siem-ca/ca.crt — so the env path and the secret key can never
+          drift (the live hub's hand-patch pointed at ca.pem while the key was
+          ca.crt → the CA silently never loaded). Read at pod BOOT, so a CA change
+          needs a BE restart. Unset = no volume/env (publicly-trusted SIEM cert).
+          The forwarder ALWAYS verifies TLS (no insecure-skip) — this is how a
+          self-signed / private-CA SIEM is trusted, the day-one path.
+        */}}
+        {{- if (default (dict) (default (dict) .Values.enbuildBk.observability).siem).caExistingSecret }}
+        - name: NODE_EXTRA_CA_CERTS
+          value: /etc/siem-ca/ca.crt
+        {{- end }}
         envFrom:
         {{- /*
           MongoDB credentials. When mongodb.existingSecret is set the operator
@@ -394,10 +409,25 @@ spec:
           runAsGroup: 1000
           runAsNonRoot: true
           runAsUser: 1000
+        {{- if (default (dict) (default (dict) .Values.enbuildBk.observability).siem).caExistingSecret }}
+        volumeMounts:
+        - name: siem-ca
+          mountPath: /etc/siem-ca
+          readOnly: true
+        {{- end }}
 {{- if or .Values.global.imagePullSecretName .Values.global.image.registry_credentials }}
       imagePullSecrets:
         - name: {{ .Values.global.imagePullSecretName | default (printf "%s-image-pull-secret" .Release.Name) }}
 {{- end }}
+      {{- with (default (dict) (default (dict) .Values.enbuildBk.observability).siem).caExistingSecret }}
+      volumes:
+      - name: siem-ca
+        secret:
+          secretName: {{ . }}
+          items:
+          - key: ca.crt
+            path: ca.crt
+      {{- end }}
 ---
 apiVersion: v1
 kind: Service

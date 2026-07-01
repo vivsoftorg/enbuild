@@ -234,9 +234,16 @@ enbuildBk:
     existingSecret: ""
     siem:                          # SOO §1.5(i) — solution audit stream → P1 SIEM
       forwardingEnabled: ""        # "true" to ship; empty/"false" = OFF
-      endpoint: ""                 # https URL of the P1 SIEM HTTP(S) collector
+      endpoint: ""                 # https URL. OpenSearch/Elastic: include the index — /<index>/_doc or /<index>/_bulk (auto-NDJSON). Splunk HEC: /services/collector/raw
       format: ""                   # json (ECS, default) | cef
       timeoutMs: ""                # per-POST timeout ms; empty = 5000
+      # [CUSTOMER] Secret (key `ca.crt`) holding YOUR SIEM's CA cert, so the hub
+      # can VERIFY its TLS (the forwarder always verifies — no insecure-skip).
+      # REQUIRED for a self-signed / private-CA SIEM; OMIT for a publicly-trusted
+      # SIEM cert. Wired to NODE_EXTRA_CA_CERTS via /etc/siem-ca/ca.crt (fixed
+      # filename — no drift) — read at pod BOOT, so a change needs a BE restart.
+      # The SIEM's serving cert SAN must match the `endpoint` host above.
+      caExistingSecret: ""
     prometheus:                    # SOO §1.5(iii) — performance tuning
       host: ""                     # HUB-SELF Prometheus base URL ONLY; spokes auto-route via the agent (leave empty)
     loki:                          # SOO §1.5(iii) — efficient troubleshooting (pod-log tailing)
