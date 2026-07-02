@@ -30,6 +30,16 @@ data:
 
     server {
       listen 8080 default_server;
+      # absolute_redirect off — keep nginx's trailing-slash / directory 301s RELATIVE.
+      # WHY: nginx listens on 8080, but kubectl port-forward reaches it on a DIFFERENT
+      # local port (e.g. 8081). With the default absolute_redirect ON, the auto 301 for
+      # a slash-less path (e.g. the OIDC callback `/p1-ccm-console?scope=...`) rebuilds
+      # the URL using nginx's LISTEN port 8080 -> bounces the browser to localhost:8080,
+      # which isn't served/whitelisted, breaking login. Relative 301s stay on whatever
+      # host:port the browser used. (Root-caused on vendor13-ib 2026-07-02; the frontend
+      # derives its OIDC redirect_uri from window.location.href, so a wrong-port bounce
+      # here poisons the redirect_uri too.) Harmless behind the Istio gateway.
+      absolute_redirect off;
       # WHY "localhost" is in server_name (DO NOT REMOVE):
       # The Iron Bank (and stock) nginx base image ships a default server block
       # in /etc/nginx/nginx.conf with `server_name localhost`, also listening on
