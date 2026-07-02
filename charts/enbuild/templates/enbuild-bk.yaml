@@ -15,6 +15,25 @@ spec:
     {{- include "enbuild-helm-chart.selectorLabels" . | nindent 6 }}
   template:
     metadata:
+      annotations:
+        {{- /*
+          FIX-E (G1, first-deploy findings): roll the backend automatically when
+          its Keycloak issuer/URL config changes. KEYCLOAK_ISSUER / KEYCLOAK_URL /
+          KEYCLOAK_BACKEND_URL ride {release}-backend-secret via envFrom and are
+          read ONCE at process boot — so a helm upgrade that only re-points the
+          issuer/URL updates the Secret but leaves the running pod verifying tokens
+          against the OLD issuer (strict endpoints 401, catalog stuck "Loading
+          templates…"). Checksumming just the KC issuer/URL values (mirrors the
+          effective-issuer derivation in backend-secret.yaml) rolls the pod on
+          exactly those changes, without coupling it to unrelated Secret edits.
+        */}}
+        {{- $kc := default (dict) .Values.enbuildBk.keycloak }}
+        {{- $kcRealm := default "enbuild" $kc.realm }}
+        {{- $kcIssuer := $kc.issuer }}
+        {{- if and (not $kcIssuer) $kc.url }}
+        {{- $kcIssuer = printf "%s/realms/%s" (trimSuffix "/" $kc.url) $kcRealm }}
+        {{- end }}
+        checksum/keycloak-config: {{ dict "issuer" $kcIssuer "url" $kc.url "backendUrl" $kc.backendUrl "realm" $kcRealm | toYaml | sha256sum }}
       labels:
         app: bk
         app.kubernetes.io/component: backend
