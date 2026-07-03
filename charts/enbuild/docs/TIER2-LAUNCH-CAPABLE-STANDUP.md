@@ -128,9 +128,12 @@ enbuildBk:
 Plus AWS credentials for the launch pipeline itself: group-level CI variables
 (`AWS_ACCESS_KEY_ID`/`AWS_SECRET_ACCESS_KEY`) on the deployments group, **or**
 the console's Admin Settings → platform AWS credentials. Pin every
-`<svc>.image.tag` to a published build (the quickstart carries known-good pins —
-the empty default resolves to the chart `appVersion`, which is **not** guaranteed
-deployable).
+`<svc>.image.tag` to a published build. The quickstart carries known-good pins,
+but they reference `registry.gitlab.com/enbuild-staging/...` git-SHA images —
+you need pull entitlement to that GitLab namespace (see the quickstart's
+image-pull prerequisites); without it, substitute tags your cluster can actually
+pull. The empty default resolves to the chart `appVersion`, which is **not**
+guaranteed deployable.
 
 ## 5. DNS, install, verify
 
