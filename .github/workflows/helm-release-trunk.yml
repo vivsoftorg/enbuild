@@ -103,11 +103,13 @@ jobs:
               --notes  "$(printf '%s\n' \
                 'Auto-published from feat/p1ccm-enbuild-helm-trunk for the P1 CCM contract.' \
                 '' \
-                'Consume via:' \
+                'Install (the .tgz bundles all subchart dependencies — no helm repo access needed):' \
                 '  gh release download '"$TAG"' --repo vivsoftorg/enbuild --pattern '"'"'enbuild-*.tgz'"'"' --dir /tmp' \
-                '  LOCAL_CHART_TGZ=/tmp/enbuild-'"$VERSION"'.tgz \\' \
-                '    EXTRA_HELM_ARGS="--values $HOME/code/p1-cluster-mgmt/envs/vendor13-ib/stage-a-mongo-handoff.values.yaml" \\' \
-                '    ~/code/p1-cluster-mgmt/scripts/roll-vendor13-ib.sh backend <sha>' \
+                '  helm upgrade --install enbuild-ib /tmp/enbuild-'"$VERSION"'.tgz -n enbuild --create-namespace -f <your-values>.yaml' \
+                '' \
+                'Docs ride the artifact: README.md (install + config surface) and docs/TIER2-LAUNCH-CAPABLE-STANDUP.md (launch-capable standup) inside the .tgz.' \
+                '' \
+                'VivSoft-internal (vendor13-ib rolls): pass the downloaded .tgz to the roll wrapper via LOCAL_CHART_TGZ= instead of helm-upgrading directly.' \
                 '' \
                 'NOT distributed via https://vivsoftorg.github.io/enbuild — see workflow comment for why.')"
           fi

@@ -1,0 +1,47 @@
+{{- /*
+  GAP-07/GAP-24 metrics push-half — Prometheus Operator ServiceMonitor for the
+  backend REST listener that hosts /api/metrics (prom-client Registry: the hub
+  gRPC observability series + lifecycle/audit/rabbit counters + RUM histograms
+  + default process metrics).
+
+  Renders ONLY when enbuildBk.observability.serviceMonitor.enabled=true — it
+  requires the monitoring.coreos.com CRDs (kube-prometheus-stack / Big Bang
+  monitoring). Default OFF so a stock deploy is unchanged.
+
+  The selector targets the existing <release>-enbuild-backend Service on its
+  `http` port (the bk REST port — the metrics endpoint is colocated with the
+  REST API, no extra Service needed). Do NOT scrape through the gRPC port
+  (8443): it speaks the agent wire protocol, not HTTP scrape.
+
+  nil-safe under `helm upgrade --reuse-values` from a release that predates
+  these keys (same idiom as the rest of the observability block).
+*/}}
+{{- $obs := default (dict) .Values.enbuildBk.observability }}
+{{- $sm := default (dict) $obs.serviceMonitor }}
+{{- if $sm.enabled }}
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: {{ include "enbuild-helm-chart.fullname" . }}-bk-metrics
+  labels:
+    app.kubernetes.io/component: bk-metrics
+    {{- include "enbuild-helm-chart.labels" . | nindent 4 }}
+    {{- /* Extra labels so YOUR Prometheus discovers this monitor (e.g.
+           kube-prometheus-stack's default serviceMonitorSelector wants
+           `release: monitoring`). */}}
+    {{- with $sm.labels }}
+    {{- toYaml . | nindent 4 }}
+    {{- end }}
+spec:
+  selector:
+    matchLabels:
+      app: bk
+      app.kubernetes.io/component: backend
+      {{- include "enbuild-helm-chart.selectorLabels" . | nindent 6 }}
+  endpoints:
+    - port: http
+      path: {{ $sm.path | default "/api/metrics" | quote }}
+      interval: {{ $sm.interval | default "30s" | quote }}
+      scrapeTimeout: {{ $sm.scrapeTimeout | default "10s" | quote }}
+      honorLabels: true
+{{- end }}

@@ -20,13 +20,20 @@
 # names are derived from it and the generated secret names match):
 #   1.  REPO1_USER=... REPO1_TOKEN=... GITLAB_USER=... GITLAB_TOKEN=... \
 #         scripts/create-bootstrap-secrets.sh          # creates the secrets below
-#   2.  helm upgrade --install enbuild-ib . -n enbuild --create-namespace \
-#         -f examples/values-quickstart.yaml
-#       # NOTE: do NOT run `helm dependency build` — the rabbitmq + headlamp
-#       # subcharts are already vendored under charts/*.tgz (see Chart.lock), so
-#       # install renders fully OFFLINE. `helm dependency build` would FAIL in a
-#       # clean room (it wants `helm repo add bitnami`/`headlamp` first) and is
-#       # unnecessary.
+#   2.  Install from the RELEASED chart artifact — the supported path. The
+#       published .tgz bundles the rabbitmq + headlamp subchart dependencies,
+#       so it installs fully OFFLINE:
+#         gh release download enbuild-trunk-<version> \
+#           --repo vivsoftorg/enbuild --pattern '*.tgz' -D /tmp
+#         helm upgrade --install enbuild-ib /tmp/enbuild-<version>.tgz \
+#           -n enbuild --create-namespace -f values-quickstart.yaml
+#       # Installing from a GIT CLONE instead? The clone does NOT carry the
+#       # vendored subcharts (charts/enbuild/charts/* is gitignored), so you
+#       # must fetch them first — this needs network egress to the public
+#       # chart repos and is NOT air-gap friendly:
+#       #   helm repo add bitnami  https://charts.bitnami.com/bitnami
+#       #   helm repo add headlamp https://kubernetes-sigs.github.io/headlamp/
+#       #   helm dependency build charts/enbuild
 #   3.  kubectl -n enbuild port-forward svc/enbuild-ib-enbuild-ui      8081:80   &
 #       kubectl -n enbuild port-forward svc/enbuild-ib-keycloak        8088:8080 &
 #   4.  Open http://localhost:8081  → log in as admin@p1.mil / ChangeMe123!

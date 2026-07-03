@@ -245,6 +245,39 @@ enbuildBk:
     grafana:                       # deep-link fallback for log search
       base: ""                     # Grafana base URL for the Explore deep-link
       lokiDatasource: ""           # Loki datasource UID for the deep-link
+    # --- Metrics scrape + alerting (the "what pages me?" push half) ----------
+    # The backend ALWAYS serves prom-client metrics at /api/metrics (REST port
+    # 8080); the two knobs below make a Prometheus-Operator cluster ACT on
+    # them. Both default OFF because they require the monitoring.coreos.com
+    # CRDs — flip them on together on any cluster running kube-prometheus-stack
+    # / Big Bang monitoring.
+    serviceMonitor:
+      enabled: false               # render a ServiceMonitor scraping /api/metrics
+      interval: 30s
+      scrapeTimeout: 10s
+      path: /api/metrics
+      # Extra labels so YOUR Prometheus discovers the monitor (e.g. the
+      # kube-prometheus-stack default selector wants `release: monitoring`).
+      labels: {}
+    prometheusRule:
+      enabled: false               # render the hub alert pack (severity: page | ticket)
+      labels: {}
+      # The chart ships alert RULES only — Alertmanager routing/receivers are
+      # cluster policy, not chart scope (Alertmanager deploys with ZERO
+      # receivers by default, so an unrouted `severity: page` alert pages
+      # NOBODY). Wire the severity labels to a human in your Alertmanager,
+      # e.g. (kube-prometheus-stack values → alertmanager.config):
+      #   route:
+      #     receiver: default
+      #     routes:
+      #       - matchers: [ 'severity = page' ]
+      #         receiver: enbuild-oncall
+      #   receivers:
+      #     - name: default
+      #     - name: enbuild-oncall
+      #       webhook_configs:          # or slack_configs / email_configs
+      #         - url: https://<your-pager-or-chatops-webhook>
+      #           send_resolved: true
 
   # --- [CUSTOMER] SSO / authentication (Keycloak) ---
   # P1 is Keycloak-only. authMechanism defaults to "keycloak"; the chart wires the

@@ -433,6 +433,9 @@ spec:
     app.kubernetes.io/component: backend
   {{- include "enbuild-helm-chart.selectorLabels" . | nindent 4 }}
   ports:
-  - port: 80
+  {{- /* Named so the observability ServiceMonitor can reference it by name
+         (and Istio protocol detection is explicit). */}}
+  - name: http
+    port: 80
     protocol: TCP
     targetPort: 8080

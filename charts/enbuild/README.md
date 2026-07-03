@@ -57,6 +57,16 @@ helm upgrade --install enbuild-ib /tmp/enbuild-<version>.tgz \
   --values my-values.yaml
 ```
 
+> **The released `.tgz` is the supported install artifact** — it bundles the
+> rabbitmq + headlamp subchart dependencies, so it installs offline. A **git
+> clone does not** (`charts/enbuild/charts/*` is gitignored): installing from a
+> clone requires `helm repo add bitnami …`/`helm repo add headlamp …` +
+> `helm dependency build charts/enbuild` first, which needs network egress.
+
+> **Standing up a hub that launches and manages spoke clusters** (the gRPC agent
+> edge, hub-CA bootstrap, launch credentials, and the first-launch console
+> gates): [`docs/TIER2-LAUNCH-CAPABLE-STANDUP.md`](docs/TIER2-LAUNCH-CAPABLE-STANDUP.md).
+
 Verify the reverse-proxy chain end to end after install:
 
 ```shell
@@ -85,10 +95,19 @@ entries in [`values.yaml`](values.yaml). The essential ones:
 | `rabbitmq.auth.existingPasswordSecret` / `.existingErlangSecret` | broker creds | `enbuild-rabbitmq` |
 | `keycloak.enabled` | deploy bundled SSO (else use an external IdP) | `true` |
 | `pki.recreateHubIssuer` | one-shot restore of a missing hub mTLS ClusterIssuer | `false` |
+| `enbuildBk.observability.serviceMonitor.enabled` / `.prometheusRule.enabled` | Prometheus-Operator scrape of `/api/metrics` + the hub alert pack (`severity: page\|ticket`) — route them in your Alertmanager (example in `values.yaml`) | `false` / `false` |
 | `<svc>.image.tag` | pin a service image; empty tracks the chart appVersion | unset |
 
 A complete filled-out example for a real environment:
 [`examples/enbuild/values-vendor13-ib.yaml`](../../examples/enbuild/values-vendor13-ib.yaml).
+
+> **Fail-closed rendering.** The chart refuses to render the misconfigurations
+> that used to deploy silently broken: an enabled edge with an empty
+> `global.domain`/`enbuildUi.hostname` (a console route to nowhere), no MongoDB
+> datasource at all (backend crashloop), and `authMechanism=keycloak` with no
+> token-verification source. A [`values.schema.json`](values.schema.json)
+> additionally type-checks the identity-critical + observability keys at
+> lint/template/install time, so a wrong-typed value fails before it deploys.
 
 ## 3a. Console login & multi-tenancy (Keycloak SSO)
 

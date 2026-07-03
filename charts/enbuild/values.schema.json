@@ -1,0 +1,353 @@
+{
+  "$schema": "https://json-schema.org/draft-07/schema#",
+  "title": "enbuild hub chart values",
+  "description": "Type contract for the identity-critical + observability customer surface (GAP-17 parity pass). Deliberately permissive on unlisted keys (additionalProperties stays open) so subchart passthrough and reuse-values upgrades keep working; the point is that a WRONG TYPE on a key the platform's identity/edge/datasource/observability wiring reads fails at render time instead of deploying broken.",
+  "type": "object",
+  "properties": {
+    "global": {
+      "type": "object",
+      "properties": {
+        "domain": { "type": "string" },
+        "disable_tls_gitlab": { "type": "boolean" },
+        "istio": {
+          "type": "object",
+          "properties": {
+            "enabled": { "type": "boolean" },
+            "gateway": { "type": "string" }
+          }
+        },
+        "ingress": {
+          "type": "object",
+          "properties": {
+            "enabled": { "type": "boolean" },
+            "tls": { "type": "boolean" },
+            "tls_secret": { "type": "string" },
+            "className": { "type": "string" },
+            "annotations": { "type": "object" }
+          }
+        },
+        "imagePullSecretName": { "type": "string" },
+        "storageClass": { "type": "string" },
+        "image": {
+          "type": "object",
+          "properties": {
+            "registry": { "type": "string" },
+            "pullPolicy": { "type": "string", "enum": ["Always", "IfNotPresent", "Never"] },
+            "registry_credentials": { "type": "object" }
+          }
+        },
+        "AppVersion": { "type": "string" },
+        "auth_plugin": { "type": "string" },
+        "create_istio_virtual_service": { "type": "boolean" },
+        "gitlabRegistryCredentials": { "type": "object" }
+      }
+    },
+    "lightning_features": {
+      "type": "object",
+      "properties": {
+        "operations_lightning": {
+          "type": "object",
+          "properties": {
+            "headlamp": { "type": "boolean" }
+          }
+        }
+      }
+    },
+    "rabbitmq": {
+      "type": "object",
+      "properties": {
+        "enabled": { "type": "boolean" },
+        "auth": {
+          "type": "object",
+          "properties": {
+            "username": { "type": "string" },
+            "existingPasswordSecret": { "type": "string" },
+            "existingErlangSecret": { "type": "string" },
+            "securePassword": { "type": "boolean" },
+            "password": { "type": "string" },
+            "erlangCookie": { "type": "string" }
+          }
+        },
+        "host": { "type": "string" },
+        "env": { "type": "string" },
+        "queue_prefix": { "type": "string" }
+      }
+    },
+    "mongodb": {
+      "type": "object",
+      "properties": {
+        "enabled": { "type": "boolean" },
+        "existingSecret": { "type": "string" },
+        "mongo_endpoint_override": { "type": "string" },
+        "storageClassName": { "type": "string" },
+        "image": {
+          "type": "object",
+          "properties": {
+            "registry": { "type": "string" },
+            "repository": { "type": "string" },
+            "tag": { "type": ["string", "number"] }
+          }
+        },
+        "mongo_root_username": { "type": "string" },
+        "mongo_root_password": { "type": "string" },
+        "mongo_server": { "type": "string" }
+      }
+    },
+    "enbuildUi": {
+      "type": "object",
+      "properties": {
+        "hostname": { "type": "string" },
+        "replicas": { "type": "integer", "minimum": 0 },
+        "keycloak": {
+          "type": "object",
+          "properties": {
+            "url": { "type": "string" },
+            "realm": { "type": "string" },
+            "clientId": { "type": "string" }
+          }
+        },
+        "apiBase": { "type": "string" },
+        "impactLevel": { "type": "string" },
+        "image": {
+          "type": "object",
+          "properties": {
+            "registry": { "type": "string" },
+            "repository": { "type": "string" },
+            "tag": { "type": ["string", "number"] }
+          }
+        },
+        "service_type": { "type": "string" },
+        "node_port": { "type": ["integer", "string"] }
+      }
+    },
+    "enbuildBk": {
+      "type": "object",
+      "properties": {
+        "replicas": { "type": "integer", "minimum": 0 },
+        "resources": { "type": "object" },
+        "encryptionKey": {
+          "type": "object",
+          "properties": { "existingSecret": { "type": "string" } }
+        },
+        "messaging": {
+          "type": "object",
+          "properties": { "existingSecret": { "type": "string" } }
+        },
+        "gitlabPat": {
+          "type": "object",
+          "properties": { "existingSecret": { "type": "string" } }
+        },
+        "securityTooling": {
+          "type": "object",
+          "properties": { "existingSecret": { "type": "string" } }
+        },
+        "exportSigning": {
+          "type": "object",
+          "properties": {
+            "existingSecret": { "type": "string" },
+            "privateKeyPem": { "type": "string" }
+          }
+        },
+        "observability": {
+          "type": "object",
+          "properties": {
+            "existingSecret": { "type": "string" },
+            "siem": {
+              "type": "object",
+              "properties": {
+                "forwardingEnabled": { "type": "string" },
+                "endpoint": { "type": "string" },
+                "format": { "type": "string" },
+                "timeoutMs": { "type": ["string", "integer"] }
+              }
+            },
+            "prometheus": {
+              "type": "object",
+              "properties": { "host": { "type": "string" } }
+            },
+            "loki": {
+              "type": "object",
+              "properties": {
+                "host": { "type": "string" },
+                "tenant": { "type": "string" }
+              }
+            },
+            "grafana": {
+              "type": "object",
+              "properties": {
+                "base": { "type": "string" },
+                "lokiDatasource": { "type": "string" }
+              }
+            },
+            "serviceMonitor": {
+              "type": "object",
+              "properties": {
+                "enabled": { "type": "boolean" },
+                "interval": { "type": "string" },
+                "scrapeTimeout": { "type": "string" },
+                "path": { "type": "string" },
+                "labels": { "type": "object" }
+              }
+            },
+            "prometheusRule": {
+              "type": "object",
+              "properties": {
+                "enabled": { "type": "boolean" },
+                "labels": { "type": "object" }
+              }
+            }
+          }
+        },
+        "authMechanism": { "type": "string", "enum": ["keycloak", "local"] },
+        "adminEmails": { "type": "string" },
+        "keycloak": {
+          "type": "object",
+          "properties": {
+            "realm": { "type": "string" },
+            "url": { "type": "string" },
+            "backendUrl": { "type": "string" },
+            "issuer": { "type": "string" },
+            "clientId": { "type": "string" },
+            "adminBaseUrl": { "type": "string" },
+            "adminClientId": { "type": "string" },
+            "realmPublicKey": { "type": "string" },
+            "existingSecret": { "type": "string" }
+          }
+        },
+        "grpcVirtualService": {
+          "type": "object",
+          "properties": {
+            "enabled": { "type": "boolean" },
+            "host": { "type": "string" },
+            "additionalHosts": {
+              "type": "array",
+              "items": { "type": "string" }
+            },
+            "gateway": { "type": "string" }
+          }
+        },
+        "reaperSvc": {
+          "type": "object",
+          "properties": { "existingSecret": { "type": "string" } }
+        },
+        "installAgent": {
+          "type": "object",
+          "properties": {
+            "existingSecret": { "type": "string" },
+            "hubUrl": { "type": "string" },
+            "tlsServerName": { "type": "string" },
+            "hubInternalIps": { "type": "string" },
+            "agentImageTag": { "type": "string" },
+            "chartRepo": { "type": "string" },
+            "chartRef": { "type": "string" },
+            "repo1Registry": { "type": "string" },
+            "agentImageRegistry": { "type": "string" },
+            "agentImageRepository": { "type": "string" },
+            "agentImagePullSecret": { "type": "string" }
+          }
+        },
+        "image": {
+          "type": "object",
+          "properties": {
+            "registry": { "type": "string" },
+            "repository": { "type": "string" },
+            "tag": { "type": ["string", "number"] }
+          }
+        },
+        "encryption_key": { "type": "string" },
+        "gitlabConnection": { "type": "object" },
+        "service_type": { "type": "string" },
+        "grpcEnabled": { "type": "boolean" },
+        "grpcPort": { "type": "integer" },
+        "grpcServiceType": { "type": "string" },
+        "clusterRpcTimeoutMs": { "type": ["string", "integer"] },
+        "snapshotIngestEnabled": { "type": ["string", "boolean"] },
+        "snapshotReadFromStore": { "type": ["string", "boolean"] },
+        "kubeProxyFallbackActor": { "type": "string" },
+        "consoleAuthStrict": { "type": "boolean" },
+        "spokeImpersonation": { "type": "boolean" },
+        "healthProbe": {
+          "type": "object",
+          "properties": { "enabled": { "type": "boolean" } }
+        },
+        "kubeProxyCache": { "type": "object" },
+        "serviceAccount": { "type": "string" }
+      }
+    },
+    "enbuildUser": {
+      "type": "object",
+      "properties": {
+        "replicas": { "type": "integer", "minimum": 0 },
+        "image": {
+          "type": "object",
+          "properties": {
+            "registry": { "type": "string" },
+            "repository": { "type": "string" },
+            "tag": { "type": ["string", "number"] }
+          }
+        },
+        "service_type": { "type": "string" }
+      }
+    },
+    "enbuildConsumer": {
+      "type": "object",
+      "properties": {
+        "replicas": { "type": "integer", "minimum": 0 },
+        "image": {
+          "type": "object",
+          "properties": {
+            "registry": { "type": "string" },
+            "repository": { "type": "string" },
+            "tag": { "type": ["string", "number"] }
+          }
+        },
+        "command": { "type": "array" },
+        "args": { "type": "array" }
+      }
+    },
+    "keycloak": {
+      "type": "object",
+      "properties": {
+        "enabled": { "type": "boolean" },
+        "image": { "type": "string" },
+        "existingSecret": { "type": "string" },
+        "demoRealm": {
+          "type": "object",
+          "properties": {
+            "enabled": { "type": "boolean" },
+            "adminPassword": { "type": "string" },
+            "consoleUrl": { "type": "string" }
+          }
+        },
+        "resources": { "type": "object" },
+        "hostname": { "type": "string" },
+        "adminUser": { "type": "string" },
+        "virtualService": {
+          "type": "object",
+          "properties": {
+            "enabled": { "type": "boolean" },
+            "host": { "type": "string" },
+            "gateway": { "type": "string" }
+          }
+        }
+      }
+    },
+    "pki": {
+      "type": "object",
+      "properties": {
+        "recreateHubIssuer": { "type": "boolean" },
+        "hubIssuerName": { "type": "string" },
+        "caSecretName": { "type": "string" }
+      }
+    },
+    "headlamp": {
+      "type": "object",
+      "properties": {
+        "spokes": {
+          "type": "array",
+          "items": { "type": "string" }
+        }
+      }
+    }
+  }
+}

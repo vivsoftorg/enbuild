@@ -1,4 +1,9 @@
 {{- if and .Values.global.ingress.enabled (not .Values.global.create_istio_virtual_service )  -}}
+{{- /* Fail-closed: an empty domain/hostname used to render `host: .` — an
+       Ingress that silently routes nothing. */}}
+{{- if or (not .Values.global.domain) (not .Values.enbuildUi.hostname) }}
+{{- fail "global.ingress.enabled=true requires BOTH global.domain and enbuildUi.hostname (Ingress host = <enbuildUi.hostname>.<global.domain>; empty values render a broken host silently). Set both, or disable the edge for the port-forward profile (see examples/values-quickstart.yaml)." }}
+{{- end }}
 {{- if and .Values.global.ingress.className (not (semverCompare ">=1.18-0" .Capabilities.KubeVersion.GitVersion)) }}
   {{- if not (hasKey .Values.global.ingress.annotations "kubernetes.io/ingress.class") }}
   {{- $_ := set .Values.global.ingress.annotations "kubernetes.io/ingress.class" .Values.global.ingress.className}}

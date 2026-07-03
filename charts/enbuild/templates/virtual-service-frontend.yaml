@@ -1,4 +1,9 @@
 {{- if and .Values.global.istio.enabled (not .Values.global.ingress.enabled ) -}}
+{{- /* Fail-closed: an empty domain/hostname used to render `hosts: [.]` —
+       a console VirtualService that silently routes nothing. */}}
+{{- if or (not .Values.global.domain) (not .Values.enbuildUi.hostname) }}
+{{- fail "global.istio.enabled=true requires BOTH global.domain and enbuildUi.hostname (console VirtualService host = <enbuildUi.hostname>.<global.domain>; empty values render a broken host silently). Set both, or set global.istio.enabled=false for the port-forward profile (see examples/values-quickstart.yaml)." }}
+{{- end }}
 apiVersion: networking.istio.io/v1beta1
 kind: VirtualService
 metadata:
