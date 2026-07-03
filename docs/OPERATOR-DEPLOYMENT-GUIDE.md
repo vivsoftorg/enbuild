@@ -42,10 +42,13 @@ entered in the ENBUILD admin UI; see the note above.)
 | `<release>-keycloak-secrets` | `realm-enbuild.json`, `KC_BOOTSTRAP_ADMIN_PASSWORD` | Self-hosted Keycloak SSO (rendered when `keycloak.enabled=true`). Realm + admin password — never in git. | Yes when `keycloak.enabled` |
 
 > Keycloak (`keycloak.enabled`) and the PKI ClusterIssuer (`pki.recreateHubIssuer`)
-> are deployed by this chart. The Keycloak realm/admin Secret is created out-of-band
-> (see `runbooks/enbuild-hub-reconcile-adopt.md`); `pki.recreateHubIssuer` restores
-> the `enbuild-hub-issuer` CA ClusterIssuer pointing at the existing CA — it does
-> not rotate certs.
+> are deployed by this chart. The Keycloak realm/admin Secret is created out-of-band:
+> import your own realm export into a `<release>-keycloak-secrets` Secret, or — for
+> demo/eval only — let the chart seed the bundled demo realm with
+> `keycloak.demoRealm.enabled=true` (see `charts/enbuild/examples/values-quickstart.yaml`).
+> `pki.recreateHubIssuer` restores the `enbuild-hub-issuer` CA ClusterIssuer pointing
+> at the existing CA — it does not rotate certs (CA bootstrap: see
+> `charts/enbuild/docs/TIER2-LAUNCH-CAPABLE-STANDUP.md` §3).
 
 ### Create commands (replace placeholders)
 

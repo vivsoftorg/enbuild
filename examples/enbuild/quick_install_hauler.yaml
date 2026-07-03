@@ -2,8 +2,25 @@ global:
   image:
     registry: 127.0.0.1:5000
     pullPolicy: Always
+  # This air-gapped profile reaches the console via port-forward/Service, so the
+  # Istio edge (chart default ON) is switched off — the chart fail-closes when an
+  # edge is enabled without global.domain + enbuildUi.hostname.
+  istio:
+    enabled: false
 rabbitmq:
   image:
     registry: 127.0.0.1:5000
     repository: bitnami/rabbitmq
     tag: 3.11.13-debian-11-r0
+# The backend requires a MongoDB datasource (the chart fail-closes without one).
+# Bundled single-node Mongo pulled from the same hauler-mirrored local registry
+# (mongodb.image.registry empty → global.image.registry).
+mongodb:
+  enabled: true
+  mongo_root_username: "enbuild"
+  mongo_root_password: "SuperSecret"   # placeholder — change it
+# SSO: authMechanism=keycloak fail-closes without a token-verification source.
+# This quick profile uses the dev/test local-account mode; for real Keycloak SSO
+# copy the keycloak blocks from charts/enbuild/examples/values-quickstart.yaml.
+enbuildBk:
+  authMechanism: local

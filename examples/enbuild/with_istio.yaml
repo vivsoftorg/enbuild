@@ -5,7 +5,27 @@ global:
     registry_credentials: {}
       # username: registry_user_name
       # password: registry_password
-  domain: ijuned.com         # Set the proper doamin.
+  domain: ijuned.com         # Set the proper domain.
   istio:
     enabled: true
-    gateway: istio-system/main # set to the proper istio gateway. This istio gateway must have above domain added as `hosts` 
+    gateway: istio-system/main # set to the proper istio gateway. This istio gateway must have above domain added as `hosts`
+enbuildUi:
+  # Console FQDN = <hostname>.<global.domain> (enbuild.ijuned.com here). The
+  # chart fail-closes when the Istio edge is enabled without BOTH set.
+  hostname: enbuild
+# The backend requires a MongoDB datasource (the chart fail-closes without one).
+# Bundled single-node Mongo — dev/eval; for external Mongo see the
+# 'Database (MongoDB)' section of values.yaml.
+mongodb:
+  enabled: true
+  mongo_root_username: "enbuild"
+  mongo_root_password: "SuperSecret"   # placeholder — change it
+  image:
+    registry: docker.io
+    repository: library/mongo
+    tag: "7.0.14"
+# SSO: authMechanism=keycloak fail-closes without a token-verification source.
+# This topology example uses the dev/test local-account mode; for real Keycloak
+# SSO copy the keycloak blocks from charts/enbuild/examples/values-quickstart.yaml.
+enbuildBk:
+  authMechanism: local

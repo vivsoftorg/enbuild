@@ -9,6 +9,11 @@ global:
     registry_credentials:
       username: REGISTRY1_USER_NAME
       password: REGISTRY1_PASSWORD
+  # This quick profile reaches the console via port-forward/Service, so the
+  # Istio edge (chart default ON) is switched off — the chart fail-closes when an
+  # edge is enabled without global.domain + enbuildUi.hostname.
+  istio:
+    enabled: false
 
 lightning_features:
   operations_lightning:
@@ -36,6 +41,10 @@ enbuildUi:
     tag: 1.0.30-5101868
 
 enbuildBk:
+  # SSO: authMechanism=keycloak fail-closes without a token-verification source.
+  # This quick profile uses the dev/test local-account mode; for real Keycloak SSO
+  # copy the keycloak blocks from charts/enbuild/examples/values-quickstart.yaml.
+  authMechanism: local
   image:
     repository: ironbank/vivsoft/enbuild/backend
     tag: 1.0.30-5101272
