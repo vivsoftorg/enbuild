@@ -237,6 +237,23 @@ enbuildBk:
       endpoint: ""                 # https URL of the P1 SIEM HTTP(S) collector
       format: ""                   # json (ECS, default) | cef
       timeoutMs: ""                # per-POST timeout ms; empty = 5000
+      # CA trust for the SIEM collector's TLS chain (private / agency CA). When
+      # the collector presents a cert signed by a CA the backend's Node runtime
+      # does not already trust, the HTTPS POST fails "unable to verify the first
+      # certificate" — there is NO insecure-skip path (by decision). Point ONE of
+      # the two keys below at an OPERATOR-MANAGED ConfigMap OR Secret carrying the
+      # collector's CA (PEM). The chart mounts it read-only into the backend pod
+      # and sets NODE_EXTRA_CA_CERTS to the mounted file, which Node reads at
+      # process boot. Because the env + volume are part of the pod template, a
+      # values change here rolls the backend pod, so the new trust store takes
+      # effect (no manual restart). BOTH empty (default) = no mount, no
+      # NODE_EXTRA_CA_CERTS → today's behavior EXACTLY. existingConfigMap wins if
+      # both are set. Create the source out-of-band, e.g.:
+      #   kubectl -n enbuild create configmap siem-collector-ca --from-file=ca.crt=./siem-ca.pem
+      caBundle:
+        existingConfigMap: ""      # name of an existing ConfigMap holding the CA PEM
+        existingSecret: ""         # OR name of an existing Secret holding the CA PEM
+        key: "ca.crt"              # key within the ConfigMap/Secret = the PEM filename
     prometheus:                    # SOO §1.5(iii) — performance tuning
       host: ""                     # HUB-SELF Prometheus base URL ONLY; spokes auto-route via the agent (leave empty)
     loki:                          # SOO §1.5(iii) — efficient troubleshooting (pod-log tailing)

@@ -222,6 +222,27 @@ spec:
           value: {{ default "" $ia.agentImageRepository | quote }}
         - name: ENBUILD_AGENT_IMAGE_PULL_SECRET
           value: {{ default "" $ia.agentImagePullSecret | quote }}
+        {{- /*
+          SIEM collector CA trust (SOO §1.5(i)). When the operator points
+          enbuildBk.observability.siem.caBundle at a ConfigMap/Secret carrying the
+          SIEM collector's CA (PEM), set NODE_EXTRA_CA_CERTS so the backend's Node
+          runtime trusts the collector's TLS chain — there is NO insecure-skip
+          path (by decision). NODE_EXTRA_CA_CERTS is read at process BOOT; this env
+          + the mount/volume emitted below are part of the pod template, so a
+          values change rolls the pod and the new trust store takes effect (no
+          manual restart). Both keys empty (default) = no env, no mount →
+          unchanged. nil-safe under `helm upgrade --reuse-values` (older releases
+          predate observability/siem/caBundle → default (dict) at each hop).
+          existingConfigMap wins if both are set. $siemCa/$siemCaKey are reused by
+          the container volumeMounts and the pod volumes blocks further down.
+        */}}
+        {{- $obs := default (dict) .Values.enbuildBk.observability }}
+        {{- $siemCa := default (dict) (default (dict) $obs.siem).caBundle }}
+        {{- $siemCaKey := default "ca.crt" $siemCa.key }}
+        {{- if or $siemCa.existingConfigMap $siemCa.existingSecret }}
+        - name: NODE_EXTRA_CA_CERTS
+          value: {{ printf "/etc/enbuild/siem-ca/%s" $siemCaKey | quote }}
+        {{- end }}
         envFrom:
         {{- /*
           MongoDB credentials. When mongodb.existingSecret is set the operator
@@ -413,10 +434,38 @@ spec:
           runAsGroup: 1000
           runAsNonRoot: true
           runAsUser: 1000
+        {{- /*
+          SIEM collector CA mount (see the NODE_EXTRA_CA_CERTS block above). Only
+          the single `key` is projected, so the file lands at exactly the
+          NODE_EXTRA_CA_CERTS path. Read-only. Omitted entirely when unset.
+        */}}
+        {{- if or $siemCa.existingConfigMap $siemCa.existingSecret }}
+        volumeMounts:
+        - name: siem-ca
+          mountPath: /etc/enbuild/siem-ca
+          readOnly: true
+        {{- end }}
 {{- if or .Values.global.imagePullSecretName .Values.global.image.registry_credentials }}
       imagePullSecrets:
         - name: {{ .Values.global.imagePullSecretName | default (printf "%s-image-pull-secret" .Release.Name) }}
 {{- end }}
+      {{- if or $siemCa.existingConfigMap $siemCa.existingSecret }}
+      volumes:
+      - name: siem-ca
+        {{- if $siemCa.existingConfigMap }}
+        configMap:
+          name: {{ $siemCa.existingConfigMap }}
+          items:
+          - key: {{ $siemCaKey | quote }}
+            path: {{ $siemCaKey | quote }}
+        {{- else }}
+        secret:
+          secretName: {{ $siemCa.existingSecret }}
+          items:
+          - key: {{ $siemCaKey | quote }}
+            path: {{ $siemCaKey | quote }}
+        {{- end }}
+      {{- end }}
 ---
 apiVersion: v1
 kind: Service

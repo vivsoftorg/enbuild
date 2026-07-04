@@ -158,7 +158,15 @@
                 "forwardingEnabled": { "type": "string" },
                 "endpoint": { "type": "string" },
                 "format": { "type": "string" },
-                "timeoutMs": { "type": ["string", "integer"] }
+                "timeoutMs": { "type": ["string", "integer"] },
+                "caBundle": {
+                  "type": "object",
+                  "properties": {
+                    "existingConfigMap": { "type": "string" },
+                    "existingSecret": { "type": "string" },
+                    "key": { "type": "string" }
+                  }
+                }
               }
             },
             "prometheus": {

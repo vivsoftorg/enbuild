@@ -139,7 +139,7 @@ non-secret endpoints are plain values.
 | Capability | Test cell | How to configure | Notes |
 |---|---|---|---|
 | **Performance — managed clusters** | 3.5-5 | **Nothing.** The connected spoke agent auto-discovers the cluster's Big Bang/kube-prometheus and routes metrics over the existing mTLS link. | Leave `enbuildBk.observability.prometheus.host` EMPTY. If the Performance tab shows synthetic, check BB monitoring is Running on that spoke + the agent is connected — **not** a hub setting. |
-| **SIEM forwarding** | 3.5-1 | `enbuildBk.observability.siem.*` (endpoint/format/toggle) + `SIEM_AUTH_HEADER` in the Secret. | Ships **OFF** until `forwardingEnabled: "true"` + an `endpoint`. Forwards the **solution audit stream** (CCM-32 platform actions), *not* aggregated cluster/pod logs — those ship from each cluster's Big Bang Fluentbit (see §3c). Admin UI `/admin/siem-settings` is the **live per-field override**; these values are the GitOps floor + the only air-gap-seedable path. |
+| **SIEM forwarding** | 3.5-1 | `enbuildBk.observability.siem.*` (endpoint/format/toggle) + `SIEM_AUTH_HEADER` in the Secret. Private-CA collector: `enbuildBk.observability.siem.caBundle.{existingConfigMap\|existingSecret,key}`. | Ships **OFF** until `forwardingEnabled: "true"` + an `endpoint`. Forwards the **solution audit stream** (CCM-32 platform actions), *not* aggregated cluster/pod logs — those ship from each cluster's Big Bang Fluentbit (see §3c). Admin UI `/admin/siem-settings` is the **live per-field override**; these values are the GitOps floor + the only air-gap-seedable path. If the collector's HTTPS cert is signed by a private/agency CA the backend doesn't already trust, the POST fails "unable to verify the first certificate" (no insecure-skip, by decision) — set `caBundle` (see Step 1b). |
 | **Troubleshooting (pod logs)** | 3.5-4 | `enbuildBk.observability.loki.{host,tenant}` + `LOKI_TOKEN` in the Secret; optional `grafana.{base,lokiDatasource}` deep-link. | Without a host, in-console log tailing falls back to a synthetic zero-state + the Grafana deep-link. |
 
 **Step 1 — create the bearer-token Secret** (any subset of the three keys; the
@@ -152,6 +152,21 @@ kubectl -n enbuild create secret generic enbuild-ib-observability \
 # (or: OBS_SIEM_AUTH_HEADER=... OBS_LOKI_TOKEN=... scripts/create-bootstrap-secrets.sh)
 ```
 
+**Step 1b — (only if the SIEM collector uses a private/agency CA)** seed that CA
+so the backend's Node runtime trusts the collector's TLS chain. Put the CA PEM in
+a ConfigMap (or Secret) in the `enbuild` namespace, then point `caBundle` at it in
+Step 2. There is **no** insecure-skip-verify path — this is by decision.
+
+```bash
+kubectl -n enbuild create configmap siem-collector-ca --from-file=ca.crt=./siem-ca.pem
+```
+
+When set, the chart mounts that PEM read-only at `/etc/enbuild/siem-ca/<key>` and
+sets `NODE_EXTRA_CA_CERTS` to it. `NODE_EXTRA_CA_CERTS` is read at **process boot**,
+so a helm upgrade that adds/changes `caBundle` rolls the backend pod automatically
+(the env + volume are part of the pod template) — no manual restart. Leaving
+`caBundle` empty (default) mounts nothing and is byte-for-byte today's behavior.
+
 **Step 2 — set the non-secret endpoints in your values:**
 
 ```yaml
@@ -162,6 +177,9 @@ enbuildBk:
       forwardingEnabled: "true"
       endpoint: "https://siem.p1.example.mil/services/collector/raw"
       format: "json"                # ECS JSON (default); "cef" for Splunk/ArcSight
+      caBundle:                      # ONLY if the collector uses a private/agency CA (Step 1b)
+        existingConfigMap: siem-collector-ca   # or existingSecret: <name>
+        key: ca.crt
     loki:
       host: "http://logging-loki-gateway.logging.svc.cluster.local"
       tenant: "enbuild"
