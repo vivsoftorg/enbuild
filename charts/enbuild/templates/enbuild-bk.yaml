@@ -182,6 +182,26 @@ spec:
           value: {{ default "" $ia.tlsServerName | quote }}
         - name: ENBUILD_HUB_INTERNAL_IPS
           value: {{ default "" $ia.hubInternalIps | quote }}
+        {{- /* ADR-0052 agent mTLS. ALL default empty → byte-unchanged + mTLS OFF
+               unless a deploy opts in. mtls.enabled+listenerMode+peerCertSource
+               turn on hub-side ENFORCEMENT (verifyMtls CN==clusterId); enroll
+               makes catalog launches MINT a per-spoke client cert from the hub
+               ClusterIssuer (loadSpokeClientCert). issuerName/pkiNamespace tell
+               the backend where to mint. Flip enabled=true ONLY after all spokes
+               present certs (ADR-0052 Track-2). */ -}}
+        {{- $mt := default (dict) .Values.enbuildBk.agentMtls }}
+        - name: ENBUILD_HUB_MTLS_ENABLED
+          value: {{ default "" $mt.enabled | quote }}
+        - name: ENBUILD_HUB_LISTENER_MODE
+          value: {{ default "" $mt.listenerMode | quote }}
+        - name: ENBUILD_PEER_CERT_SOURCE
+          value: {{ default "" $mt.peerCertSource | quote }}
+        - name: ENBUILD_HUB_SPOKE_CERT_ENROLL
+          value: {{ default "" $mt.spokeCertEnroll | quote }}
+        - name: ENBUILD_HUB_ISSUER_NAME
+          value: {{ default (default "enbuild-hub-issuer" .Values.pki.hubIssuerName) $mt.issuerName | quote }}
+        - name: ENBUILD_HUB_PKI_NAMESPACE
+          value: {{ default .Release.Namespace $mt.pkiNamespace | quote }}
         - name: ENBUILD_AGENT_IMAGE_TAG
           value: {{ default "" $ia.agentImageTag | quote }}
         - name: ENBUILD_AGENT_CHART_REPO
