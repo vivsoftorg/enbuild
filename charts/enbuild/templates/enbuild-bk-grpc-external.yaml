@@ -1,0 +1,55 @@
+{{- /* ADR-0052 AUTH-5 — OPT-IN externally-reachable agent-gateway endpoint so a
+       cross-network spoke (GKE/AKS, or any spoke not in the hub's VPC) can dial
+       the hub. DEFAULT OFF (enbuildBk.agentGatewayExternal.enabled=false) → not
+       rendered, byte-unchanged. This is an ADDITIVE second Service; the internal
+       ClusterIP gRPC Service (used by in-VPC spokes) is untouched, so EKS/RKE2
+       are unaffected.
+
+       SAFETY (ADR-0052): expose this ONLY with hub mTLS enforcement on
+       (enbuildBk.agentMtls.enabled=true) — every peer must present a hub-CA
+       client cert or is rejected at the socket, so the exposed port is a
+       REJECTING endpoint, not an open registration door. Optionally further
+       limit with sourceRanges (spoke egress CIDRs) as defense-in-depth. L4
+       pass-through NLB with preserve_client_ip=false (avoids the eks-10
+       asymmetric-routing dial timeout). AWS NLB annotations are defaults (the
+       hub runs on EKS); override per cloud via the values below. */ -}}
+{{- if and .Values.enbuildBk.grpcEnabled (default (dict) .Values.enbuildBk.agentGatewayExternal).enabled -}}
+{{- $ext := .Values.enbuildBk.agentGatewayExternal -}}
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ .Release.Name }}-enbuild-bk-grpc-external
+  labels:
+    app: bk
+    app.kubernetes.io/component: backend
+    {{- include "enbuild-helm-chart.labels" . | nindent 4 }}
+  annotations:
+    service.beta.kubernetes.io/aws-load-balancer-type: {{ $ext.awsLbType | default "external" | quote }}
+    service.beta.kubernetes.io/aws-load-balancer-nlb-target-type: {{ $ext.awsNlbTargetType | default "instance" | quote }}
+    service.beta.kubernetes.io/aws-load-balancer-scheme: {{ $ext.scheme | default "internet-facing" | quote }}
+    service.beta.kubernetes.io/aws-load-balancer-target-group-attributes: "preserve_client_ip.enabled=false"
+    {{- with $ext.subnets }}
+    service.beta.kubernetes.io/aws-load-balancer-subnets: {{ . | quote }}
+    {{- end }}
+    {{- with $ext.sourceRanges }}
+    service.beta.kubernetes.io/aws-load-balancer-source-ranges: {{ . | quote }}
+    {{- end }}
+    {{- with $ext.extraAnnotations }}
+    {{- toYaml . | nindent 4 }}
+    {{- end }}
+spec:
+  type: LoadBalancer
+  {{- with $ext.loadBalancerClass }}
+  loadBalancerClass: {{ . | quote }}
+  {{- end }}
+  externalTrafficPolicy: {{ $ext.externalTrafficPolicy | default "Local" | quote }}
+  selector:
+    app: bk
+    app.kubernetes.io/component: backend
+    {{- include "enbuild-helm-chart.selectorLabels" . | nindent 4 }}
+  ports:
+  - name: grpc
+    port: {{ $ext.port | default 443 }}
+    targetPort: 8443
+    protocol: TCP
+{{- end -}}

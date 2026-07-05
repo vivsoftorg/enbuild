@@ -372,6 +372,21 @@ enbuildBk:
     spokeCertEnroll: ""           # "true" → catalog launches MINT a per-spoke client cert (loadSpokeClientCert)
     issuerName: ""                # override the hub ClusterIssuer (default pki.hubIssuerName / enbuild-hub-issuer)
     pkiNamespace: ""              # ns the Certificates/Secrets live in (default = release namespace)
+  # ADR-0052 AUTH-5 — opt-in externally-reachable agent gateway for CROSS-NETWORK
+  # spokes (GKE/AKS). DEFAULT OFF → not rendered. Additive: the internal ClusterIP
+  # gRPC Service is untouched (in-VPC EKS/RKE2 unaffected). Expose ONLY with
+  # agentMtls.enabled=true — mTLS is what makes the exposed port safe.
+  agentGatewayExternal:
+    enabled: false
+    scheme: internet-facing       # "internet-facing" (cross-cloud) | "internal" (peered VPC)
+    port: 443
+    externalTrafficPolicy: Local
+    awsLbType: external           # AWS Load Balancer Controller manages the NLB
+    awsNlbTargetType: instance
+    subnets: ""                   # [CUSTOMER] CSV of public subnet IDs (pin when the elb-role tag is absent)
+    sourceRanges: ""              # [CUSTOMER] CSV of allowed client CIDRs (spoke egress /32) — defense-in-depth
+    loadBalancerClass: ""         # e.g. "service.k8s.aws/nlb"
+    extraAnnotations: {}          # per-cloud LB annotations (GCP/Azure)
   image:
     tag: ""                       # [CUSTOMER] pin backend image; empty = appVersion
     # [INTERNAL]
