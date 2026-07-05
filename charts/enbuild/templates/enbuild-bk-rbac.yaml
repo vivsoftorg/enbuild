@@ -45,6 +45,13 @@ rules:
   - apiGroups: ["apps"]
     resources: ["deployments"]
     verbs: ["get", "patch"]
+  # ADR-0052 — mint per-spoke mTLS client certs (loadSpokeClientCert): server-side
+  # apply (create/patch) a cert-manager Certificate from enbuild-hub-issuer; the
+  # issued Secret {tls.crt,tls.key,ca.crt} is read via the `secrets` rule above.
+  # Inert unless agentMtls.spokeCertEnroll is on + cert-manager is installed.
+  - apiGroups: ["cert-manager.io"]
+    resources: ["certificates"]
+    verbs: ["create", "get", "list", "patch"]
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: RoleBinding
