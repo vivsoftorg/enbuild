@@ -91,8 +91,12 @@ lightning_features:
 
 # ---- ENBUILD backend ---------------------------------------------------------
 enbuildBk:
-  # No image.tag pin: the released chart's appVersion tag applies. (Pin a specific
-  # released SHA here only for a controlled rollback.)
+  # Image tags pinned to the VALIDATED ccm-p1 RELEASE (2026-07-06): backend +
+  # frontend carry the launch-dedup + v3-SKU fixes; user + mq-consumer are the
+  # current release. Bump all four as ONE coherent set on upgrade. (image.tag
+  # defaults to appVersion, which is a stale placeholder — pin explicitly.)
+  image:
+    tag: "792601ea9b8d8a091d80bd724e1ba5cd1338948d"
   #
   # Auth = keycloak (chart default). The backend FAILS CLOSED in keycloak mode
   # without a token-verification source, so keycloak.backendUrl below is required.
@@ -141,15 +145,20 @@ enbuildBk:
     enabled: false
 
 enbuildUi:
-  # No image.tag pin (released chart tag applies).
+  image:
+    tag: "792601ea9b8d8a091d80bd724e1ba5cd1338948d"   # validated ccm-p1 release (v3-SKU fix)
   hostname: enbuild
   keycloak:
     url: https://keycloak.aks.example.com   # ← REPLACE (must equal enbuildBk.keycloak.url)
     realm: enbuild
     clientId: enbuild-ui
 
-enbuildUser: {}
+enbuildUser:
+  image:
+    tag: "8d473885fc7945166def7411dd1ba56954eb2404"   # validated ccm-p1 release (current)
 enbuildConsumer:
+  image:
+    tag: "93c52dfd602ec6c144079a51a7cd3ec9ec6f7da7"   # validated ccm-p1 release (current)
   # AKS Istio FIX (production-correct): exclude the mq consumer's AMQP outbound
   # from the sidecar (pairs with rabbitmq.podAnnotations above).
   podAnnotations:

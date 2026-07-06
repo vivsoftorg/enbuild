@@ -25,9 +25,8 @@ mongodb:
   storageClassName: "managed-csi"
 
 enbuildBk:
-  # Pinned to the Phase-A validated backend build (dedup + launch fixes).
-  image:
-    tag: "f423a844eb26aabba15595025e7fb5aeaed15bec"
+  # Image tags inherit the production overlay's validated ccm-p1 release (the
+  # dedup + v3 fixes are already on ccm-p1 — no eval-specific build needed).
   # EVAL AUTH — LOCAL mode. The RolesGuard short-circuits to allow (no Keycloak
   # JWT needed) so the eval can browse catalogs + launch without an IdP. The
   # break-glass ADMIN_EMAILS list grants the tokenless Local-login user admin.
@@ -43,18 +42,8 @@ enbuildBk:
     host: "hub-grpc.48.216.154.225.nip.io"
 
 enbuildUi:
-  image:
-    tag: "4046d3e39a466044366921b2ca4ba71ce7ab9ac1"
   keycloak:
     url: https://keycloak.48.216.154.225.nip.io
-
-enbuildUser:
-  image:
-    tag: "8d473885fc7945166def7411dd1ba56954eb2404"
-
-enbuildConsumer:
-  image:
-    tag: "93c52dfd602ec6c144079a51a7cd3ec9ec6f7da7"
 
 keycloak:
   hostname: https://keycloak.48.216.154.225.nip.io
