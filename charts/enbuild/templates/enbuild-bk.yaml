@@ -34,6 +34,9 @@ spec:
         {{- $kcIssuer = printf "%s/realms/%s" (trimSuffix "/" $kc.url) $kcRealm }}
         {{- end }}
         checksum/keycloak-config: {{ dict "issuer" $kcIssuer "url" $kc.url "backendUrl" $kc.backendUrl "realm" $kcRealm | toYaml | sha256sum }}
+        {{- with .Values.enbuildBk.podAnnotations }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
       labels:
         app: bk
         app.kubernetes.io/component: backend

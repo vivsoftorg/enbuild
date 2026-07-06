@@ -12,6 +12,19 @@
 #   • cheaper Standard_LRS storage.
 # Every value here is an EVAL CONVENIENCE. Using this layer in a real deployment
 # would ship the hub with authentication effectively open — do not.
+#
+# ⚠️ BROWSER TLS — EXPECTED EVAL FRICTION (tester note):
+#   This eval terminates TLS at the Istio gateway with a SELF-SIGNED cert on the
+#   nip.io domain (no real DNS zone → no publicly-trusted cert obtainable). Your
+#   browser will show "Your connection is not private" (NET::ERR_CERT_AUTHORITY_
+#   INVALID) the first time. Either click Advanced → Proceed, OR trust the eval CA
+#   once so it loads cleanly:
+#     macOS : security add-trusted-cert -r trustRoot -k ~/Library/Keychains/login.keychain-db <eval-ca>.crt
+#     Linux : sudo cp <eval-ca>.crt /usr/local/share/ca-certificates/ && sudo update-ca-certificates
+#   A PRODUCTION deploy (values-aks.yaml, real DNS + a real cert via cert-manager/
+#   an Azure-issued cert/org-or-DoD-PKI CA) has NO such warning — nothing to trust
+#   manually. The SPOKE AGENT's trust of the hub cert (connect-back) is handled
+#   BY THE PLATFORM (agent.hubCaBundle), never a manual step.
 # =============================================================================
 
 global:

@@ -97,6 +97,15 @@ enbuildBk:
   image:
     tag: "792601ea9b8d8a091d80bd724e1ba5cd1338948d"
   authMechanism: keycloak
+  # GitLab connection for catalog launches (mq-consumer createProject reads these).
+  # host needs a trailing slash; namespaceId = your enbuild-deployments group id.
+  # Prod credential = a GROUP ACCESS TOKEN (SSO-exempt) via the install-agent secret.
+  gitlabConnection:
+    host: "https://gitlab.example.com/"   # ← REPLACE with your GitLab base URL
+    namespaceId: "000000"                 # ← REPLACE with your enbuild-deployments group id
+  # The mq-consumer envFroms this secret for GITLAB_TOKEN + ENBUILD_REPO1_* (launches).
+  installAgent:
+    existingSecret: "enbuild-ib-install-agent"
   # Istio FIX (production-correct): the backend's OUTBOUND AMQP to RabbitMQ is
   # mangled by Istio protocol-sniffing the same way — exclude 5672 outbound.
   podAnnotations:

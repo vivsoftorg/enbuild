@@ -1,0 +1,66 @@
+# =============================================================================
+# ENBUILD hub — GKE EVAL layer  ·  ⚠️  THROWAWAY EVAL ONLY — NOT FOR PRODUCTION
+# =============================================================================
+# Layer AFTER the production GKE overlay:
+#   helm ... -f examples/values-gke.yaml -f examples/values-gke-eval.yaml
+#
+# Swaps the production defaults for a self-contained eval on a GKE cluster with
+# NO real DNS/cert and NO external Keycloak users:
+#   • a nip.io domain (resolves to the ingressgateway LB IP with zero DNS setup),
+#   • LOCAL auth + a break-glass ADMIN_EMAILS allowlist (no Keycloak IdP needed),
+#   • the bundled demo realm (seeds the demo admin@p1.mil login user),
+#   • cheaper pd-balanced (standard-rwo) storage.
+# Image tags INHERIT the production overlay's validated ccm-p1 release (no eval
+# build needed). Every value here is an EVAL CONVENIENCE — using this layer in a
+# real deployment ships the hub with authentication effectively open. Do not.
+#
+# ⚠️ BROWSER TLS — EXPECTED EVAL FRICTION (tester note):
+#   This eval terminates TLS at the Istio gateway with a SELF-SIGNED cert on the
+#   nip.io domain (no real DNS zone → no publicly-trusted cert obtainable). Your
+#   browser will show "Your connection is not private" (NET::ERR_CERT_AUTHORITY_
+#   INVALID) the first time. Either click Advanced → Proceed, OR trust the eval CA
+#   once so it loads cleanly:
+#     macOS : security add-trusted-cert -r trustRoot -k ~/Library/Keychains/login.keychain-db <eval-ca>.crt
+#     Linux : sudo cp <eval-ca>.crt /usr/local/share/ca-certificates/ && sudo update-ca-certificates
+#   A PRODUCTION deploy (values-gke.yaml, real DNS + a real cert via cert-manager/
+#   Let's Encrypt/Google CAS/org-or-DoD-PKI CA) has NO such warning — nothing to
+#   trust manually. The SPOKE AGENT's trust of the hub cert (connect-back) is
+#   handled BY THE PLATFORM (agent.hubCaBundle), never a manual step.
+# =============================================================================
+
+global:
+  # pd-balanced is fine for a throwaway eval (production uses premium-rwo / pd-ssd).
+  storageClass: "standard-rwo"
+  # nip.io: <ip>.nip.io resolves to <ip> with no DNS records. Set <LB_IP> to YOUR
+  # GKE Istio ingressgateway external IP once the cluster + gateway are up.
+  domain: "REPLACE_LB_IP.nip.io"
+
+mongodb:
+  storageClassName: "standard-rwo"
+
+enbuildBk:
+  # EVAL AUTH — LOCAL mode. The RolesGuard short-circuits to allow (no Keycloak
+  # JWT needed); ADMIN_EMAILS grants the tokenless Local-login user admin.
+  # ⚠️ authentication effectively OFF — eval only.
+  authMechanism: local
+  adminEmails: "admin@local.com,admin@p1.mil"
+  gitlabConnection:
+    host: "https://gitlab.com/"
+    namespaceId: "70306609"
+  keycloak:
+    url: https://keycloak.REPLACE_LB_IP.nip.io
+  grpcVirtualService:
+    host: "hub-grpc.REPLACE_LB_IP.nip.io"
+
+enbuildUi:
+  keycloak:
+    url: https://keycloak.REPLACE_LB_IP.nip.io
+
+keycloak:
+  hostname: https://keycloak.REPLACE_LB_IP.nip.io
+  virtualService:
+    host: "keycloak.REPLACE_LB_IP.nip.io"
+  # EVAL: bootstrap the bundled demo realm (seeds the demo admin@p1.mil user used
+  # to log into the eval console). ⚠️ demo credentials — eval only.
+  demoRealm:
+    enabled: true

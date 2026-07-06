@@ -19,6 +19,10 @@ spec:
         app: mq
         app.kubernetes.io/component: mq
       {{- include "enbuild-helm-chart.selectorLabels" . | nindent 8 }}
+      {{- with .Values.enbuildConsumer.podAnnotations }}
+      annotations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
     spec:
       containers:
       - env:
@@ -40,6 +44,18 @@ spec:
             name: {{ . }}
         {{- end }}
         {{- with (default (dict) .Values.enbuildBk.messaging).existingSecret }}
+        - secretRef:
+            name: {{ . }}
+        {{- end }}
+        {{- /*
+          Launch credentials — the mq-consumer's createProject needs GITLAB_TOKEN
+          (+ ENBUILD_REPO1_* for agent installs). Gated on installAgent.existingSecret
+          so it is DEFAULT-OFF and AWS-safe: renders ONLY when the operator wires the
+          install-agent Secret (same one the backend consumes). Without this the mq
+          gets GITLAB_HOST/NAMESPACE_ID from backend-secret but no token → launches
+          fail "couldn't resolve namespace path".
+        */ -}}
+        {{- with (default (dict) .Values.enbuildBk.installAgent).existingSecret }}
         - secretRef:
             name: {{ . }}
         {{- end }}
