@@ -126,7 +126,7 @@ enbuildBk:
 
 enbuildUi:
   image:
-    tag: "792601ea9b8d8a091d80bd724e1ba5cd1338948d"   # validated ccm-p1 release (v3-SKU fix)
+    tag: "401aab8df5acaec989de8b50204d1060371d16d2"   # validated ccm-p1 release (v3 dropdown dist)
   hostname: enbuild
   keycloak:
     url: https://keycloak.gke.example.com
