@@ -1,0 +1,162 @@
+# =============================================================================
+# ENBUILD hub — GKE (Google Kubernetes Engine) cloud overlay  ·  PRODUCTION
+# =============================================================================
+# Layer on TOP of the chart defaults (values.yaml). This overlay makes the hub
+# run on a vanilla GKE cluster: GCE PD CSI storage, an Istio edge (Anthos Service
+# Mesh / istioctl), and the spoke agent-gateway gRPC path routed through the SAME
+# Istio ingressgateway (HTTP/2 carries gRPC) — NO AWS NLB, NO IRSA.
+#
+# PRODUCTION-SAFE BY DEFAULT: Keycloak auth (chart default; backend fails closed
+# without a token source), real-DNS/cert placeholders you replace, no pinned image
+# SHAs. NO eval shortcuts. For a throwaway eval (nip.io + local auth + build SHAs)
+# add a values-gke-eval.yaml AFTER this file — mirror examples/values-aks-eval.yaml.
+#
+# PREREQUISITES on the GKE cluster:
+#   • Istio installed (ASM `asm-gateways` or upstream istioctl) with an ingress
+#     gateway Service of type=LoadBalancer — GKE provisions a regional external
+#     TCP/UDP Network Load Balancer (or a global L7 if you use GKE Gateway API).
+#     Set the two gateway refs below to match YOUR gateway ns/name.
+#   • A public DNS record (Cloud DNS, or /etc/hosts for an eval) pointing the
+#     console + Keycloak + hub-grpc FQDNs at the ingressgateway LB IP.
+#   • A TLS cert on the Istio Gateway covering all three hosts (cert-manager +
+#     Google CAS / Let's Encrypt, or a Google-managed cert on a GKE Gateway).
+#     Istio terminates TLS; HTTP/2 then carries console + spoke gRPC.
+#   • Image-pull entitlements for registry.gitlab.com + registry1.dso.mil, wired
+#     via scripts/create-bootstrap-secrets.sh (same as quickstart).
+#
+# EVAL SHORTCUT (no DNS/cert yet): keep global.istio.enabled=false and reach the
+# console + Keycloak by `kubectl port-forward` as in the quickstart. The storage
+# block below applies either way.
+# =============================================================================
+
+global:
+  # ---- GCE Persistent Disk CSI storage for the bundled Mongo + RabbitMQ PVCs -
+  # GKE ships built-in StorageClasses from the pd.csi.storage.gke.io driver:
+  #   standard-rwo  → pd-balanced (balanced PD, good default)
+  #   premium-rwo   → pd-ssd      (SSD PD, real IOPS)
+  #   standard      → pd-standard (in-tree legacy; avoid on new clusters)
+  # All are ReadWriteOnce, matching the bundled Mongo StatefulSet + RabbitMQ.
+  # Use premium-rwo (pd-ssd) for Mongo throughput; standard-rwo for an eval.
+  storageClass: "premium-rwo"
+
+  # ---- Edge: Istio ----------------------------------------------------------
+  # istio.enabled=true renders the frontend + rabbitmq VirtualServices; the chart
+  # FAILS CLOSED unless BOTH global.domain and enbuildUi.hostname are set.
+  istio:
+    enabled: true
+    # <namespace>/<Gateway-name> the console + rabbitmq VirtualServices bind to.
+    # ASM commonly uses istio-system/main or asm-gateways/<gw>; MATCH your cluster.
+    gateway: istio-system/main
+  ingress:
+    enabled: false
+
+  # ---- DNS suffix: console FQDN = <enbuildUi.hostname>.<global.domain> -------
+  domain: "gke.example.com"
+
+  # ---- Image registries + pull secret (unchanged from quickstart) -----------
+  image:
+    registry: registry.gitlab.com
+    pullPolicy: IfNotPresent
+  imagePullSecretName: enbuild-ib-image-pull-secret
+  imagePullSecrets:
+    - enbuild-ib-image-pull-secret
+
+# Keep Mongo's PVC on SSD PD explicitly (survives a differing cluster default SC).
+mongodb:
+  enabled: true
+  storageClassName: "premium-rwo"
+  existingSecret: enbuild-ib-mongo-secrets
+  image:
+    registry: registry1.dso.mil
+    repository: ironbank/opensource/mongodb/mongodb_7.x
+    tag: "7.0.34"
+
+rabbitmq:
+  enabled: true
+  auth:
+    username: enbuild
+    existingPasswordSecret: enbuild-ib-rabbitmq-creds
+    existingErlangSecret: enbuild-ib-rabbitmq-creds
+  # Istio FIX (production-correct): Istio protocol-sniffing mangles the long-lived
+  # AMQP/TCP connection on the unnamed `amqp` Service port → the mq consumer gets
+  # ECONNRESET and CrashLoops. Exclude the RabbitMQ inbound ports from sidecar
+  # interception so AMQP stays plain TCP. (General Istio behavior — applies to ASM
+  # and upstream Istio alike; the AWS Big Bang hub handles this in its own config.)
+  podAnnotations:
+    traffic.sidecar.istio.io/excludeInboundPorts: "5672,4369,25672,15672"
+
+lightning_features:
+  operations_lightning:
+    headlamp: true
+
+# ---- ENBUILD backend ---------------------------------------------------------
+enbuildBk:
+  # No image.tag pin: the released chart's appVersion tag applies.
+  authMechanism: keycloak
+  # Istio FIX (production-correct): the backend's OUTBOUND AMQP to RabbitMQ is
+  # mangled by Istio protocol-sniffing the same way — exclude 5672 outbound.
+  podAnnotations:
+    traffic.sidecar.istio.io/excludeOutboundPorts: "5672"
+  encryptionKey:
+    existingSecret: enbuild-ib-encryption-key
+  messaging:
+    existingSecret: enbuild-ib-messaging
+  keycloak:
+    realm: enbuild
+    url: https://keycloak.gke.example.com
+    backendUrl: http://enbuild-ib-keycloak:8080
+    clientId: enbuild
+
+  # ---- Spoke agent-gateway gRPC path (NON-AWS hub) -------------------------
+  # Same model as AKS: in-cluster ClusterIP gRPC Service + a VirtualService that
+  # scopes /enbuild.v1. on the public Istio ingressgateway. Spokes dial
+  # https://<host>:443; the gateway terminates TLS and HTTP/2 carries gRPC.
+  grpcServiceType: ClusterIP
+  grpcVirtualService:
+    enabled: true
+    host: "hub-grpc.gke.example.com"
+    additionalHosts: []
+    gateway: istio-ingress/public-ingressgateway
+  agentGatewayExternal:
+    enabled: false
+
+enbuildUi:
+  # No image.tag pin (released chart tag applies).
+  hostname: enbuild
+  keycloak:
+    url: https://keycloak.gke.example.com
+    realm: enbuild
+    clientId: enbuild-ui
+
+enbuildUser: {}
+enbuildConsumer:
+  # Istio FIX (production-correct): exclude the mq consumer's AMQP outbound from
+  # the sidecar (pairs with rabbitmq.podAnnotations above).
+  podAnnotations:
+    traffic.sidecar.istio.io/excludeOutboundPorts: "5672"
+
+# ---- Bundled Keycloak, exposed on the Istio gateway --------------------------
+keycloak:
+  enabled: true
+  # PRODUCTION: provide YOUR realm (real users + /enbuild/platform-admins group)
+  # via an operator Secret (keycloak.existingSecret: <name>; keys realm-enbuild.json
+  # + KC_BOOTSTRAP_ADMIN_PASSWORD). The bundled demoRealm seeds a DEMO admin@p1.mil
+  # user and is DISABLED here (chart default false) — enable only in an eval layer.
+  demoRealm:
+    enabled: false
+  hostname: https://keycloak.gke.example.com
+  virtualService:
+    enabled: true
+    host: "keycloak.gke.example.com"
+    gateway: istio-ingress/public-ingressgateway
+
+# =============================================================================
+# ALTERNATIVE GCP edge — GKE Gateway API / global external L7 instead of Istio.
+# The chart only renders k8s Ingress or Istio VirtualServices, so a GKE Gateway
+# (gateway.networking.k8s.io) would be authored OUTSIDE this chart, pointing at
+# the enbuild-ib-enbuild-ui Service. For spoke gRPC over a GKE Gateway you need
+# HTTP/2 end-to-end (cloud.google.com/v1 BackendConfig) — Istio is simpler, so
+# keep istio.enabled=true when onboarding spokes. For a console-only eval you can
+# instead set global.ingress.enabled=true + className: gce and pre-create a
+# Google-managed cert Secret.
+# =============================================================================

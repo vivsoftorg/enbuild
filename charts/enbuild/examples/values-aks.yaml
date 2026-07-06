@@ -1,0 +1,195 @@
+# =============================================================================
+# ENBUILD hub — AKS (Azure Kubernetes Service) cloud overlay  ·  PRODUCTION
+# =============================================================================
+# Layer on TOP of the chart defaults (values.yaml). This overlay makes the hub
+# run on a vanilla AKS cluster: Azure CSI storage, an Istio edge (AKS add-on or
+# self-installed Istio), and the spoke agent-gateway gRPC path routed through the
+# SAME Istio ingressgateway (HTTP/2 carries gRPC) — NO AWS NLB, NO IRSA.
+#
+# This file is PRODUCTION-SAFE BY DEFAULT: Keycloak auth (the chart default; the
+# backend FAILS CLOSED without a token-verification source), real-DNS/cert
+# placeholders you replace, and NO pinned image SHAs (the released chart's tags
+# apply). It contains NO eval shortcuts.
+#
+#   • Replace every `aks.example.com` with your real DNS suffix.
+#   • Point <console>.<domain>, <keycloak>.<domain>, hub-grpc.<domain> at the
+#     Istio ingressgateway LB IP, and put a TLS cert covering all three on the
+#     Gateway (cert-manager or an Azure-issued cert). Istio terminates TLS; HTTP/2
+#     then carries the console + the spoke gRPC transparently.
+#   • Set the gateway refs (`aks-istio-ingress/enbuild-gw`) to YOUR Istio gateway.
+#   • Fill enbuildBk.gitlabConnection with your enbuild-deployments GitLab group.
+#   • Create the operator secrets (enbuild-ib-*) via
+#     scripts/create-bootstrap-secrets.sh (image pull, Mongo, RabbitMQ, Keycloak,
+#     encryption key, messaging, install-agent).
+#
+# THROWAWAY EVAL (no DNS/cert, self-contained auth): ALSO pass
+# examples/values-aks-eval.yaml AFTER this file —
+#   helm ... -f examples/values-aks.yaml -f examples/values-aks-eval.yaml
+# That eval layer swaps in a nip.io domain, local auth, and pinned build SHAs.
+# NEVER use the eval layer for a real deployment.
+# =============================================================================
+
+global:
+  # ---- Azure CSI storage for the bundled Mongo + RabbitMQ PVCs --------------
+  # AKS ships `managed-csi` (Standard_LRS) and `managed-csi-premium` (Premium_LRS)
+  # as built-in StorageClasses. Azure Disk is RWO, matching the bundled Mongo
+  # StatefulSet / RabbitMQ. Use managed-csi-premium for real Mongo IOPS.
+  storageClass: "managed-csi-premium"
+
+  # ---- Edge: Istio ----------------------------------------------------------
+  # istio.enabled=true renders the frontend + rabbitmq VirtualServices; the chart
+  # FAILS CLOSED unless BOTH global.domain and enbuildUi.hostname are set.
+  istio:
+    enabled: true
+    # <namespace>/<Gateway-name> the console + rabbitmq VirtualServices bind to.
+    # AKS Istio add-on: a Gateway you create in aks-istio-ingress; upstream Istio
+    # commonly uses istio-system/main. MATCH your cluster.
+    gateway: aks-istio-ingress/enbuild-gw
+  ingress:
+    enabled: false
+
+  # ---- DNS suffix: console FQDN = <enbuildUi.hostname>.<global.domain> -------
+  domain: "aks.example.com"   # ← REPLACE with your real DNS suffix
+
+  # ---- Image registries + pull secret ---------------------------------------
+  image:
+    registry: registry.gitlab.com
+    pullPolicy: IfNotPresent
+  imagePullSecretName: enbuild-ib-image-pull-secret
+  imagePullSecrets:
+    - enbuild-ib-image-pull-secret
+
+# Bundled Mongo honors a per-service SC; keep it aligned with global so a cluster
+# whose default SC differs still lands the PVC on Azure Disk.
+mongodb:
+  enabled: true
+  storageClassName: "managed-csi-premium"
+  existingSecret: enbuild-ib-mongo-secrets
+  image:
+    registry: registry1.dso.mil
+    repository: ironbank/opensource/mongodb/mongodb_7.x
+    tag: "7.0.34"
+
+rabbitmq:
+  enabled: true
+  auth:
+    username: enbuild
+    existingPasswordSecret: enbuild-ib-rabbitmq-creds
+    existingErlangSecret: enbuild-ib-rabbitmq-creds
+  # AKS Istio FIX (production-correct): the AKS Istio add-on's protocol-sniffing
+  # mangles the long-lived AMQP/TCP connection on the unnamed `amqp` Service port
+  # → the mq consumer gets ECONNRESET and CrashLoops. Exclude the RabbitMQ inbound
+  # ports from sidecar interception so AMQP stays plain TCP. (AKS-mesh-specific;
+  # the AWS Big Bang hub handles this in its own Istio config.)
+  podAnnotations:
+    traffic.sidecar.istio.io/excludeInboundPorts: "5672,4369,25672,15672"
+
+# Embedded cluster console.
+lightning_features:
+  operations_lightning:
+    headlamp: true
+
+# ---- ENBUILD backend ---------------------------------------------------------
+enbuildBk:
+  # No image.tag pin: the released chart's appVersion tag applies. (Pin a specific
+  # released SHA here only for a controlled rollback.)
+  #
+  # Auth = keycloak (chart default). The backend FAILS CLOSED in keycloak mode
+  # without a token-verification source, so keycloak.backendUrl below is required.
+  # Durable platform admins = the Keycloak /enbuild/platform-admins group (no
+  # ADMIN_EMAILS break-glass list in production).
+  authMechanism: keycloak
+  # GitLab connection for catalog launches (mq-consumer createProject reads these
+  # from env). host needs a trailing slash; namespaceId = the enbuild-deployments
+  # group id. Prod credential = a GROUP ACCESS TOKEN (SSO-exempt), via the secret.
+  gitlabConnection:
+    host: "https://gitlab.example.com/"   # ← REPLACE with your GitLab base URL
+    namespaceId: "000000"                 # ← REPLACE with your enbuild-deployments group id
+  installAgent:
+    existingSecret: "enbuild-ib-install-agent"
+  # AKS Istio FIX (production-correct): the backend also connects OUT to RabbitMQ
+  # to enqueue CREATE_STACK; its outbound AMQP is mangled by the AKS add-on's
+  # protocol-sniffing the same way. Exclude 5672 from outbound interception.
+  podAnnotations:
+    traffic.sidecar.istio.io/excludeOutboundPorts: "5672"
+  encryptionKey:
+    existingSecret: enbuild-ib-encryption-key
+  messaging:
+    existingSecret: enbuild-ib-messaging
+  keycloak:
+    realm: enbuild
+    # Browser-facing issuer — the gateway-exposed Keycloak FQDN. MUST equal
+    # enbuildUi.keycloak.url and keycloak.hostname (jwt.verify is exact-match).
+    url: https://keycloak.aks.example.com   # ← REPLACE
+    # In-cluster Keycloak for JWKS/token verification (satisfies fail-closed).
+    backendUrl: http://enbuild-ib-keycloak:8080
+    clientId: enbuild
+
+  # ---- Spoke agent-gateway gRPC path (NON-AWS hub) -------------------------
+  # grpcEnabled renders the in-cluster ClusterIP gRPC Service; the VirtualService
+  # scopes /enbuild.v1. on the SAME public Istio ingressgateway. Spokes dial
+  # https://<host>:443 → gateway terminates TLS → HTTP/2 carries gRPC. No NLB.
+  grpcServiceType: ClusterIP
+  grpcVirtualService:
+    enabled: true
+    host: "hub-grpc.aks.example.com"        # ← REPLACE (must be a SAN on the gateway cert)
+    additionalHosts: []
+    gateway: aks-istio-ingress/enbuild-gw
+  # Leave the opt-in L4 external Service OFF — it carries AWS NLB annotations and
+  # is unnecessary when the Istio gateway already fronts gRPC.
+  agentGatewayExternal:
+    enabled: false
+
+enbuildUi:
+  # No image.tag pin (released chart tag applies).
+  hostname: enbuild
+  keycloak:
+    url: https://keycloak.aks.example.com   # ← REPLACE (must equal enbuildBk.keycloak.url)
+    realm: enbuild
+    clientId: enbuild-ui
+
+enbuildUser: {}
+enbuildConsumer:
+  # AKS Istio FIX (production-correct): exclude the mq consumer's AMQP outbound
+  # from the sidecar (pairs with rabbitmq.podAnnotations above).
+  podAnnotations:
+    traffic.sidecar.istio.io/excludeOutboundPorts: "5672"
+
+# ---- Bundled Keycloak, exposed on the Istio gateway --------------------------
+keycloak:
+  enabled: true
+  # PRODUCTION: provide YOUR realm — with real users and the
+  # /enbuild/platform-admins group — via an operator-created Secret (keys
+  # `realm-enbuild.json` + `KC_BOOTSTRAP_ADMIN_PASSWORD`):
+  #   keycloak:
+  #     existingSecret: enbuild-ib-keycloak-secrets
+  # The bundled demoRealm SEEDS A DEMO admin@p1.mil USER and is DISABLED here
+  # (chart default is false). Enable it ONLY in the eval layer.
+  demoRealm:
+    enabled: false
+  # KC_HOSTNAME — the issuer Keycloak stamps into tokens. MUST equal the two
+  # keycloak.url values above (issuer alignment).
+  hostname: https://keycloak.aks.example.com   # ← REPLACE
+  virtualService:
+    enabled: true
+    host: "keycloak.aks.example.com"            # ← REPLACE
+    gateway: aks-istio-ingress/enbuild-gw
+
+# =============================================================================
+# ALTERNATIVE Azure edge — Application Gateway Ingress Controller (AGIC) instead
+# of Istio. Swap the global block for:
+#   global:
+#     istio: { enabled: false }
+#     ingress:
+#       enabled: true
+#       className: azure-application-gateway   # AGIC IngressClass
+#       tls: true
+#       tls_secret: enbuild-tls                # pre-created cert Secret
+#       annotations:
+#         appgw.ingress.kubernetes.io/backend-protocol: "http"
+#     domain: aks.example.com
+#   enbuildUi.hostname: enbuild
+# Note: plain L7 Ingress does NOT carry the spoke gRPC (HTTP/2) path cleanly for
+# most controllers — keep Istio if you need spoke onboarding. AGIC is fine for a
+# console-only eval.
+# =============================================================================
