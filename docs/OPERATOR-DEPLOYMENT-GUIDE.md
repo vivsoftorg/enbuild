@@ -214,6 +214,40 @@ config. (Tracked as the remaining SOO §1.5(i) "Stream B" delivery item.)
 
 ---
 
+## 3d. Spoke agent connect-back — hub CA trust (REQUIRED on a self-signed hub)
+
+The hub's agent gRPC gateway serves a cert signed by the hub's **private CA**
+(`enbuild-hub-issuer` / `CN=enbuild-hub-ca`, created by this chart's cert-manager
+templates — ADR-0004). Every spoke agent (whether **launched** via the catalog or
+**imported** via *Import existing cluster*) dials that gateway with cert
+verification ON (`ENBUILD_AGENT_HUB_INSECURE=false`), so **the agent must trust that
+CA or it silently fails the TLS dial** — the symptom is `grpc.Dial(<hub>): context
+deadline exceeded` and the cluster never leaves "Stalled"/empty-inventory even though
+`nc`/`curl` to the hub succeed (it's a cert-trust failure, not a network one).
+
+**Operator step — set the hub CA source ONCE** so both onboarding paths distribute it
+to spokes automatically (backend `catalog.service` for launch + `installAgent.service`
+for import both read it and write the `enbuild-spoke-ca-bundle` ConfigMap + enable the
+agent chart's `agent.hubCaBundle`):
+
+```bash
+# Base64 PEM of the hub gateway CA (from the chart-created cert secret):
+CA=$(kubectl -n istio-system get secret enbuild-hub-grpc-tls -o go-template='{{index .data "ca.crt"}}')
+# Preferred: set it in the encrypted AdminSettings via the admin UI/API
+#   AdminSettings → agent → HUB_CA_BUNDLE_PEM = "$CA"   (survives rolls)
+# Or as a backend env in your values (helm): enbuild-bk env ENBUILD_HUB_CA_BUNDLE_PEM="$CA"
+```
+
+**When to SKIP it:** a hub fronted by a **public/real cert** (e.g. a Big Bang
+`public-ingressgateway`) needs nothing — leave the CA source unset and the agent uses
+the system trust store (the provisioning is guarded off, byte-unchanged). Only set it
+for a self-signed / private-CA hub gateway. Blast radius is narrow: the CA affects
+*only* the agent→hub dial (the agent's K8s-API and other TLS use their own CAs), so
+setting the wrong CA or setting it on a public-cert hub is the only failure mode —
+don't.
+
+---
+
 ## 4. Migrating the live vendor13-ib release (943-line override → lean)
 
 The chart is backwards-compatible, so this is value-preserving if you create the
