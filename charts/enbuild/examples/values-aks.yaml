@@ -19,8 +19,10 @@
 #   • Set the gateway refs (`aks-istio-ingress/enbuild-gw`) to YOUR Istio gateway.
 #   • Fill enbuildBk.gitlabConnection with your enbuild-deployments GitLab group.
 #   • Create the operator secrets (enbuild-ib-*) via
-#     scripts/create-bootstrap-secrets.sh (image pull, Mongo, RabbitMQ, Keycloak,
-#     encryption key, messaging, install-agent).
+#     scripts/create-bootstrap-secrets.sh (image pull, Mongo, RabbitMQ,
+#     encryption key, messaging, install-agent). It does NOT create a Keycloak
+#     realm secret: the authMechanism:keycloak path needs enbuild-ib-keycloak-secrets
+#     (keys `realm-enbuild.json` + `KC_BOOTSTRAP_ADMIN_PASSWORD`) hand-crafted out-of-band.
 #
 # THROWAWAY EVAL (no DNS/cert, self-contained auth): ALSO pass
 # examples/values-aks-eval.yaml AFTER this file —
@@ -108,7 +110,7 @@ enbuildBk:
   # group id. Prod credential = a GROUP ACCESS TOKEN (SSO-exempt), via the secret.
   gitlabConnection:
     host: "https://gitlab.example.com/"   # ← REPLACE with your GitLab base URL
-    namespaceId: "000000"                 # ← REPLACE with your enbuild-deployments group id
+    namespaceId: "000000"                 # ← REPLACE: enbuild-deployments GitLab GROUP numeric id (GitLab → Group → Settings → General)
   installAgent:
     existingSecret: "enbuild-ib-install-agent"
   # AKS Istio FIX (production-correct): the backend also connects OUT to RabbitMQ

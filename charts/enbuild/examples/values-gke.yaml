@@ -46,6 +46,9 @@ global:
     enabled: true
     # <namespace>/<Gateway-name> the console + rabbitmq VirtualServices bind to.
     # ASM commonly uses istio-system/main or asm-gateways/<gw>; MATCH your cluster.
+    # ALL THREE gateway refs in this file — here, enbuildBk.grpcVirtualService.gateway,
+    # and keycloak.virtualService.gateway — MUST name the SAME single Istio Gateway you
+    # created, or half the VirtualServices bind to a Gateway that does not exist.
     gateway: istio-system/main
   ingress:
     enabled: false
@@ -99,7 +102,12 @@ enbuildBk:
   authMechanism: keycloak
   # GitLab connection for catalog launches (mq-consumer createProject reads these).
   # host needs a trailing slash; namespaceId = your enbuild-deployments group id.
+  # WHERE TO GET namespaceId: the numeric id of your enbuild-deployments GitLab
+  # GROUP — open GitLab Group → Settings (General); the group id is shown there.
   # Prod credential = a GROUP ACCESS TOKEN (SSO-exempt) via the install-agent secret.
+  # The GKE launch ALSO needs GOOGLE_PROJECT set as a group-level CI variable on the
+  # enbuild-deployments group (alongside GCP_WORKLOAD_IDENTITY_PROVIDER +
+  # GCP_SERVICE_ACCOUNT) — see platform-one-gke/docs/OPERATOR-SETUP.md.
   gitlabConnection:
     host: "https://gitlab.example.com/"   # ← REPLACE with your GitLab base URL
     namespaceId: "000000"                 # ← REPLACE with your enbuild-deployments group id
@@ -129,7 +137,8 @@ enbuildBk:
     enabled: true
     host: "hub-grpc.gke.example.com"
     additionalHosts: []
-    gateway: istio-ingress/public-ingressgateway
+    # MUST match global.istio.gateway (the single Istio Gateway you created).
+    gateway: istio-system/main
   agentGatewayExternal:
     enabled: false
 
@@ -157,16 +166,21 @@ enbuildConsumer:
 keycloak:
   enabled: true
   # PRODUCTION: provide YOUR realm (real users + /enbuild/platform-admins group)
-  # via an operator Secret (keycloak.existingSecret: <name>; keys realm-enbuild.json
-  # + KC_BOOTSTRAP_ADMIN_PASSWORD). The bundled demoRealm seeds a DEMO admin@p1.mil
-  # user and is DISABLED here (chart default false) — enable only in an eval layer.
+  # via a HAND-MADE operator Secret named enbuild-ib-keycloak-secrets (keys
+  # realm-enbuild.json + KC_BOOTSTRAP_ADMIN_PASSWORD), referenced by
+  # keycloak.existingSecret. scripts/create-bootstrap-secrets.sh does NOT create
+  # this one — it makes the enbuild-ib-* image-pull/mongo/rabbitmq/etc. secrets, but
+  # the Keycloak realm secret is the prod keycloak path and you create it by hand.
+  # The bundled demoRealm seeds a DEMO admin@p1.mil user and is DISABLED here (chart
+  # default false) — enable only in an eval layer.
   demoRealm:
     enabled: false
   hostname: https://keycloak.gke.example.com
   virtualService:
     enabled: true
     host: "keycloak.gke.example.com"
-    gateway: istio-ingress/public-ingressgateway
+    # MUST match global.istio.gateway (the single Istio Gateway you created).
+    gateway: istio-system/main
 
 # =============================================================================
 # ALTERNATIVE GCP edge — GKE Gateway API / global external L7 instead of Istio.

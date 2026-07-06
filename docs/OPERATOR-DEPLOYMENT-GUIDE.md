@@ -101,6 +101,14 @@ Copy an example and edit only the `[CUSTOMER]` knobs:
 cp examples/enbuild/values-vendor13-ib.yaml my-values.yaml
 ```
 
+> The example above is the **AWS/Iron Bank** hub. **AKS and GKE** hub deploys
+> instead layer the per-CSP overlays `examples/values-aks.yaml` /
+> `examples/values-gke.yaml` (plus the matching `examples/values-<csp>-eval.yaml`
+> for demo/eval), as in `helm ... -f examples/values-<csp>.yaml [-f examples/values-<csp>-eval.yaml]`.
+> See the per-cloud entry point [`DEPLOY-HUB-PER-CLOUD.md`](DEPLOY-HUB-PER-CLOUD.md)
+> for the full command and prerequisites. Spoke onboarding for those clouds is set
+> up via the `platform-one-gke` / `platform-one-azure` catalog repos.
+
 Minimum bindings:
 - `global.domain`, edge (`global.istio.*` **or** `global.ingress.*`), `global.imagePullSecretName`, `global.storageClass`
 - `enbuildUi.hostname`

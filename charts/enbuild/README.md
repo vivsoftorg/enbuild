@@ -42,6 +42,18 @@ entered later **in the ENBUILD admin UI**, not in this chart.)
 `kubectl create secret` commands for each are in
 [`docs/OPERATOR-DEPLOYMENT-GUIDE.md`](../../docs/OPERATOR-DEPLOYMENT-GUIDE.md).
 
+> **Names are release-prefixed.** `create-bootstrap-secrets.sh` and the per-CSP
+> overlays write these as `enbuild-ib-*` (e.g. `enbuild-ib-mongo`) — that prefix is
+> just the install release `enbuild-ib` (the script + install-example default), so
+> `enbuild-ib-mongo` **is** the `enbuild-mongo` row above. Same Secrets.
+
+**Commercial per-CSP path (AKS / GKE) also needs an edge.** Beyond the Secrets
+above, the commercial CSP path expects: an Istio `ingressgateway` Service of
+`type=LoadBalancer`; DNS records (or `nip.io`) pointing the console, Keycloak, and
+hub-gRPC hosts at the LoadBalancer's external IP; and a TLS certificate on the
+Gateway covering all three SANs. Full steps + overlays:
+[`../../docs/DEPLOY-HUB-PER-CLOUD.md`](../../docs/DEPLOY-HUB-PER-CLOUD.md).
+
 ## 2. Installing
 
 **P1 CCM (trunk channel):**
@@ -72,6 +84,23 @@ Verify the reverse-proxy chain end to end after install:
 ```shell
 helm test <release> -n <namespace>
 ```
+
+### Deploy on AKS / GKE (commercial per-CSP path)
+
+Deploying to a commercial CSP (Azure AKS, Google GKE) layers a per-CSP values
+overlay on top of the base chart:
+
+```shell
+helm upgrade --install enbuild-ib /tmp/enbuild-<version>.tgz \
+  --namespace enbuild --create-namespace \
+  --values my-values.yaml \
+  -f examples/values-aks.yaml      # or examples/values-gke.yaml
+```
+
+Add the matching `-f examples/values-<csp>-eval.yaml` overlay on top for an
+evaluation (nip.io + bundled deps) stand-up. Start here for the full walkthrough —
+LB/DNS/TLS edge, connect-back CA wiring, and the required GitLab CI variables:
+[`../../docs/DEPLOY-HUB-PER-CLOUD.md`](../../docs/DEPLOY-HUB-PER-CLOUD.md).
 
 ## 3. Configuration — the customer surface
 

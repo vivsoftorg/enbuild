@@ -24,8 +24,15 @@
 #     Linux : sudo cp <eval-ca>.crt /usr/local/share/ca-certificates/ && sudo update-ca-certificates
 #   A PRODUCTION deploy (values-gke.yaml, real DNS + a real cert via cert-manager/
 #   Let's Encrypt/Google CAS/org-or-DoD-PKI CA) has NO such warning — nothing to
-#   trust manually. The SPOKE AGENT's trust of the hub cert (connect-back) is
-#   handled BY THE PLATFORM (agent.hubCaBundle), never a manual step.
+#   trust manually, and the spoke agent trusts the hub's publicly-rooted cert with
+#   no CA plumbing at all.
+# ⚠️ SPOKE AGENT connect-back on THIS self-signed eval hub is NOT automatic-only:
+#   because the gateway cert is self-signed, you MUST first set
+#   AdminSettings.agent.HUB_CA_BUNDLE_PEM to the gateway CA in the console BEFORE
+#   launching any spoke — otherwise the agent rejects the hub's untrusted cert and
+#   never connects back. That Admin-Settings step is manual. Once set, the catalog
+#   auto-delivers the CA to the agent (agent.hubCaBundle) — THAT part is automatic.
+#   See charts/enbuild/docs/CONNECT-BACK-SAME-CLOUD.md.
 # =============================================================================
 
 global:

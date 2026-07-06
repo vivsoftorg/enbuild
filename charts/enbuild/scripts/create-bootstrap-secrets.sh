@@ -186,5 +186,12 @@ kubectl -n "$NAMESPACE" get secret | grep -E "^${RELEASE}-(mongo-secrets|encrypt
 cat <<EOF
 
 Next: helm upgrade --install ${RELEASE} . -n ${NAMESPACE} --create-namespace \\
-        -f examples/values-quickstart.yaml
+        -f examples/values-<your-cloud>.yaml [-f examples/values-<your-cloud>-eval.yaml]
+
+  Pick the overlay(s) for your target cloud (layer the -eval overlay LAST):
+    AKS:  -f examples/values-aks.yaml [-f examples/values-aks-eval.yaml]
+    GKE:  -f examples/values-gke.yaml [-f examples/values-gke-eval.yaml]
+    port-forward quickstart (no edge): -f examples/values-quickstart.yaml
+
+  Full deploy walkthrough (which overlay, connect-back, CI vars): docs/DEPLOY-HUB-PER-CLOUD.md
 EOF

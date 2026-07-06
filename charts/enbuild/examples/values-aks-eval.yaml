@@ -23,8 +23,11 @@
 #     Linux : sudo cp <eval-ca>.crt /usr/local/share/ca-certificates/ && sudo update-ca-certificates
 #   A PRODUCTION deploy (values-aks.yaml, real DNS + a real cert via cert-manager/
 #   an Azure-issued cert/org-or-DoD-PKI CA) has NO such warning — nothing to trust
-#   manually. The SPOKE AGENT's trust of the hub cert (connect-back) is handled
-#   BY THE PLATFORM (agent.hubCaBundle), never a manual step.
+#   manually. CONNECT-BACK (spoke agent → this hub): because this eval hub uses a
+#   SELF-SIGNED gateway cert, the spoke agent will NOT trust it out of the box —
+#   the operator MUST first set AdminSettings.agent.HUB_CA_BUNDLE_PEM to the eval
+#   gateway CA before the agent can dial back. See
+#   charts/enbuild/docs/CONNECT-BACK-SAME-CLOUD.md.
 # =============================================================================
 
 global:
@@ -32,7 +35,7 @@ global:
   storageClass: "managed-csi"
   # nip.io: <ip>.nip.io resolves to <ip> with no DNS records. Set to YOUR
   # ingressgateway external IP for the eval.
-  domain: "48.216.154.225.nip.io"
+  domain: "REPLACE_LB_IP.nip.io"
 
 mongodb:
   storageClassName: "managed-csi"
@@ -50,18 +53,18 @@ enbuildBk:
     host: "https://gitlab.com/"
     namespaceId: "70306609"
   keycloak:
-    url: https://keycloak.48.216.154.225.nip.io
+    url: https://keycloak.REPLACE_LB_IP.nip.io
   grpcVirtualService:
-    host: "hub-grpc.48.216.154.225.nip.io"
+    host: "hub-grpc.REPLACE_LB_IP.nip.io"
 
 enbuildUi:
   keycloak:
-    url: https://keycloak.48.216.154.225.nip.io
+    url: https://keycloak.REPLACE_LB_IP.nip.io
 
 keycloak:
-  hostname: https://keycloak.48.216.154.225.nip.io
+  hostname: https://keycloak.REPLACE_LB_IP.nip.io
   virtualService:
-    host: "keycloak.48.216.154.225.nip.io"
+    host: "keycloak.REPLACE_LB_IP.nip.io"
   # EVAL: bootstrap the bundled demo realm (seeds the demo admin@p1.mil user used
   # to log into the eval console). ⚠️ demo credentials — eval only.
   demoRealm:
