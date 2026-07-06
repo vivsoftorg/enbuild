@@ -108,6 +108,19 @@ spec:
           value: "true"
         {{- end }}
         {{- /*
+          OOTB demo-project seed (ProjectsService.onModuleInit). The bundled demo
+          realm (keycloak.demoRealm.enabled) imports the persona GROUPS + users for
+          iron-bank / big-bang but NO Project docs, so the non-admin personas would
+          otherwise land on an empty, dead-end Projects tab. SEED_DEMO_PROJECTS=true
+          converges those two Projects (iron-bank IL5, big-bang IL4) on boot,
+          idempotently. Coupled to demoRealm so it fires exactly for the eval
+          scenario and never on a real customer-IdP deploy (no demo realm → no seed).
+        */ -}}
+        {{- if and .Values.keycloak.enabled (default (dict) .Values.keycloak.demoRealm).enabled }}
+        - name: SEED_DEMO_PROJECTS
+          value: "true"
+        {{- end }}
+        {{- /*
           ADR-0046 CA-10 spoke per-user impersonation. When true the proxy
           forwards Impersonate-User/-Group (verb-matched) from the VERIFIED token
           so the spoke apiserver's RBAC + audit attribute to the real user instead

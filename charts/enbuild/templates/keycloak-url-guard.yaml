@@ -1,0 +1,45 @@
+{{- /*
+  OOTB Keycloak-URL alignment guard (render-time, output-less). Mirrors
+  templates/headlamp-oidc-guard.yaml.
+
+  The browser SPA login URL (enbuildUi.keycloak.url → config.json keycloakUrl),
+  the bundled Keycloak's KC_HOSTNAME (keycloak.hostname → the `iss` Keycloak
+  stamps into every token), and the backend token verifier (enbuildBk.keycloak.url
+  → KEYCLOAK_ISSUER) MUST all be the SAME browser-facing origin. keycloak.service
+  verifies with `issuer: KEYCLOAK_ISSUER`, so a token whose `iss` doesn't byte-match
+  is rejected → login succeeds, then bounces with a SILENT 401 and no install-time
+  error (the #1 fresh-deploy footgun). This guard turns that into a clear
+  `helm install` failure that names the three values.
+
+  ANCHOR: keycloak.hostname (the bundled KC's browser URL). keycloak.yaml defaults
+  KC_HOSTNAME to http://localhost:8088 when unset, so mirror that default here for a
+  byte-accurate comparison — and frontend-config.yaml derives keycloakUrl the same
+  way, so setting ONLY keycloak.hostname aligns all three by construction.
+
+  SCOPE: only the bundled-Keycloak path (keycloak.enabled) with keycloak auth. A
+  local-auth install (authMechanism != keycloak) or a bring-your-own external IdP
+  (keycloak.enabled=false) trips nothing — there the operator owns issuer alignment.
+*/ -}}
+{{- if and .Values.keycloak.enabled (eq (default "keycloak" .Values.enbuildBk.authMechanism) "keycloak") }}
+{{- $uiKc := default (dict) .Values.enbuildUi.keycloak }}
+{{- $bkKc := default (dict) .Values.enbuildBk.keycloak }}
+{{- $kcHost := trimSuffix "/" (default "http://localhost:8088" .Values.keycloak.hostname) }}
+{{- if not (or (hasPrefix "https://" $kcHost) (hasPrefix "http://" $kcHost)) }}
+{{- fail (printf "keycloak.hostname must be a full browser-facing URL with scheme (https://<kc-host>), got %q. It becomes KC_HOSTNAME — the issuer Keycloak stamps into every token." $kcHost) }}
+{{- end }}
+{{- /* enbuildBk.keycloak.url drives the backend KEYCLOAK_ISSUER and must be set +
+       equal to the KC host (an empty value yields the broken issuer '/realms/<realm>'). */ -}}
+{{- $bkUrl := default "" $bkKc.url }}
+{{- if eq $bkUrl "" }}
+{{- fail (printf "enbuildBk.keycloak.url is required for keycloak auth — it derives KEYCLOAK_ISSUER (the value backend token verification pins). Set it to the same browser-facing URL as keycloak.hostname (%s)." $kcHost) }}
+{{- end }}
+{{- if ne (trimSuffix "/" $bkUrl) $kcHost }}
+{{- fail (printf "Keycloak URL misalignment — enbuildBk.keycloak.url (%s) must equal keycloak.hostname (%s). The backend rejects any token whose issuer != KEYCLOAK_ISSUER, so a mismatch makes login bounce with a silent 401." $bkUrl $kcHost) }}
+{{- end }}
+{{- /* enbuildUi.keycloak.url is OPTIONAL (frontend-config.yaml inherits keycloak.hostname
+       when empty); if it IS set explicitly it must match too. */ -}}
+{{- $uiUrl := default "" $uiKc.url }}
+{{- if and (ne $uiUrl "") (ne (trimSuffix "/" $uiUrl) $kcHost) }}
+{{- fail (printf "Keycloak URL misalignment — enbuildUi.keycloak.url (%s) must equal keycloak.hostname (%s), or be left empty to inherit it. The SPA builds its OIDC authority from this value; a mismatch fails login." $uiUrl $kcHost) }}
+{{- end }}
+{{- end }}

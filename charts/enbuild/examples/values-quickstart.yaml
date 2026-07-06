@@ -113,6 +113,13 @@ enbuildBk:
   image:
     tag: "71e400c2fabea831b4ead98e1243391ce75cf66f"   # known-good build (see note above)
   authMechanism: keycloak
+  # Eval preset runs the production-like STRICT posture so the multi-tenancy
+  # boundary is group-authoritative and honest: tokenless reads → 401 (not a
+  # permissive empty 200), no header/body/?actor fallback, no ADMIN_EMAILS
+  # self-grant. Safe on a fresh hub (no spoke clusters → the Headlamp cluster
+  # drill-down, the one strict-sensitive path, is never exercised). Review
+  # runbooks/console-auth-strict-cutover.md before enabling on a hub WITH spokes.
+  consoleAuthStrict: true
   encryptionKey:
     existingSecret: enbuild-ib-encryption-key       # ENCRYPTION_KEY (at-rest)
   messaging:

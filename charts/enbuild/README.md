@@ -148,14 +148,17 @@ paste anywhere**. Pick one of two paths:
 
 ### Path A — bundled Keycloak + demo realm (deploy & log in in minutes)
 
-For evaluating the platform. The chart deploys Keycloak *and* auto-imports a demo
-realm with ready-made personas and projects — set **one host** and a flag:
+For evaluating the platform. The chart deploys Keycloak, auto-imports a demo realm
+(ready-made personas + **groups**), and — via the backend demo-project seed
+(`SEED_DEMO_PROJECTS`, which the chart enables automatically alongside the demo
+realm; requires a backend image with the seed) — creates the matching `iron-bank`
+and `big-bang` Projects so every persona lands somewhere. Set **one host** and a flag:
 
 ```yaml
 keycloak:
   enabled: true
   demoRealm:
-    enabled: true                 # auto-seed the demo realm (personas + groups)
+    enabled: true                 # auto-seed the demo realm (personas + groups) + the matching iron-bank/big-bang Projects (backend SEED_DEMO_PROJECTS)
   hostname: https://kc.<domain>    # browser-reachable Keycloak URL (KC_HOSTNAME)
 enbuildUi:
   hostname: enbuild                # console FQDN = enbuild.<global.domain>

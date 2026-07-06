@@ -36,7 +36,7 @@ data:
   {{- $impactLevel := default "" .Values.enbuildUi.impactLevel }}
   config.json: |
     {
-      "keycloakUrl": "{{ $uiKc.url }}",
+      "keycloakUrl": "{{ $uiKc.url | default $.Values.keycloak.hostname | default "http://localhost:8088" }}",
       "keycloakRealm": "{{ $kcRealm }}",
       "keycloakClientId": "{{ $kcClientId }}",
       "apiBase": "{{ $apiBase }}",
