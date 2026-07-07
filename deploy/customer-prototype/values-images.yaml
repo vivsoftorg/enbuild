@@ -1,0 +1,37 @@
+# =============================================================================
+# ENBUILD hub — PINNED IMAGE TAGS  (REQUIRED: apply with EVERY install)
+# =============================================================================
+# WHY THIS IS REQUIRED (or a fresh install breaks):
+#   The chart defaults every service image tag to ""  →  appVersion (e.g. 1.0.35).
+#   But P1 CCM images are published to the registry by GIT SHA (and a CalVer tag
+#   `vYYYY.MM.DD-<shortsha>`), NEVER by appVersion. So a fresh `helm install` with
+#   the chart defaults tries to pull `enbuild-backend:1.0.35` etc. — which do not
+#   exist — and every pod ImagePullBackOffs. Pin this validated, known-good set.
+#
+#   The BACKEND tag below includes the Headlamp create-wire + release-name
+#   portability + public-client-id fixes (ccm-p1; 166166167 is its ancestor).
+#   This exact set is running durably on the eks-10 hub (chart
+#   0.1.0-p1ccm-trunk.35, helm rev 5) and was validated end-to-end: greenfield
+#   create AND brownfield import both browse in Headlamp.
+#
+# INSTALL (apply alongside your posture file):
+#   helm install enbuild-ib enbuild/enbuild -n enbuild \
+#     -f deploy/customer-prototype/values-demo.yaml \
+#     -f deploy/customer-prototype/values-images.yaml
+#
+# AIR-GAP (IL5): also override the registry per service (enbuildBk.image.registry,
+# etc.) or the global registry, and mirror these tags into your registry first.
+# =============================================================================
+
+enbuildBk:
+  image:
+    tag: "bd665438632c15ede8f511bb189024a1297b29ad"   # backend — INCLUDES the Headlamp fixes
+enbuildUi:
+  image:
+    tag: "e3dfaba11dc861fa8f7a3117f649d14ff0a3c292"   # frontend / console (nginx fix rides the chart CM, not the image)
+enbuildUser:
+  image:
+    tag: "8d473885fc7945166def7411dd1ba56954eb2404"   # enbuild-user
+enbuildConsumer:
+  image:
+    tag: "7953026dc434bcac0f1f3ea367d1561f98d9136c"   # mq-consumer

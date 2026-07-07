@@ -13,6 +13,7 @@ Pick ONE values file for your posture. They form a ladder from "just works" to
 | **`values-demo.yaml`** ⭐ | **Permissive (`authMechanism=local`).** Headlamp browses EVERY managed cluster out-of-the-box under an admin fallback — no per-user auth. **Most bulletproof / zero-config-drift.** | **Recommended quick-start.** You want a guaranteed-working demo in the customer environment with no OIDC to get wrong. Live-validated: Headlamp browses greenfield + imported spokes in the browser. |
 | `values-prototype.yaml` | Real Keycloak SSO login + real per-user Headlamp OIDC, permissive tenancy. | You have a real, browser-AND-pod-reachable Keycloak FQDN and want per-user auth (not just permissive). |
 | `values-production.example.yaml` | The above + strict per-user tenancy enforcement. | Production hardening. |
+| **`values-images.yaml`** ⚠️ | **Pinned image tags. REQUIRED with every install** — the chart defaults tags to a non-existent appVersion, so without this a fresh install ImagePullBackOffs. BE tag includes the Headlamp fixes. | **Always** (`-f values-images.yaml` in addition to your posture file). |
 | `HEADLAMP-AUTH-HARDENING.md` | Full status, the blockers (with fixes), the cutover plan. **Read this.** | Always. |
 
 ## Honest posture / DISCLOSURE (state this to the customer)
@@ -63,8 +64,11 @@ Until that exists, local mode is the no-surprises default.
 kubectl create namespace enbuild
 charts/enbuild/scripts/create-bootstrap-secrets.sh -n enbuild   # or your own operator Secrets
 
-# 3. Install (any release name/namespace works; enbuild-ib/enbuild used for consistency)
-helm install enbuild-ib enbuild/enbuild -n enbuild -f deploy/customer-prototype/values-demo.yaml
+# 3. Install (any release name/namespace works; enbuild-ib/enbuild used for consistency).
+#    values-images.yaml is REQUIRED — it pins real image tags (chart default = non-existent appVersion).
+helm install enbuild-ib enbuild/enbuild -n enbuild \
+  -f deploy/customer-prototype/values-demo.yaml \
+  -f deploy/customer-prototype/values-images.yaml
 ```
 
 The chart runs **fail-closed render guards** at install time — if the Keycloak
