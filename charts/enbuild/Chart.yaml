@@ -7,8 +7,8 @@ home: https://www.vivsoft.io/
 sources: [https://github.com/vivsoftorg/enbuild]
 icon: https://enbuild-docs.vivplatform.io/images/emma/enbuild-logo.png
 kubeVersion: '>=1.25.0-0'
-version: 0.1.0-p1ccm-trunk.33
-appVersion: 1.0.33
+version: 0.1.0-p1ccm-trunk.34
+appVersion: 1.0.34
 maintainers:
   - name: Juned Memon
     email: jmemon@vivsoft.io

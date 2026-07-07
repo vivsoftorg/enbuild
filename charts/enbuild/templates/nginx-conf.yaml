@@ -45,6 +45,22 @@ data:
       # and is unaffected by this line.
       server_name localhost _;
 
+      # CRITICAL (Headlamp/SSO auth): emit RELATIVE redirects, not absolute.
+      # nginx defaults `absolute_redirect on`, so its automatic trailing-slash
+      # 301 (e.g. GET /p1-ccm-console -> /p1-ccm-console/, GET /headlamp ->
+      # /headlamp/) rebuilds the Location using THIS block's own scheme/host/
+      # port — which is the in-pod `listen 8080` (+ server_name), NOT the
+      # browser-facing origin. Behind a port-forward or the Istio gateway that
+      # produced `Location: http://<host>:8080/...` (wrong port, http not
+      # https) and dead-ended the Keycloak OIDC round-trip: keycloak-js sends
+      # redirect_uri = window.location.href, the SPA normalizes that to a
+      # NO-trailing-slash path (`/p1-ccm-console?scope=...`), Keycloak returns
+      # the browser to it, nginx 301s the slash-append to the dead :8080 and
+      # login (and Headlamp's own /headlamp/oidc-callback) fails with
+      # "connection refused" — looking exactly like an auth failure. Relative
+      # Location keeps the browser on whatever real origin it is using.
+      absolute_redirect off;
+
       include override.conf;
 
       # P1 CCM latency P0 (2026-06-11): the hub is reached through an SSM
