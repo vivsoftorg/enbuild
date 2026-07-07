@@ -50,11 +50,23 @@ Until that exists, local mode is the no-surprises default.
 
 ## Install
 
-> **Release name / namespace are now flexible** (blocker #4 fixed in `.35`): the backend
-> derives the Headlamp hostnames from `{{ .Release.Name }}` / `{{ .Release.Namespace }}`, so
-> any name works. The examples below use `enbuild-ib` / `enbuild` for consistency with the
-> demo realm and docs; if you change them, keep the console/Keycloak FQDNs in the values in
-> sync.
+> **⚠️ Headlamp is ENABLED BY DEFAULT and is the whole point of this bundle.**
+> The chart ships `lightning_features.operations_lightning.headlamp: true`. **Do NOT set it
+> to `false` on a real deploy** — that turns off the cluster-browse feature (the Headlamp
+> pod + its RBAC). Nothing in these values disables it; leave it on.
+
+> **Release name / namespace are flexible** (blocker #4 fixed in `.35`): the backend derives
+> the Headlamp hostnames from `{{ .Release.Name }}` / `{{ .Release.Namespace }}`, so any name
+> works. Examples use `enbuild-ib` / `enbuild`; if you change them, keep the console/Keycloak
+> FQDNs in the values in sync.
+
+> **Running MORE THAN ONE hub in the SAME cluster?** Headlamp (and a few components) create
+> **cluster-scoped** resources (e.g. a ClusterRoleBinding) named by the **release name** —
+> so two hubs with the **same** release name in one cluster collide on those objects. The
+> correct fix is a **DISTINCT release name per hub** (e.g. `enbuild-ib` and `enbuild-oobe`) —
+> the backend reconcile is release-name-aware (Fix B), so any name works and Headlamp stays
+> enabled on both. **Do NOT disable Headlamp to resolve a same-release-name collision.**
+> (A customer running a single hub never hits this.)
 
 ```bash
 # 1. Edit values-demo.yaml — replace every "example.mil" with your domain.
