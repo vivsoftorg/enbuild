@@ -168,7 +168,7 @@ guaranteed deployable.
      (503 = the installAgent Secret is missing);
    - catalog tiles render ACTIVE in the console.
 
-## 6. The two console gates every fresh hub hits (do these BEFORE the first launch)
+## 6. The console gates every fresh hub hits (do these BEFORE the first launch)
 
 1. **Create a Project and make it the active Project.** A fresh hub has zero
    Projects, so the header sits on "All Projects" (an aggregate view with an
@@ -184,8 +184,17 @@ guaranteed deployable.
    401 while lenient ones (`/fleet-health`, `/projects`) return 200 — and the
    catalog hangs on "Loading templates…". Fix:
    `kubectl -n <ns> rollout restart deploy/<release>-enbuild-backend`.
+3. **Restart BOTH the backend AND the mq-consumer after any GitLab config
+   change.** If you change GitLab connection settings (`gitlabConnection` in
+   values, or the Platform Settings → GitLab fields) *after* the hub is running,
+   `kubectl -n <ns> rollout restart deploy/<release>-enbuild-backend` **and**
+   `deploy/<release>-enbuild-mq`. Both read `GITLAB_HOST` / `GITLAB_NAMESPACE_ID`
+   **once at boot** — a stale mq-consumer fails every launch with
+   `TypeError: Only absolute URLs are supported` (empty/missing host or
+   namespace id in its `createProject`). Setting `gitlabConnection` in values
+   **before** install avoids this entirely — both pods pick it up at first boot.
 
-With both gates cleared, the catalog wizard submits end-to-end: stack create →
+With these gates cleared, the catalog wizard submits end-to-end: stack create →
 deploy repo created → pipeline → Terraform apply → agent install → the new spoke
 shows **connected** in fleet health.
 

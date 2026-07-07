@@ -29,6 +29,14 @@
 {{- if eq (trim (default "" $ia.hubUrl)) "" }}
 {{- fail "enbuildBk.installAgent.hubUrl is REQUIRED for a full platform — it is the host:443 a launched spoke agent dials back to. An empty value makes spokes stall with no connect-back. Set it (== the gRPC edge host, with :443), or set global.evalMode:true." }}
 {{- end }}
+{{- /* G-5 — GitLab deploy-repo target. namespaceId is the group every catalog
+       launch forks its deploy repo into (backend + mq-consumer createProject).
+       Unset ($bk.gitlabConnection is {} by default) → GITLAB_NAMESPACE_ID empty →
+       launches fail. Nil-safe: gitlabConnection may be an empty dict. */ -}}
+{{- $glc := default (dict) $bk.gitlabConnection }}
+{{- if eq (trim (toString (default "" $glc.namespaceId))) "" }}
+{{- fail "enbuildBk.gitlabConnection.namespaceId is REQUIRED for a full platform — it is the GitLab group/namespace id where every catalog launch forks its deploy repo (the backend + mq-consumer's createProject). Without it launches fail 'Only absolute URLs are supported' / can't create the repo. Set it (with enbuildBk.gitlabConnection.host), or set global.evalMode:true for a launch-incapable eval hub." }}
+{{- end }}
 {{- end }}
 
 {{- /* G-3 — gRPC agent edge. If enabled, host + gateway are required (an empty
