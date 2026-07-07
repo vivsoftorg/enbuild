@@ -40,10 +40,11 @@ deliberate, disclosed choice for evaluation, not an oversight.
 
 ## Install
 
-> **Pin the release name and namespace.** Until blocker #4 (hardcoded host) ships,
-> the release **must** be named `enbuild-ib` in namespace `enbuild`, or Headlamp
-> spoke browsing 404s. This is a one-line install constraint, documented in the
-> hardening plan.
+> **Release name / namespace are now flexible** (blocker #4 fixed in `.35`): the backend
+> derives the Headlamp hostnames from `{{ .Release.Name }}` / `{{ .Release.Namespace }}`, so
+> any name works. The examples below use `enbuild-ib` / `enbuild` for consistency with the
+> demo realm and docs; if you change them, keep the console/Keycloak FQDNs in the values in
+> sync.
 
 ```bash
 # 1. Edit values-prototype.yaml — replace every "example.mil" with your domain.
@@ -53,7 +54,7 @@ deliberate, disclosed choice for evaluation, not an oversight.
 kubectl create namespace enbuild
 charts/enbuild/scripts/create-bootstrap-secrets.sh -n enbuild   # or your own operator Secrets
 
-# 3. Install (name MUST be enbuild-ib, namespace MUST be enbuild)
+# 3. Install (any release name/namespace works; enbuild-ib/enbuild used for consistency)
 helm install enbuild-ib enbuild/enbuild -n enbuild -f deploy/customer-prototype/values-prototype.yaml
 ```
 
@@ -68,10 +69,12 @@ installs, the auth wiring is internally consistent.
    Keycloak, log in, and land **back on the console** (no dead-port redirect — this
    is the blocker-#1 fix in action). Demo users are in the bundled realm
    (`admin@p1.mil` etc.); rotate these before production.
-2. **Import** a test cluster via the Import wizard (this fully wires Headlamp),
-   completing the project-tag step. *(For a catalog-**created** cluster, note
-   blocker #3: run any import once to sweep created clusters into Headlamp, or add
-   them to `headlamp.spokes` — see the hardening plan.)*
+2. Onboard a test cluster **both ways**:
+   - **Import** (brownfield) via the Import wizard — wires Headlamp immediately; complete
+     the project-tag step.
+   - **Create** (greenfield) via the catalog — the cluster is swept into Headlamp
+     automatically by the reconciler within ~5 minutes of the agent connecting (blocker #3
+     fixed; no import needed). Give it a few minutes after the agent goes healthy.
 3. Open the cluster's detail page → **"Open in Headlamp ↗"** → Headlamp completes
    its own OIDC login and **lists the spoke's namespaces/pods/etc.** That is the
    full path authenticated as the logged-in user.

@@ -61,8 +61,9 @@ Key consequences:
   defense-in-depth).
 - Reference: FE `frontend-p1ccm/.../ClusterDetail.tsx` (the `Open in Headlamp` anchor);
   BE `backend/microservices/enbuild/src/kubeProxy/kubeProxy.controller.ts` (proxy + guards);
-  BE `.../installAgent/installAgent.service.ts:2224` (`reconcileHeadlamp` builds the
-  `headlamp-kubeconfigs` ConfigMap); agent `agents/enbuild-agent/internal/clients/kube_proxy.go`.
+  BE `.../installAgent/headlamp-reconcile.service.ts` (`HeadlampReconcileService` builds the
+  `headlamp-kubeconfigs` ConfigMap — shared by the import path + the reconciler sweep);
+  agent `agents/enbuild-agent/internal/clients/kube_proxy.go`.
 
 ---
 
@@ -72,9 +73,9 @@ Key consequences:
 |---|---------|----------|-----|--------|
 | **1** | **nginx 301'd no-slash paths to a dead `:8080`** — broke the SSO login round-trip *and* Headlamp's `/headlamp/oidc-callback`. Looked exactly like an auth wall. | `curl /p1-ccm-console` → `301 http://localhost:8080/p1-ccm-console/`; `/headlamp` → `:8080/headlamp/`. Cause: nginx default `absolute_redirect on` + in-pod `listen 8080`, so slash-append redirects use the internal port, not the browser origin. | Add **`absolute_redirect off;`** to `charts/enbuild/templates/nginx-conf.yaml` (relative Location keeps the browser on its real origin). | ✅ **FIXED** in `0.1.0-p1ccm-trunk.34` |
 | **2** | **Headlamp browser OIDC + strict console auth ship OFF.** Fresh install = permissive fallback (no real per-user auth), or if strict is turned on *without* OIDC = hard 401. This is the "issues authenticating." | `values.yaml headlamp.config.oidc.{clientID,issuerURL,scopes,callbackURL}` all default `""`; `enbuildBk.consoleAuthStrict` default `false`. Live hub had neither set (tokenless K8s-api call → `401 "User roles not defined"`). | Set the **four `headlamp.config.oidc.*` values together** + `consoleAuthStrict=true` + real FQDNs (Section 4). The chart's render-time guards enforce consistency once OIDC is non-empty. | 📋 **DOCUMENTED** — prototype runs permissive; production = Section 4 |
-| **3** | **Catalog-CREATE does not wire a new cluster into Headlamp.** `reconcileHeadlamp` is only called by the **import** path, so a created cluster is invisible in Headlamp until a later import (which rebuilds the ConfigMap from *all* managed clusters) or a manual `headlamp.spokes` edit. | `installAgent.service.ts:1096` is the only caller (`reconcileHeadlamp` defined at `:2224`); catalog-create registers the agent via heartbeat (`agent-registry.service.ts` sets `managedCluster=true`) but never calls reconcile. | **Workaround (prototype):** import your test clusters (import fully wires Headlamp), or run any import to sweep created ones in. **Durable fix (Phase-2):** trigger a *content-guarded* reconcile on agent register/first-heartbeat (only patch+roll Headlamp when the rendered ConfigMap actually changes, to avoid roll churn). | 📋 **DOCUMENTED** + workaround |
-| **4** | **`reconcileHeadlamp` hardcodes the hub service host + Headlamp deployment name to `enbuild-ib` / `enbuild`.** A non-`enbuild-ib` release name (or non-`enbuild` namespace) makes every spoke context point at a non-existent Service → Headlamp spoke browsing 404s. | `installAgent.service.ts:2264` writes `server: http://enbuild-ib-enbuild-backend.enbuild.svc.cluster.local/...`; the Headlamp rollout targets `deployments/enbuild-ib-headlamp`. | **Prototype:** install the release as **`enbuild-ib`** in namespace **`enbuild`** (zero-code — see README). **Durable fix (Phase-2):** derive host + deployment name from the release name / namespace env instead of the literals. | 📋 **DOCUMENTED** — pin release name |
-| **5** | **ConfigMap OIDC `client-id` sourced from the confidential client env** (`KEYCLOAK_CLIENT_ID`) instead of the public PKCE client (`enbuild-ui`). | `installAgent.service.ts:2249`: `oidcClientId = process.env.KEYCLOAK_CLIENT_ID || 'enbuild-ui'`. Tolerated by the verifier (`azp`/`aud` ∈ {enbuild, enbuild-ui}) — advisory field only. | **Durable fix (Phase-2):** read `KEYCLOAK_PUBLIC_CLIENT_ID || 'enbuild-ui'`. Low severity; not an auth blocker. | 📋 **DOCUMENTED** — low severity |
+| **3** | **Catalog-CREATE did not wire a new cluster into Headlamp** (reconcile was only called by the import path), so a created cluster was invisible in Headlamp until a later import. | Was: `installAgent.service.ts:1096` the only caller; catalog-create sets `managedCluster=true` via heartbeat but never reconciled. | Reconcile extracted into a content-guarded **`HeadlampReconcileService`**, now called by BOTH the import path (immediate) AND the leader-gated `StackReconciler` sweep every 5 min — so CREATED clusters wire themselves in with no import. Content-guarded: only PATCHes + rolls Headlamp when the config actually changed. | ✅ **FIXED** (BE `ccm-p1` + chart `.35`) |
+| **4** | **Reconcile hardcoded the hub service host + Headlamp deployment name to `enbuild-ib` / `enbuild`**, so any other release name/namespace 404'd every spoke context. | Was: `server: http://enbuild-ib-enbuild-backend.enbuild.svc...` + rollout of `deployments/enbuild-ib-headlamp`. | Host + deployment name now derived from `ENBUILD_RELEASE_NAME` / `ENBUILD_NS` (chart wires `{{ .Release.Name }}` / `{{ .Release.Namespace }}`), defaulting to `enbuild-ib`/`enbuild`. Proven by rendering under `cust-hub`/`cust-ns`. Works under any release name. | ✅ **FIXED** (BE + chart `.35`) |
+| **5** | **ConfigMap OIDC `client-id` was sourced from the confidential client env** (`KEYCLOAK_CLIENT_ID`) instead of the public PKCE client. | Was: `oidcClientId = process.env.KEYCLOAK_CLIENT_ID \|\| 'enbuild-ui'`. | Now reads `KEYCLOAK_PUBLIC_CLIENT_ID \|\| 'enbuild-ui'`; the chart already emits `KEYCLOAK_PUBLIC_CLIENT_ID` from the public client. | ✅ **FIXED** (BE) |
 | **6** | **Under strict, a freshly imported cluster must be project-tagged** or verified non-admins 403 (K8sApiProxy is excluded from the unscoped-viewer bypass). | tenancy-guard; ImportWizard already has the tag step (`tagStackProject`). | Operator completes the import wizard's project-tag step (already in the UI). | 📋 Operational note |
 | **7** | **Air-gapped / IL5:** the import Job and agent pod pull the enbuild-agent chart + image from `registry.gitlab.com`. | `installAgent.service.ts` agent chart/image env; `agents/enbuild-agent/chart/values.yaml` image repo. | Mirror the enbuild-agent OCI chart + image and the enbuild-stack bootstrap chart to the customer registry; override `AGENT_OCI_REF` / `image.repository` / `pullSecrets`. | 📋 Air-gap note |
 
@@ -108,17 +109,15 @@ Headlamp SSO off). See `values-production.example.yaml`.
 7. Every user has ≥1 realm role and the correct `groups` (project membership +
    platform-admin group), or verified tokens still 401 (no role) / 403 (no group).
 
-### Phase-2 code changes (small, precise — offered separately)
+### Repeatability code fixes — DONE (blockers #3/#4/#5, 2026-07-07)
 
-- **CREATE auto-wire (blocker #3):** add a content-guarded `reconcileHeadlamp` trigger on
-  agent register / first heartbeat in `agent-registry.service.ts` (only patch + roll when the
-  rendered `headlamp-kubeconfigs` changes).
-- **De-hardcode (blocker #4):** in `installAgent.service.ts` derive the backend Service host
-  (`:2264`) and Headlamp deployment name (the rollout target) from the release name /
-  `ENBUILD_NS` env, with the current literals as defaults; wire the env in the chart from
-  `{{ .Release.Name }}` / `{{ .Release.Namespace }}`.
-- **Public client-id (blocker #5):** `installAgent.service.ts:2249` →
-  `process.env.KEYCLOAK_PUBLIC_CLIENT_ID || 'enbuild-ui'`.
+Blockers #3, #4, #5 are **implemented** (they were functionality/portability gaps, not auth
+hardening) so greenfield-create and brownfield-import both wire Headlamp identically under any
+release name. Shipped in BE `ccm-p1` + chart `0.1.0-p1ccm-trunk.35`; 91 BE tests green, tsc
+clean. What remains in Section 4 above is **configuration** (the OIDC cutover values + strict),
+not code. The only genuine remaining *code* work is optional Phase-2 defense-in-depth:
+per-user spoke impersonation (`spokeImpersonation`) and per-user dynamic kubeconfigs — neither
+needed for create/import Headlamp browsing to function.
 
 ---
 
@@ -131,6 +130,8 @@ Headlamp SSO off). See `values-production.example.yaml`.
   built-in `view` ClusterRole); the agent uses its own SA and strips inbound Authorization.
 - `config.json` is ConfigMap-mounted (durably overridable via values — no image rebuild to
   retarget Keycloak).
-- The **import** path fully and idempotently wires Headlamp and rolls the Headlamp pod.
+- **Both** create and import wire Headlamp identically (shared `HeadlampReconcileService`):
+  import reconciles immediately; create is swept in by the leader-gated reconciler within 5 min.
 - Chart fail-closed render guards catch most auth/URL misconfigurations at `helm install`.
-- nginx dead-redirect (blocker #1) — **fixed** in `0.1.0-p1ccm-trunk.34`.
+- nginx dead-redirect (blocker #1) — **fixed** in `0.1.0-p1ccm-trunk.34`; create-wire +
+  release-name portability + public client-id (blockers #3/#4/#5) — **fixed** in `.35` + BE.
