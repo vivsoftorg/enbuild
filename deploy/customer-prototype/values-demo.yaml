@@ -1,0 +1,71 @@
+# =============================================================================
+# ENBUILD hub — DEMO / permissive deploy values  (RECOMMENDED QUICK-START)
+# =============================================================================
+# Posture: Headlamp cluster browsing + the console work OUT OF THE BOX with NO
+# per-user authorization — `authMechanism: local`. This is the most bulletproof,
+# zero-config-drift way to deploy the prototype in a customer environment: every
+# managed cluster (greenfield-created AND brownfield-imported) is browsable in
+# Headlamp immediately, with no OIDC cutover to get wrong.
+#
+# ►► DISCLOSURE (prototype constraint — state this to the customer) ◄◄
+#   In this mode the backend does NOT enforce per-user auth: the console's
+#   Headlamp K8s proxy serves reads under a single admin fallback identity, so
+#   anyone who can load the console can browse cluster resources. This is an
+#   INTENTIONAL prototype demo posture. The PRODUCTION-secure path (real Keycloak
+#   SSO + Headlamp OIDC + strict per-user tenancy) is already implemented and
+#   documented — see values-production.example.yaml + HEADLAMP-AUTH-HARDENING.md
+#   §4. Move to it when you want enforced authorization.
+#
+# Why local mode (not keycloak+OIDC) for the quick-start: Headlamp's OIDC does a
+# SERVER-SIDE token exchange from inside the cluster, so it requires Keycloak to
+# be reachable from BOTH the browser AND the in-cluster Headlamp pod (a real
+# FQDN). Until you have that, local mode is the reliable, no-surprises default.
+#
+# The console still uses Keycloak for LOGIN (the SPA forces SSO), so you still
+# wire the Keycloak URLs below — but Headlamp browsing does not depend on OIDC.
+#
+# INSTALL (any release name works; enbuild-ib/enbuild used for consistency):
+#   kubectl create namespace enbuild
+#   charts/enbuild/scripts/create-bootstrap-secrets.sh -n enbuild
+#   helm install enbuild-ib enbuild/enbuild -n enbuild -f values-demo.yaml
+#
+# Replace every "example.mil" with your domain before installing.
+# =============================================================================
+
+global:
+  domain: "example.mil"            # <-- REPLACE. console FQDN = <enbuildUi.hostname>.<global.domain>
+  istio:
+    enabled: true                  # set false if you expose the console via your own ingress
+
+mongodb:
+  enabled: true                    # bundled datastore (fine for a demo; use external for prod)
+
+# --- Console SPA login (Keycloak is still used to LOG IN to the console) ------
+enbuildUi:
+  hostname: "enbuild-ib"
+  keycloak:
+    url: "https://keycloak.example.mil"   # <-- REPLACE. browser Keycloak origin (for console login)
+    realm: "enbuild"
+    clientId: "enbuild-ui"
+
+keycloak:
+  hostname: "https://keycloak.example.mil"  # <-- REPLACE. bundled Keycloak browser URL (== enbuildUi.keycloak.url)
+  demoRealm:
+    enabled: true
+    consoleUrl: "https://enbuild-ib.example.mil"  # <-- REPLACE. covers the console login redirect
+
+# --- Backend: PERMISSIVE (disclosed prototype posture) -----------------------
+enbuildBk:
+  authMechanism: "local"           # <== PERMISSIVE: no per-user backend authZ. Headlamp browses out of the box.
+  consoleAuthStrict: false
+  # Headlamp's K8s proxy has no user identity (it does not run OIDC in this mode),
+  # so it serves reads under this fallback identity. Making it an admin (below)
+  # guarantees EVERY managed cluster is browsable — no per-cluster tenancy 403.
+  kubeProxyFallbackActor: "demo-admin@enbuild.local"
+  adminEmails: "demo-admin@enbuild.local"   # the fallback identity is treated as a platform admin
+  encryptionKey:
+    existingSecret: "enbuild-ib-encryption-key"  # created by scripts/create-bootstrap-secrets.sh
+
+# NOTE: deliberately NO headlamp.config.oidc block — Headlamp browses via the
+# permissive backend fallback, not per-user OIDC. To harden, switch to
+# values-production.example.yaml (adds the OIDC cutover + strict).

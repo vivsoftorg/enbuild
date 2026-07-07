@@ -5,31 +5,40 @@ This folder is a self-contained bundle for deploying the ENBUILD hub in a
 browser working end-to-end (view a managed/imported spoke's Kubernetes resources
 from the hub console).
 
-| File | Purpose |
-|------|---------|
-| `values-prototype.yaml` | Recommended prototype deploy — real SSO login + real per-user Headlamp browsing, permissive tenancy. |
-| `values-production.example.yaml` | Hardened target — same wiring with strict tenancy enforcement on. |
-| `HEADLAMP-AUTH-HARDENING.md` | Full status: what works, the blockers (with fixes), and the production cutover plan. **Read this.** |
+Pick ONE values file for your posture. They form a ladder from "just works" to
+"fully hardened":
 
-## Honest posture (what this demonstrates vs. what's deferred)
+| File | Posture | Use when |
+|------|---------|----------|
+| **`values-demo.yaml`** ⭐ | **Permissive (`authMechanism=local`).** Headlamp browses EVERY managed cluster out-of-the-box under an admin fallback — no per-user auth. **Most bulletproof / zero-config-drift.** | **Recommended quick-start.** You want a guaranteed-working demo in the customer environment with no OIDC to get wrong. Live-validated: Headlamp browses greenfield + imported spokes in the browser. |
+| `values-prototype.yaml` | Real Keycloak SSO login + real per-user Headlamp OIDC, permissive tenancy. | You have a real, browser-AND-pod-reachable Keycloak FQDN and want per-user auth (not just permissive). |
+| `values-production.example.yaml` | The above + strict per-user tenancy enforcement. | Production hardening. |
+| `HEADLAMP-AUTH-HARDENING.md` | Full status, the blockers (with fixes), the cutover plan. **Read this.** | Always. |
 
-- **Demonstrated:** the hub deploys in your environment; operators log in via
-  Keycloak SSO; they import/create clusters and **browse real Kubernetes
-  resources on the spokes through Headlamp** — proving the full
-  console → hub proxy → agent → spoke path.
-- **Deferred to Phase 2 (if selected):** strict multi-tenant authorization
-  enforcement, per-user spoke RBAC (impersonation), and a couple of small code
-  hardening fixes. These are **designed and documented** in
-  `HEADLAMP-AUTH-HARDENING.md` — not open questions.
+## Honest posture / DISCLOSURE (state this to the customer)
 
-The prototype runs with `consoleAuthStrict=false` (permissive tenancy). That is a
-deliberate, disclosed choice for evaluation, not an oversight.
+The **recommended quick-start (`values-demo.yaml`) is intentionally permissive**:
+`authMechanism=local` means the backend does **not** enforce per-user
+authorization — the console's Headlamp K8s proxy serves reads under a single
+admin fallback identity, so anyone who can reach the console can browse cluster
+resources. **This is a deliberate, disclosed prototype choice** — it guarantees
+Headlamp works everywhere with no environment-specific auth wiring to break.
+
+The **production-secure path is already implemented and documented** (real
+Keycloak SSO + Headlamp OIDC + strict per-user tenancy — `values-production.example.yaml`
++ HEADLAMP-AUTH-HARDENING.md §4). Nothing about hardening is an open question;
+it is a values switch away when enforced authorization is required.
+
+Why permissive is the *quick-start* and not OIDC: Headlamp's OIDC does a
+SERVER-SIDE token exchange from inside the cluster, so it needs Keycloak
+reachable from the browser **and** the in-cluster Headlamp pod (a real FQDN).
+Until that exists, local mode is the no-surprises default.
 
 ## Prerequisites
 
 1. A Kubernetes cluster with the ENBUILD chart repo added (`helm repo add enbuild …`)
-   or the chart available locally, chart version **`0.1.0-p1ccm-trunk.34`** or newer
-   (the nginx redirect fix — blocker #1 — landed in `.34`).
+   or the chart available locally, chart version **`0.1.0-p1ccm-trunk.35`** or newer
+   (nginx redirect fix landed in `.34`; create-wire + release-name portability in `.35`).
 2. DNS + TLS for two hostnames: the console (`enbuild-ib.<domain>`) and Keycloak
    (`keycloak.<domain>`). If you run Istio, the chart creates the VirtualServices;
    otherwise expose the console/Keycloak via your own ingress and set
@@ -47,15 +56,15 @@ deliberate, disclosed choice for evaluation, not an oversight.
 > sync.
 
 ```bash
-# 1. Edit values-prototype.yaml — replace every "example.mil" with your domain.
-#    Keep the three Keycloak URLs + the Headlamp issuerURL byte-identical.
+# 1. Edit values-demo.yaml — replace every "example.mil" with your domain.
+#    (Quick-start / recommended. For per-user auth use values-prototype.yaml instead.)
 
 # 2. Namespace + bootstrap secrets
 kubectl create namespace enbuild
 charts/enbuild/scripts/create-bootstrap-secrets.sh -n enbuild   # or your own operator Secrets
 
 # 3. Install (any release name/namespace works; enbuild-ib/enbuild used for consistency)
-helm install enbuild-ib enbuild/enbuild -n enbuild -f deploy/customer-prototype/values-prototype.yaml
+helm install enbuild-ib enbuild/enbuild -n enbuild -f deploy/customer-prototype/values-demo.yaml
 ```
 
 The chart runs **fail-closed render guards** at install time — if the Keycloak
@@ -65,21 +74,26 @@ installs, the auth wiring is internally consistent.
 
 ## Verify Headlamp works (the acceptance test)
 
+*(Steps below are for the recommended `values-demo.yaml` posture — LIVE-VALIDATED
+2026-07-07 on the fresh eks-10 hub: Headlamp browsed a greenfield-created cluster's
+46 namespaces and a second cluster's 125 workloads in the browser.)*
+
 1. Browse to `https://enbuild-ib.<domain>/p1-ccm-console/` → you are redirected to
    Keycloak, log in, and land **back on the console** (no dead-port redirect — this
-   is the blocker-#1 fix in action). Demo users are in the bundled realm
-   (`admin@p1.mil` etc.); rotate these before production.
+   is the nginx fix). Demo users are in the bundled realm (`admin@p1.mil` etc.);
+   rotate these before production.
 2. Onboard a test cluster **both ways**:
-   - **Import** (brownfield) via the Import wizard — wires Headlamp immediately; complete
-     the project-tag step.
    - **Create** (greenfield) via the catalog — the cluster is swept into Headlamp
-     automatically by the reconciler within ~5 minutes of the agent connecting (blocker #3
-     fixed; no import needed). Give it a few minutes after the agent goes healthy.
-3. Open the cluster's detail page → **"Open in Headlamp ↗"** → Headlamp completes
-   its own OIDC login and **lists the spoke's namespaces/pods/etc.** That is the
-   full path authenticated as the logged-in user.
+     automatically by the reconciler within ~5 min of the agent connecting (create-wire
+     fix; no import needed).
+   - **Import** (brownfield) via the Import wizard — wires Headlamp immediately.
+3. Open the cluster's detail page → **"Open in Headlamp ↗"** → Headlamp **lists the
+   spoke's namespaces / pods / workloads**. In `values-demo.yaml` (permissive) this
+   works with no per-user token — the proxy serves reads under the admin fallback.
+   (In `values-prototype.yaml`/production, Headlamp does its own OIDC login and the
+   reads are per-user authorized.)
 
-If step 3 shows resources, connectivity + per-user cluster visibility are proven.
+If step 3 shows resources, the console → hub proxy → agent → spoke path is proven.
 
 ## Hardening to production
 
