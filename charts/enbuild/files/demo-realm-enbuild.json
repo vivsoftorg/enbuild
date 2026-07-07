@@ -154,6 +154,65 @@
       ]
     },
     {
+      "username": "member-ib@p1.mil",
+      "enabled": true,
+      "email": "member-ib@p1.mil",
+      "emailVerified": true,
+      "firstName": "Iron",
+      "lastName": "Member",
+      "credentials": [
+        {
+          "type": "password",
+          "temporary": false,
+          "value": "ChangeMe123!"
+        }
+      ],
+      "groups": [
+        "/enbuild/projects/iron-bank/member"
+      ],
+      "realmRoles": [
+        "devops"
+      ]
+    },
+    {
+      "username": "maintainer-ib@p1.mil",
+      "enabled": true,
+      "email": "maintainer-ib@p1.mil",
+      "emailVerified": true,
+      "firstName": "Iron",
+      "lastName": "Maintainer",
+      "credentials": [
+        {
+          "type": "password",
+          "temporary": false,
+          "value": "ChangeMe123!"
+        }
+      ],
+      "groups": [
+        "/enbuild/projects/iron-bank/maintainer"
+      ],
+      "realmRoles": [
+        "devops"
+      ]
+    },
+    {
+      "username": "no-access@p1.mil",
+      "enabled": true,
+      "email": "no-access@p1.mil",
+      "emailVerified": true,
+      "firstName": "No",
+      "lastName": "Access",
+      "credentials": [
+        {
+          "type": "password",
+          "temporary": false,
+          "value": "ChangeMe123!"
+        }
+      ],
+      "groups": [],
+      "realmRoles": []
+    },
+    {
       "username": "owner-bb@p1.mil",
       "enabled": true,
       "email": "owner-bb@p1.mil",

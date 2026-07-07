@@ -1,15 +1,18 @@
-# Tier-2 standup — a hub that LAUNCHES and MANAGES spoke clusters
+# Standup — the full ENBUILD platform (launches + manages spoke clusters)
 
 **Audience:** an engineer standing up ENBUILD in their own Platform One / GovCloud
 environment, from this chart's released artifact alone.
-**Goal:** a hub that not only runs the console (Tier 1), but **launches spoke
-clusters and manages them** — the full product (Tier 2).
+**Goal:** the full platform — a hub that runs the console **and launches +
+manages spoke clusters**. This is the only supported install (the chart default
+`global.evalMode:false`); the render-time guards fail the install if a required
+input is missing, so you can't accidentally ship a crippled hub.
 
-> **Tier 1** = control-plane eval: console + SSO + catalog browse, reachable by
-> port-forward, no spokes. That is [`examples/values-quickstart.yaml`](../examples/values-quickstart.yaml)
-> end-to-end — nothing below is needed for it.
-> **Tier 2 (this doc)** = Tier 1 **plus** the launch credential, the hub↔spoke
-> PKI, and the Istio-terminated gRPC edge that launched agents dial back to.
+> The required inputs below (the launch credential, the hub↔spoke PKI, and the
+> Istio-terminated gRPC edge that launched agents dial back to) are per-environment
+> — the chart can't bake them, so it **requires** them. The only exception is a
+> deliberate throwaway eval rig: [`examples/values-quickstart.yaml`](../examples/values-quickstart.yaml)
+> sets `global.evalMode:true` to bring up a login-only, port-forward console with
+> no spokes. Never use that for a real deploy.
 
 ---
 
@@ -47,7 +50,7 @@ LoadBalancer — install an Istio edge first (Appendix A).
 
 Run [`scripts/create-bootstrap-secrets.sh`](../scripts/create-bootstrap-secrets.sh)
 for the base set (mongo, encryption key, rabbitmq, image pull), **plus the launch
-credential** — the Secret that makes the hub Tier-2. Passing `IA_GITLAB_TOKEN`
+credential** — the Secret that makes the hub full-platform. Passing `IA_GITLAB_TOKEN`
 (with the registry1 pull creds) makes the script emit that Secret itself; the
 equivalent hand-made form — and the exact name the AKS/GKE overlays and
 `enbuildBk.installAgent.existingSecret` expect — is:
@@ -117,7 +120,7 @@ then issues each spoke a `<cluster>-spoke-client` certificate off this issuer.
 
 ## 4. Values that make the hub launch + connect
 
-On top of your Tier-1 values (quickstart or your own):
+On top of your console-layer values (quickstart or your own):
 
 ```yaml
 enbuildBk:

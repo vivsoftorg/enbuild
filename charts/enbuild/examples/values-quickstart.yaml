@@ -1,9 +1,12 @@
 # =============================================================================
 # ENBUILD hub — QUICKSTART (greenfield "deploy & log in in minutes")
 # =============================================================================
-# A self-contained profile that brings up a FULLY FUNCTIONAL hub on a vanilla
-# Kubernetes cluster using ONLY this chart + the generated bootstrap secrets —
-# no external Mongo, no operator realm, no live-environment coupling.
+# A self-contained CONSOLE/EVAL profile (global.evalMode:true) that brings up a
+# login-working hub on a vanilla Kubernetes cluster using ONLY this chart + the
+# generated bootstrap secrets — no external Mongo, no operator realm, no
+# live-environment coupling. NOTE: this is an EVAL rig — it does NOT launch or
+# manage spoke clusters (no install-agent Secret, no gRPC edge). For the FULL
+# platform (the default), see LAUNCH-CAPABLE-STANDUP.md.
 #
 #   • Mongo, RabbitMQ, Keycloak are all BUNDLED in-cluster.
 #   • Keycloak boots the chart-shipped DEMO realm (working SSO, personas below).
@@ -43,6 +46,11 @@
 # =============================================================================
 
 global:
+  # THROWAWAY eval hub: no spoke launch/import, no gRPC edge. This downgrades the
+  # full-platform launch-wiring guards (install-agent Secret + gRPC edge host) so
+  # this login-only profile installs. For a real, launch-capable deploy leave
+  # evalMode at its default (false) and provide those inputs — see LAUNCH-CAPABLE-STANDUP.md.
+  evalMode: true
   # No public DNS in the port-forward profile — leave empty (the demo realm then
   # trusts http://localhost:8081). Set both for a real FQDN (see PRODUCTION EDGE).
   domain: ""

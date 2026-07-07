@@ -1,0 +1,56 @@
+{{- /*
+  Full-platform render-time guards (output-less). Mirrors keycloak-url-guard.yaml
+  / headlamp-oidc-guard.yaml.
+
+  A DEFAULT install (global.evalMode:false) is the FULL platform — it launches +
+  manages spokes. The inputs that make launch/connect-back work are inherently
+  per-environment and CANNOT be baked into a chart default (the install-agent
+  Secret's real GitLab/repo1 tokens, the external gRPC FQDN / Istio gateway, the
+  bundled Keycloak realm). So instead of silently shipping a crippled hub, these
+  guards FAIL `helm install` loudly and name the missing input.
+
+  ESCAPE HATCH: global.evalMode:true declares a THROWAWAY, launch-INCAPABLE eval
+  hub (port-forward, no spokes) and downgrades the launch-wiring guards. The
+  examples/values-quickstart.yaml overlay sets it. Never set it on a real deploy.
+
+  (Identity-source is already guarded by backend-secret.yaml's $jwksOk union, so
+  it is intentionally NOT duplicated here — only the bundled-KC-realm branch G-4,
+  which $jwksOk does not cover, is added.)
+*/ -}}
+{{- $bk := .Values.enbuildBk }}
+{{- $eval := .Values.global.evalMode }}
+
+{{- /* G-2 — launch/import install-agent Secret + hubUrl (required for a full hub). */ -}}
+{{- if not $eval }}
+{{- $ia := default (dict) $bk.installAgent }}
+{{- if eq (trim (default "" $ia.existingSecret)) "" }}
+{{- fail "enbuildBk.installAgent.existingSecret is REQUIRED for a full platform — it carries GITLAB_TOKEN + ENBUILD_REPO1_USER/TOKEN the backend uses to clone the agent chart, create the deploy repo, and pull Iron Bank images. Without it every catalog launch and cluster import fails. Create it with scripts/create-bootstrap-secrets.sh (pass IA_GITLAB_TOKEN / IA_REPO1_*), or set global.evalMode:true for a launch-incapable eval hub." }}
+{{- end }}
+{{- if eq (trim (default "" $ia.hubUrl)) "" }}
+{{- fail "enbuildBk.installAgent.hubUrl is REQUIRED for a full platform — it is the host:443 a launched spoke agent dials back to. An empty value makes spokes stall with no connect-back. Set it (== the gRPC edge host, with :443), or set global.evalMode:true." }}
+{{- end }}
+{{- end }}
+
+{{- /* G-3 — gRPC agent edge. If enabled, host + gateway are required (an empty
+       host renders a dead VirtualService). A full (non-eval) hub must expose it. */ -}}
+{{- $vs := default (dict) $bk.grpcVirtualService }}
+{{- if and $bk.grpcEnabled $vs.enabled }}
+{{- if eq (trim (default "" $vs.host)) "" }}
+{{- fail "enbuildBk.grpcVirtualService.host is REQUIRED when the gRPC agent edge is enabled — it is the external FQDN (cert SAN) spoke agents dial back to. An empty host renders a dead VirtualService (hosts: [\"\"]) and every launched spoke stalls 'provisioning'. Set it, or set global.evalMode:true for a port-forward-only eval hub." }}
+{{- end }}
+{{- if eq (trim (default "" $vs.gateway)) "" }}
+{{- fail "enbuildBk.grpcVirtualService.gateway is REQUIRED when the gRPC edge is enabled — set it to <namespace>/<gateway>." }}
+{{- end }}
+{{- end }}
+{{- if and (not $eval) (not $vs.enabled) }}
+{{- fail "enbuildBk.grpcVirtualService.enabled:false is only allowed with global.evalMode:true — a full (default) platform exposes the gRPC agent edge so launched spokes connect back. Enable the edge (set host + gateway), or declare a launch-incapable eval hub with global.evalMode:true." }}
+{{- end }}
+
+{{- /* G-4 — bundled Keycloak with demoRealm off needs a real realm Secret, else
+       the KC pod boots with NO realm and console login is impossible. (Distinct
+       from $jwksOk, which only checks the BACKEND's token-verification source.) */ -}}
+{{- if and .Values.keycloak.enabled
+       (not (default (dict) .Values.keycloak.demoRealm).enabled)
+       (eq (trim (default "" .Values.keycloak.existingSecret)) "") }}
+{{- fail "keycloak.enabled=true with keycloak.demoRealm.enabled=false requires keycloak.existingSecret (your realm-enbuild.json + admin password) — otherwise the bundled Keycloak boots with NO realm and console login is impossible. Set keycloak.existingSecret, OR enable keycloak.demoRealm for an eval." }}
+{{- end }}

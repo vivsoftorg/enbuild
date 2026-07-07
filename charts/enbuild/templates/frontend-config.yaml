@@ -86,7 +86,7 @@ data:
       )
       "operations_lightning" (dict
         "operations" true
-        "headlamp" (.Values.lightning_features.operations_lightning.headlamp | default false)
+        "headlamp" (.Values.lightning_features.operations_lightning.headlamp | default true)
         "metrics" true
       )
     }}

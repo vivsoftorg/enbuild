@@ -77,7 +77,7 @@ helm upgrade --install enbuild-ib /tmp/enbuild-<version>.tgz \
 
 > **Standing up a hub that launches and manages spoke clusters** (the gRPC agent
 > edge, hub-CA bootstrap, launch credentials, and the first-launch console
-> gates): [`docs/TIER2-LAUNCH-CAPABLE-STANDUP.md`](docs/TIER2-LAUNCH-CAPABLE-STANDUP.md).
+> gates): [`docs/LAUNCH-CAPABLE-STANDUP.md`](docs/LAUNCH-CAPABLE-STANDUP.md).
 
 Verify the reverse-proxy chain end to end after install:
 

@@ -21,6 +21,13 @@
 
 ## @section Global parameters
 global:
+  # [CUSTOMER] evalMode: false (DEFAULT) = the FULL platform — launch/import,
+  # the agent gRPC edge, Headlamp, tenancy + personas are all expected, and the
+  # render-time guards (templates/full-platform-guard.yaml) FAIL the install if a
+  # required per-env input is missing (install-agent Secret, gRPC edge host, a
+  # realm). Set evalMode: true ONLY for a THROWAWAY, launch-INCAPABLE eval hub
+  # (port-forward, no spokes) — it downgrades those guards. NEVER for a real deploy.
+  evalMode: false
   # [CUSTOMER] DNS suffix for hub ingress hosts + cert SANs.
   # `<enbuildUi.hostname>.<global.domain>` = console FQDN.
   domain: ""
