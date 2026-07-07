@@ -1,0 +1,70 @@
+# =============================================================================
+# ENBUILD hub — PROTOTYPE / demo deploy values
+# =============================================================================
+# Posture: REAL Keycloak SSO login + REAL per-user Headlamp cluster browsing,
+#          with tenancy enforcement left PERMISSIVE (consoleAuthStrict=false).
+#          This demonstrates end-to-end connectivity + cluster visibility in the
+#          customer environment; strict multi-tenant enforcement is the Phase-2
+#          hardening step (flip consoleAuthStrict=true — see values-production.example.yaml).
+#
+# WHY SSO is required even for the demo: the shipped console image forces
+# Keycloak login (the local-actor bypass is a build-time flag, off in the
+# release image), so a working Keycloak is a hard floor. The bundled demo realm
+# covers it — you only supply the browser FQDNs below.
+#
+# INSTALL (release name + namespace are PINNED — see HEADLAMP-AUTH-HARDENING.md #4):
+#   kubectl create namespace enbuild
+#   ./scripts/create-bootstrap-secrets.sh            # creates the encryption-key + mongo secrets
+#   helm install enbuild-ib enbuild/enbuild -n enbuild -f values-prototype.yaml
+#
+# BEFORE INSTALLING: replace every "example.mil" below with your real domain.
+# The three Keycloak URLs and the Headlamp issuerURL MUST stay byte-identical
+# (the chart's render guards fail the install if they drift).
+# =============================================================================
+
+global:
+  domain: "example.mil"            # <-- REPLACE. console FQDN = <enbuildUi.hostname>.<global.domain>
+  istio:
+    enabled: true                  # set false if you expose the console via your own ingress
+
+# --- Bundled datastores (fine for a prototype; point at external for prod) ---
+mongodb:
+  enabled: true
+
+# --- Console (SPA) -----------------------------------------------------------
+enbuildUi:
+  hostname: "enbuild-ib"           # console FQDN = enbuild-ib.example.mil
+  keycloak:
+    url: "https://keycloak.example.mil"   # <-- REPLACE. browser Keycloak origin (NO /realms suffix)
+    realm: "enbuild"
+    clientId: "enbuild-ui"                 # public PKCE client (shared with Headlamp)
+
+# --- Bundled Keycloak + demo realm ------------------------------------------
+keycloak:
+  hostname: "https://keycloak.example.mil"  # <-- REPLACE. KC_HOSTNAME — MUST equal the two keycloak.url values
+  demoRealm:
+    enabled: true
+    consoleUrl: "https://enbuild-ib.example.mil"  # <-- REPLACE. wildcard covers console + /headlamp/oidc-callback
+
+# --- Backend -----------------------------------------------------------------
+enbuildBk:
+  authMechanism: "keycloak"
+  consoleAuthStrict: false          # PERMISSIVE (prototype). Flip to true for hardened tenancy.
+  keycloak:
+    realm: "enbuild"
+    url: "https://keycloak.example.mil"          # <-- REPLACE. must equal keycloak.hostname + enbuildUi.keycloak.url
+    issuer: "https://keycloak.example.mil/realms/enbuild"  # <-- REPLACE. KEYCLOAK_ISSUER (used by Headlamp too)
+    backendUrl: "http://enbuild-ib-keycloak:8080"          # in-cluster JWKS source (bundled Keycloak svc)
+    clientId: "enbuild"                                     # confidential backend client
+  encryptionKey:
+    existingSecret: "enbuild-ib-encryption-key"  # created by scripts/create-bootstrap-secrets.sh
+
+# --- Headlamp per-user OIDC (so cluster browsing authenticates as the user) --
+# issuerURL MUST byte-match enbuildBk.keycloak.issuer above (headlamp-oidc-guard enforces it).
+headlamp:
+  config:
+    oidc:
+      clientID: "enbuild-ui"
+      issuerURL: "https://keycloak.example.mil/realms/enbuild"        # <-- REPLACE (== enbuildBk.keycloak.issuer)
+      scopes: "openid email groups"                                   # `groups` REQUIRED for tenancy claims
+      callbackURL: "https://enbuild-ib.example.mil/headlamp/oidc-callback"  # <-- REPLACE

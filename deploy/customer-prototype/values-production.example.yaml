@@ -1,0 +1,65 @@
+# =============================================================================
+# ENBUILD hub — PRODUCTION-HARDENED deploy values (EXAMPLE)
+# =============================================================================
+# Same wiring as values-prototype.yaml but with STRICT tenancy enforcement ON.
+# This is the Phase-2 target. Differences from the prototype:
+#   * enbuildBk.consoleAuthStrict: true  — tokenless/forged requests are DENIED
+#     (401), never served by the least-privilege fallback. Every Headlamp browse
+#     is authorized per-user from the token's `groups` claim.
+#   * Point datastores at external/HA services (bundled mongo is prototype-only).
+#   * If using a BRING-YOUR-OWN Keycloak realm (not the bundled demo realm),
+#     you MUST register the console origin AND https://<console-host>/headlamp/
+#     oidc-callback as valid redirect URIs on the `enbuild-ui` client, and set
+#     keycloak.existingRealm/hostname to your IdP (disable demoRealm).
+#
+# All the URL/issuer alignment + Headlamp OIDC rules from values-prototype.yaml
+# still apply and are enforced by the chart's render guards. Replace example.mil.
+# =============================================================================
+
+global:
+  domain: "example.mil"            # <-- REPLACE
+  istio:
+    enabled: true
+
+# For production, use an external/HA MongoDB instead of the bundled one:
+#   mongodb:
+#     enabled: false
+#     existingSecret: "enbuild-ib-mongo-secrets"
+#     mongo_endpoint_override: "mongodb+srv://.../enbuild"
+mongodb:
+  enabled: true                    # <-- replace with external Mongo for production
+
+enbuildUi:
+  hostname: "enbuild-ib"
+  keycloak:
+    url: "https://keycloak.example.mil"   # <-- REPLACE
+    realm: "enbuild"
+    clientId: "enbuild-ui"
+
+keycloak:
+  hostname: "https://keycloak.example.mil"  # <-- REPLACE (== the two keycloak.url values)
+  demoRealm:
+    enabled: true                           # <-- set false + configure your own realm for a BYO IdP
+    consoleUrl: "https://enbuild-ib.example.mil"  # <-- REPLACE
+
+enbuildBk:
+  authMechanism: "keycloak"
+  consoleAuthStrict: true           # <== HARDENED: verified token required; no permissive fallback
+  spokeImpersonation: false         # optional Phase-2 defense-in-depth (needs per-user spoke RBAC)
+  adminEmails: ""                   # prefer the /enbuild/platform-admins Keycloak group over this
+  keycloak:
+    realm: "enbuild"
+    url: "https://keycloak.example.mil"                    # <-- REPLACE
+    issuer: "https://keycloak.example.mil/realms/enbuild"  # <-- REPLACE
+    backendUrl: "http://enbuild-ib-keycloak:8080"
+    clientId: "enbuild"
+  encryptionKey:
+    existingSecret: "enbuild-ib-encryption-key"
+
+headlamp:
+  config:
+    oidc:
+      clientID: "enbuild-ui"
+      issuerURL: "https://keycloak.example.mil/realms/enbuild"        # <-- REPLACE (== enbuildBk.keycloak.issuer)
+      scopes: "openid email groups"
+      callbackURL: "https://enbuild-ib.example.mil/headlamp/oidc-callback"  # <-- REPLACE
