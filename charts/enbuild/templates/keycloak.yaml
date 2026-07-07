@@ -87,7 +87,12 @@ spec:
           name: realm-import
           readOnly: true
       imagePullSecrets:
-      - name: {{ .Release.Name }}-image-pull-secret
+      # Honor global.imagePullSecretName (an operator's own pull-secret) exactly
+      # as enbuild-bk.yaml does; fall back to the chart-minted <release>-image-pull-secret
+      # so the quickstart/bootstrap-secret path is byte-identical. Without this,
+      # setting a custom global.imagePullSecretName left Keycloak alone in
+      # ImagePullBackOff against a secret name that no longer existed.
+      - name: {{ .Values.global.imagePullSecretName | default (printf "%s-image-pull-secret" .Release.Name) }}
       volumes:
       - name: realm-import
         secret:
