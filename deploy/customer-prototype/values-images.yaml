@@ -28,7 +28,7 @@ enbuildBk:
     tag: "826631e8182f991e89a0680f09118b1f4882d85f"   # backend — CURRENT VALIDATED eks-10 HEAD (mirror of envs/eks10-ib/image-tags.pin). ⊇ brownfield-IMPORT connect-back fix (live-CA derive + spoke mTLS-cert enrollment + clusterClass/importAuditedAt persistence — 74ca99071, PROVEN live via UI EKS + self-managed import 2026-07-08, failure-registry G7/G8/G9) + BB capacity preflight/sizing + launch-UX hardening + catalog DI fix
 enbuildUi:
   image:
-    tag: "25326b3b1408d6f8f1af80f4a22539fd39d03d0c"   # frontend / console — CURRENT VALIDATED eks-10 UI. ⊇ import-wizard adopt-render crash guards + AWS cred-field autofill suppression + stack-warming banner
+    tag: "29fb000739b5bb0a7756a2bf898a331481d3b0b8"   # frontend / console — CURRENT VALIDATED eks-10 UI. ⊇ import-wizard adopt-render crash guards + AWS cred-field autofill suppression + stack-warming banner
 enbuildUser:
   image:
     tag: "8d473885fc7945166def7411dd1ba56954eb2404"   # enbuild-user
