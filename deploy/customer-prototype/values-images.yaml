@@ -34,4 +34,4 @@ enbuildUser:
     tag: "8d473885fc7945166def7411dd1ba56954eb2404"   # enbuild-user
 enbuildConsumer:
   image:
-    tag: "cd3c5563d0c26dc7f4eb24163f162120bc6f5d5b"   # mq-consumer — current validated eks-10 set
+    tag: "6cd283a60f2261ac50ce3f2ec8a7c4d29949cb6b"   # mq-consumer — current validated eks-10 set
