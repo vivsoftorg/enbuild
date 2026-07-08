@@ -47,6 +47,19 @@ Until that exists, local mode is the no-surprises default.
 3. The bootstrap secrets (encryption key + Mongo). A helper is provided in the
    chart: `charts/enbuild/scripts/create-bootstrap-secrets.sh` (creates
    `enbuild-ib-encryption-key` and the Mongo secret in the `enbuild` namespace).
+4. **Brownfield cluster import (Beat 5) — agent connect-back needs the hub's PKI, which
+   the chart provisions automatically.** On chart **`.42`+** the default
+   `enbuildBk.agentMtls.spokeCertEnroll: "true"` makes the hub mint a per-spoke mTLS
+   client cert off the chart-provisioned `enbuild-hub-issuer` cert-manager ClusterIssuer
+   and hand its **live CA** to the imported agent, so the spoke trusts the hub gRPC
+   gateway's self-signed cert and connects back. **Nothing to set on `.42`+.** Requirements
+   it depends on (all chart-provided): cert-manager installed + `pki.provisionHubCA` (creates
+   `enbuild-hub-issuer` + `enbuild-ca-tls`). On an OLDER chart, set
+   `enbuildBk.agentMtls.spokeCertEnroll: "true"` explicitly. **Do NOT rely on the legacy manual
+   `HUB_CA_BUNDLE_PEM` AdminSettings field** — it goes stale per hub and was the imported-agent
+   `context deadline exceeded` connect-back bug (failure-registry **G7**; launched spokes were
+   always fine — this makes imported spokes fine too, with no operator step). Requires backend
+   image ≥ `74ca99071` (pinned in `values-images.yaml`).
 
 ## Install
 

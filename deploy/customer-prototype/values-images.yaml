@@ -25,10 +25,10 @@
 
 enbuildBk:
   image:
-    tag: "184fac94550e0f4a9deb196e38362aa265b10d69"   # backend — Headlamp fixes (8c57f588e) + FE/BE observability&trust fixes: fleet-health-live-OK, declared-vars, TF-drift benign-class
+    tag: "74ca99071a2ab013baa29887f7b4c5aa9ea35bc4"   # backend — brownfield-IMPORT connect-back: live-CA derive + spoke mTLS-cert enrollment (ADR-0052 import parity) + clusterClass/importAuditedAt persistence; ⊇ 184fac945 Headlamp/observability/trust fixes. PROVEN live via UI-driven EKS + self-managed import 2026-07-08 (failure-registry G7/G8/G9)
 enbuildUi:
   image:
-    tag: "184fac94550e0f4a9deb196e38362aa265b10d69"   # frontend / console — stack-warming banner + dismiss-X + declared-vars render (rebuilt p1ccm dist)
+    tag: "74ca99071a2ab013baa29887f7b4c5aa9ea35bc4"   # frontend / console — import-wizard adopt-render crash guards + AWS cred-field autofill suppression; ⊇ stack-warming banner + dismiss-X
 enbuildUser:
   image:
     tag: "8d473885fc7945166def7411dd1ba56954eb2404"   # enbuild-user

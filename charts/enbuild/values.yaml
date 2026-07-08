@@ -397,7 +397,14 @@ enbuildBk:
     #            Socket-mTLS behind an L4-passthrough NLB is ADR-0052 Track-2 (unshipped).
     listenerMode: "plain"         # plain (h2c, Istio-terminated — DEFAULT/safe) | tls (unsupported, guarded)
     peerCertSource: ""            # "tls" (socket, recommended) | "xfcc" (Istio mesh) | empty(=auto)
-    spokeCertEnroll: ""           # "true" → catalog launches MINT a per-spoke client cert (loadSpokeClientCert)
+    # "true" (DEFAULT) → BOTH catalog launches AND brownfield imports MINT a per-spoke
+    # client cert (loadSpokeClientCert) off enbuild-hub-issuer. Default-ON so a FRESH
+    # hub reproduces the proven-live vendor13-ib config with no per-hub override: it is
+    # fail-open (returns null if cert-manager/issuer absent → server-TLS-only) and its
+    # ca.crt is what the imported agent trusts for connect-back — which stops that trust
+    # depending on the operator-set (and easily-stale) HUB_CA_BUNDLE_PEM. Enrollment
+    # (mint) is independent of enforcement (agentMtls.enabled, which stays off).
+    spokeCertEnroll: "true"       # "true" → launches AND imports MINT a per-spoke client cert (loadSpokeClientCert)
     issuerName: ""                # override the hub ClusterIssuer (default pki.hubIssuerName / enbuild-hub-issuer)
     pkiNamespace: ""              # ns the Certificates/Secrets live in (default = release namespace)
   # ADR-0052 AUTH-5 — opt-in externally-reachable agent gateway for CROSS-NETWORK

@@ -45,6 +45,12 @@ keycloak:
 enbuildBk:
   authMechanism: "keycloak"
   consoleAuthStrict: true           # <== HARDENED: verified token required; no permissive fallback
+  # Brownfield IMPORT connect-back (Beat 5) — mint per-spoke mTLS cert off the hub issuer +
+  # hand its live CA to imported agents (no stale HUB_CA_BUNDLE_PEM; failure-registry G7).
+  # Chart default on .42+; explicit here for the deliverable. Needs backend ≥74ca99071.
+  agentMtls:
+    spokeCertEnroll: "true"
+    listenerMode: "plain"
   spokeImpersonation: false         # optional Phase-2 defense-in-depth (needs per-user spoke RBAC)
   adminEmails: ""                   # prefer the /enbuild/platform-admins Keycloak group over this
   keycloak:
