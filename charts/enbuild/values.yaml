@@ -312,11 +312,21 @@ enbuildBk:
   # Set "local" ONLY for dev/test with no SSO.
   authMechanism: "keycloak"       # keycloak | local
   adminEmails: ""                 # break-glass platform admins (comma-sep). Durable admin = the /enbuild/platform-admins Keycloak group.
+  # ⚠️  ACCESS-MODEL GUARD (do NOT "helpfully" collapse these to derive from global.domain).
+  # The DEFAULT delivery/tester model is port-forward-to-localhost (svc/…-keycloak → :8088).
+  # KC mints ONE issuer (KC_HOSTNAME) and the backend pins ONE issuer via EXACT-match
+  # jwt.verify — so if url/issuer are forced to a global.domain FQDN, a port-forward browser
+  # still hits KC at localhost:8088 but the token carries the FQDN issuer → OIDC discovery
+  # unreachable / verify fails → every console/K8sApiProxy request 401s, Headlamp goes dark.
+  # The chart ALREADY derives the FQDN ONLY when global.domain AND enbuildUi.hostname are BOTH
+  # set, else falls back to localhost. KEEP that terminal-localhost fallback; real-hostname
+  # (option A) is a values-only OPT-IN, never the default. See
+  # p1-cluster-mgmt/docs/delivery/2026-07-07-toggle-functionality-hardening-audit.md §0b.
   keycloak:
     realm: "enbuild"              # [CUSTOMER] realm name
-    url: ""                       # [CUSTOMER] browser-facing Keycloak base URL (KEYCLOAK_URL)
-    backendUrl: ""                # [CUSTOMER] in-cluster Keycloak URL the backend calls (KEYCLOAK_BACKEND_URL)
-    issuer: ""                    # [CUSTOMER] token issuer (KEYCLOAK_ISSUER); defaults to <url>/realms/<realm> if your IdP follows the standard
+    url: ""                       # [CUSTOMER] browser-facing Keycloak base URL (KEYCLOAK_URL). Empty → localhost:8088 fallback (port-forward). Set to FQDN ONLY for option-A opt-in.
+    backendUrl: ""                # [CUSTOMER] in-cluster Keycloak URL the backend calls (KEYCLOAK_BACKEND_URL). Keep in-cluster (http://<release>-keycloak:8080) — NEVER the FQDN (browser-issuer vs in-cluster-JWKS split).
+    issuer: ""                    # [CUSTOMER] token issuer (KEYCLOAK_ISSUER); defaults to <url>/realms/<realm>. Do NOT derive from global.domain unconditionally — breaks port-forward SSO fleet-wide.
     clientId: "enbuild"           # confidential backend client id
     adminBaseUrl: ""              # admin REST base URL (KEYCLOAK_ADMIN_BASE_URL) for group/user management
     adminClientId: ""             # admin client id (KEYCLOAK_ADMIN_CLIENT_ID)

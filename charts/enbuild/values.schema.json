@@ -265,7 +265,7 @@
         "encryption_key": { "type": "string" },
         "gitlabConnection": { "type": "object" },
         "service_type": { "type": "string" },
-        "grpcEnabled": { "type": "boolean" },
+        "grpcEnabled": { "const": true },
         "grpcPort": { "type": "integer" },
         "grpcServiceType": { "type": "string" },
         "clusterRpcTimeoutMs": { "type": ["string", "integer"] },
