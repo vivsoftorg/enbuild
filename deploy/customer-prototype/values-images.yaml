@@ -25,10 +25,10 @@
 
 enbuildBk:
   image:
-    tag: "8c57f588e6c12ecfc2868546dba9012f33afcf1e"   # backend — INCLUDES all Headlamp fixes: create-wire + release-portability + public-client-id + OIDC issuer-reachability (tokenless fallback)
+    tag: "184fac94550e0f4a9deb196e38362aa265b10d69"   # backend — Headlamp fixes (8c57f588e) + FE/BE observability&trust fixes: fleet-health-live-OK, declared-vars, TF-drift benign-class
 enbuildUi:
   image:
-    tag: "b357df1101798411b23d8a5716f03849bb450a21"   # frontend / console (nginx fix rides the chart CM, not the image)
+    tag: "184fac94550e0f4a9deb196e38362aa265b10d69"   # frontend / console — stack-warming banner + dismiss-X + declared-vars render (rebuilt p1ccm dist)
 enbuildUser:
   image:
     tag: "8d473885fc7945166def7411dd1ba56954eb2404"   # enbuild-user
