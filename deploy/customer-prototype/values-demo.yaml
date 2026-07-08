@@ -58,15 +58,6 @@ keycloak:
 enbuildBk:
   authMechanism: "local"           # <== PERMISSIVE: no per-user backend authZ. Headlamp browses out of the box.
   consoleAuthStrict: false
-  # Brownfield cluster IMPORT (Beat 5) connect-back — leave ON. The hub mints a per-spoke
-  # mTLS client cert off the chart-provisioned enbuild-hub-issuer and hands its LIVE CA to
-  # the imported agent, so the spoke trusts the hub gRPC gateway and connects back. Chart
-  # default on .42+ (shown explicitly here so it's visible in the deliverable); removes the
-  # dependency on the easily-stale manual HUB_CA_BUNDLE_PEM (failure-registry G7). Enrollment
-  # (mint) is independent of enforcement (agentMtls.enabled, kept off). Needs backend ≥74ca99071.
-  agentMtls:
-    spokeCertEnroll: "true"
-    listenerMode: "plain"
   # Headlamp's K8s proxy has no user identity (it does not run OIDC in this mode),
   # so it serves reads under this fallback identity. Making it an admin (below)
   # guarantees EVERY managed cluster is browsable — no per-cluster tenancy 403.
