@@ -20,6 +20,7 @@
 #   enbuild-ib-image-pull-secret .dockerconfigjson (registry1 + gitlab)                 (global.imagePullSecretName)
 #   enbuild-ib-install-agent     GITLAB_TOKEN/ENBUILD_REPO1_USER/ENBUILD_REPO1_TOKEN    (enbuildBk.installAgent.existingSecret) [optional]
 #   enbuild-ib-observability     SIEM_AUTH_HEADER/PROMETHEUS_TOKEN/LOKI_TOKEN (subset)  (enbuildBk.observability.existingSecret) [optional, SOO §1.5]
+#   enbuild-ib-export-signing    SIEM_SIGNING_KEY (ECDSA P-256 PEM, auto-generated)     (enbuildBk.exportSigning.existingSecret) [recommended, CCM-32 Auditable]
 #
 # The RabbitMQ broker password and the backend's RABBIT_MQ_CONNECTION_STRING are
 # generated ONCE and written to BOTH secrets, so they can never diverge.
@@ -89,7 +90,7 @@ kubectl get namespace "$NAMESPACE" >/dev/null 2>&1 || { log "creating namespace 
 # Bundled Mongo (mongodb.enabled=true) hardcodes envFrom <release>-mongo-secrets,
 # so the name MUST be exactly this. The backend assembles MONGODB_ENDPOINT from
 # these fields. MONGO_SERVER points at the bundled single-node service.
-section "1/7 MongoDB credentials"
+section "1/8 MongoDB credentials"
 if secret_exists "${RELEASE}-mongo-secrets" && [ "$FORCE" != "1" ]; then
   log "exists, kept: ${RELEASE}-mongo-secrets"
 else
@@ -102,14 +103,14 @@ else
 fi
 
 # 2) At-rest encryption key ----------------------------------------------------
-section "2/7 Backend at-rest ENCRYPTION_KEY"
+section "2/8 Backend at-rest ENCRYPTION_KEY"
 apply_secret "${RELEASE}-encryption-key" generic "${RELEASE}-encryption-key" \
   --from-literal=ENCRYPTION_KEY="$(rand 48)"
 
 # 3+4) RabbitMQ broker password + erlang cookie + backend connection string ----
 # ONE password drives both the broker (rabbitmq-password) and the backend's
 # RABBIT_MQ_CONNECTION_STRING — they can never diverge.
-section "3/7 RabbitMQ credentials (broker) + 4/7 backend connection string"
+section "3/8 RabbitMQ credentials (broker) + 4/8 backend connection string"
 if secret_exists "${RELEASE}-rabbitmq-creds" && [ "$FORCE" != "1" ]; then
   log "exists, kept: ${RELEASE}-rabbitmq-creds (reusing its password for messaging)"
   RMQ_PW="$(kubectl -n "$NAMESPACE" get secret "${RELEASE}-rabbitmq-creds" -o jsonpath='{.data.rabbitmq-password}' | base64 -d)"
@@ -126,7 +127,7 @@ kubectl -n "$NAMESPACE" create secret generic "${RELEASE}-messaging" \
 log "created/updated: ${RELEASE}-messaging"
 
 # 5) Image pull secret (combined registries) -----------------------------------
-section "5/7 Image-pull secret (${GITLAB_REGISTRY} + ${REPO1_REGISTRY})"
+section "5/8 Image-pull secret (${GITLAB_REGISTRY} + ${REPO1_REGISTRY})"
 if secret_exists "${RELEASE}-image-pull-secret" && [ "$FORCE" != "1" ]; then
   log "exists, kept: ${RELEASE}-image-pull-secret"
 elif [ -n "$REPO1_USER$REPO1_TOKEN$GITLAB_USER$GITLAB_TOKEN" ]; then
@@ -154,7 +155,7 @@ else
 fi
 
 # 6) install-agent secret (OPTIONAL — only for catalog launches) ---------------
-section "6/7 install-agent secret (optional — catalog launches)"
+section "6/8 install-agent secret (optional — catalog launches)"
 if [ -n "$IA_GITLAB_TOKEN" ]; then
   apply_secret "${RELEASE}-install-agent" generic "${RELEASE}-install-agent" \
     --from-literal=GITLAB_TOKEN="$IA_GITLAB_TOKEN" \
@@ -166,7 +167,7 @@ else
 fi
 
 # 7) observability/SIEM bearer tokens (OPTIONAL — SOO §1.5) ---------------------
-section "7/7 observability/SIEM secret (optional — SIEM/Loki/Prometheus tokens)"
+section "7/8 observability/SIEM secret (optional — SIEM/Loki/Prometheus tokens)"
 if [ -n "$OBS_SIEM_AUTH_HEADER$OBS_PROMETHEUS_TOKEN$OBS_LOKI_TOKEN" ]; then
   # Only include the keys actually provided (any subset).
   set -- generic "${RELEASE}-observability"
@@ -181,8 +182,29 @@ else
   log "set OBS_SIEM_AUTH_HEADER / OBS_LOKI_TOKEN / OBS_PROMETHEUS_TOKEN to wire those."
 fi
 
+# 8) audit-export signing key (CCM-32 Auditable) ------------------------------
+# ECDSA P-256 private key the backend uses to sign the /audit/export-bundle
+# checksums (auditExport.service.ts → SIEM_SIGNING_KEY). Without it the bundle
+# returns signed:false with an honest verifyHint. Auto-generated + IDEMPOTENT:
+# kept on re-run so the public key an auditor pinned stays stable (FORCE=1 to
+# rotate). Wired via enbuildBk.exportSigning.existingSecret in all 3 postures.
+section "8/8 audit-export signing key (SIEM_SIGNING_KEY, ECDSA P-256)"
+if secret_exists "${RELEASE}-export-signing" && [ "$FORCE" != "1" ]; then
+  log "exists, kept: ${RELEASE}-export-signing  (FORCE=1 to rotate the signing key)"
+elif command -v openssl >/dev/null 2>&1; then
+  signkey="$(mktemp "${TMPDIR:-/tmp}/.enbuild-signkey.XXXXXX")"; chmod 600 "$signkey"
+  openssl ecparam -name prime256v1 -genkey -noout -out "$signkey"
+  kubectl -n "$NAMESPACE" create secret generic "${RELEASE}-export-signing" \
+    --from-file=SIEM_SIGNING_KEY="$signkey" \
+    --dry-run=client -o yaml | kubectl apply -f - >/dev/null
+  rm -f "$signkey"
+  log "created: ${RELEASE}-export-signing  (enbuildBk.exportSigning.existingSecret)"
+else
+  log "SKIPPED — openssl not found; /audit/export-bundle returns signed:false (verifyHint)."
+fi
+
 section "Done. Secrets in ns/$NAMESPACE:"
-kubectl -n "$NAMESPACE" get secret | grep -E "^${RELEASE}-(mongo-secrets|encryption-key|messaging|rabbitmq-creds|image-pull-secret|install-agent|observability)" || true
+kubectl -n "$NAMESPACE" get secret | grep -E "^${RELEASE}-(mongo-secrets|encryption-key|messaging|rabbitmq-creds|image-pull-secret|install-agent|observability|export-signing)" || true
 cat <<EOF
 
 Next: helm upgrade --install ${RELEASE} . -n ${NAMESPACE} --create-namespace \\

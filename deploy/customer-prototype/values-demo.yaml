@@ -65,6 +65,11 @@ enbuildBk:
   adminEmails: "demo-admin@enbuild.local"   # the fallback identity is treated as a platform admin
   encryptionKey:
     existingSecret: "enbuild-ib-encryption-key"  # created by scripts/create-bootstrap-secrets.sh
+  # Signed audit-export bundle (CCM-32 Auditable) — even the quick-start demo signs the
+  # export out of the box so the graded "Auditable" capability works live. SIEM_SIGNING_KEY
+  # (ECDSA P-256) created by scripts/create-bootstrap-secrets.sh.
+  exportSigning:
+    existingSecret: "enbuild-ib-export-signing"
 
   # --- Launch capability (REQUIRED by the platform to create/import clusters) ---
   # A hub can only manage + browse clusters if it can launch/import them. These

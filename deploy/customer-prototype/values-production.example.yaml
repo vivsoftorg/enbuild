@@ -55,6 +55,12 @@ enbuildBk:
     clientId: "enbuild"
   encryptionKey:
     existingSecret: "enbuild-ib-encryption-key"
+  # Signed audit-export bundle (CCM-32 Auditable): the operator Secret's
+  # SIEM_SIGNING_KEY (ECDSA P-256 PEM) is created by scripts/create-bootstrap-secrets.sh
+  # and wired into the backend envFrom. Without it /audit/export-bundle returns
+  # signed:false (honest verifyHint) — hardened deploys MUST provision it.
+  exportSigning:
+    existingSecret: "enbuild-ib-export-signing"
 
 headlamp:
   config:
