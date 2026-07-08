@@ -384,7 +384,18 @@ enbuildBk:
   # the LIVE hub flips `enabled` on only AFTER all spokes present certs (Track-2).
   agentMtls:
     enabled: ""                   # "true" → hub ENFORCES mTLS (verifyMtls CN==clusterId). Empty = off.
-    listenerMode: ""              # "tls" (socket mTLS, recommended for external) | "plain" | empty
+    # LISTENER — how the hub gRPC agent-gateway (:8443) binds its socket.
+    #   plain  = the app binds h2c (cleartext HTTP/2); the Istio ingress gateway +
+    #            sidecar terminate transport TLS. THIS IS THE PROVEN-LIVE PRODUCTION
+    #            CONFIG (vendor13-ib) and the safe default: it BINDS with no mounted
+    #            server certs, so :8443 always comes up and spokes can connect.
+    #   tls    = NOT SUPPORTED by this chart. It asks the app to socket-terminate TLS
+    #            (loadHubTlsCreds), but the chart mounts NO gRPC server certs, so the
+    #            bind ABORTS ("refusing to fall back to insecure") → :8443 never
+    #            listens → every spoke gets Connection refused / "Waiting for agent".
+    #            templates/agent-gateway-listener-guard.yaml fails the install if set.
+    #            Socket-mTLS behind an L4-passthrough NLB is ADR-0052 Track-2 (unshipped).
+    listenerMode: "plain"         # plain (h2c, Istio-terminated — DEFAULT/safe) | tls (unsupported, guarded)
     peerCertSource: ""            # "tls" (socket, recommended) | "xfcc" (Istio mesh) | empty(=auto)
     spokeCertEnroll: ""           # "true" → catalog launches MINT a per-spoke client cert (loadSpokeClientCert)
     issuerName: ""                # override the hub ClusterIssuer (default pki.hubIssuerName / enbuild-hub-issuer)

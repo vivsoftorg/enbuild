@@ -1,0 +1,21 @@
+{{- /*
+  ADR-0052 — Hub gRPC agent-gateway listener guard (render-time, output-less).
+
+  The hub backend's gRPC agent-gateway (:8443) picks its listener from
+  ENBUILD_HUB_LISTENER_MODE (= enbuildBk.agentMtls.listenerMode). When set to
+  "tls" the app calls loadHubTlsCreds(HUB_TLS_DIR) to SOCKET-terminate TLS — but
+  this chart mounts NO gRPC server certs anywhere (there is no such volume), so
+  the credential load fails and the app REFUSES to fall back to insecure: the
+  bind ABORTS, :8443 never listens, and every spoke agent then gets Connection
+  refused → clusters stick on "Waiting for agent" with no obvious cause.
+
+  This guard turns that silent runtime trap into a clear `helm install` failure.
+  It is ADDITIVE and DEFAULT-INERT: the shipped default is listenerMode=plain
+  (h2c; the Istio ingress gateway + sidecar terminate transport TLS — the
+  proven-live production config), which trips nothing. The guard fires ONLY when
+  someone explicitly sets listenerMode=tls.
+*/ -}}
+{{- $mt := default (dict) .Values.enbuildBk.agentMtls }}
+{{- if eq (lower (default "" $mt.listenerMode)) "tls" }}
+{{- fail "enbuildBk.agentMtls.listenerMode=tls requests socket-terminated TLS on the hub gRPC agent-gateway (:8443), but this chart mounts NO gRPC server certs, so the listener will abort its bind and :8443 will never come up (every spoke agent then gets Connection refused / 'Waiting for agent'). Use listenerMode=plain — the app binds h2c and the Istio ingress gateway + sidecar terminate TLS (the proven production config). Socket-mTLS behind an L4-passthrough NLB is a separate, unshipped topology (ADR-0052 Track-2)." }}
+{{- end }}
