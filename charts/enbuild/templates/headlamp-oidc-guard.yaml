@@ -36,5 +36,12 @@
 {{- if and (ne (default "" $beIssuer) "") (ne $o.issuerURL $beIssuer) }}
 {{- fail (printf "headlamp.config.oidc.issuerURL (%s) MUST equal the backend token issuer (%s) EXACTLY — Headlamp tokens are verified against the backend KEYCLOAK_ISSUER, so a mismatch fails login silently. Set headlamp.config.oidc.issuerURL: %s" $o.issuerURL $beIssuer $beIssuer) }}
 {{- end }}
+{{- /* Reachability: the in-cluster Headlamp POD does OIDC discovery/token-exchange
+       against issuerURL, so a loopback/localhost issuer (the port-forward access
+       model) can never work — it connection-refuses at cluster-browse login. */ -}}
+{{- $issLower := lower $o.issuerURL }}
+{{- if or (contains "//localhost" $issLower) (contains "//127." $issLower) (contains "//0.0.0.0" $issLower) (contains "[::1]" $issLower) }}
+{{- fail (printf "headlamp.config.oidc.issuerURL (%s) is a loopback/localhost URL — the in-cluster Headlamp pod CANNOT reach it for server-side OIDC discovery (it would `dial tcp ...: connection refused` at cluster login). On the port-forward access model (localhost Keycloak) LEAVE headlamp.config.oidc EMPTY — Headlamp then browses tokenlessly with no OIDC login. Enable Headlamp OIDC only with a real FQDN issuer reachable from BOTH the browser AND the cluster." $o.issuerURL) }}
+{{- end }}
 {{- end }}
 {{- end }}
