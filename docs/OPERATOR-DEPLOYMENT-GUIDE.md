@@ -50,6 +50,20 @@ entered in the ENBUILD admin UI; see the note above.)
 > at the existing CA — it does not rotate certs (CA bootstrap: see
 > `charts/enbuild/docs/TIER2-LAUNCH-CAPABLE-STANDUP.md` §3).
 
+> **Mission Apps (Iron Bank app-lane) prerequisites.** Deploying an Iron Bank
+> Mission App (podinfo, Postgres, … — the `/mission-apps` gallery) onto a managed
+> spoke needs two credentials, both derived from what you already supply above —
+> no new secret files:
+> - **App image pull** — set `REGISTRY1_USERNAME` / `REGISTRY1_PASSWORD` (your Iron
+>   Bank robot account for `registry1.dso.mil`) in the admin UI **Platform Settings**
+>   (AdminSettings). Without them a Mission-App launch refuses early with a clear
+>   *"Iron Bank registry credentials are not configured"* error (never a silent
+>   ImagePullBackOff).
+> - **App chart pull** — the Flux OCI secret `enbuild-charts-credentials` in
+>   `flux-system` is **minted automatically by `install-agent.sh`** from the same
+>   `BOOTSTRAP_STACK_REGISTRY_TOKEN` the platform-security stack already uses (one
+>   token, both lanes). Nothing to set per-spoke.
+
 ### Create commands (replace placeholders)
 
 ```bash
