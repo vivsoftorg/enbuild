@@ -25,13 +25,13 @@
 
 enbuildBk:
   image:
-    tag: "bd665438632c15ede8f511bb189024a1297b29ad"   # backend — INCLUDES the Headlamp fixes
+    tag: "8c57f588e6c12ecfc2868546dba9012f33afcf1e"   # backend — INCLUDES all Headlamp fixes: create-wire + release-portability + public-client-id + OIDC issuer-reachability (tokenless fallback)
 enbuildUi:
   image:
-    tag: "e3dfaba11dc861fa8f7a3117f649d14ff0a3c292"   # frontend / console (nginx fix rides the chart CM, not the image)
+    tag: "b357df1101798411b23d8a5716f03849bb450a21"   # frontend / console (nginx fix rides the chart CM, not the image)
 enbuildUser:
   image:
     tag: "8d473885fc7945166def7411dd1ba56954eb2404"   # enbuild-user
 enbuildConsumer:
   image:
-    tag: "7953026dc434bcac0f1f3ea367d1561f98d9136c"   # mq-consumer
+    tag: "396b4cce7a233b82f77bc195bc942a074b8eef8b"   # mq-consumer

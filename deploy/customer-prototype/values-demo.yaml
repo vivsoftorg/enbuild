@@ -66,6 +66,46 @@ enbuildBk:
   encryptionKey:
     existingSecret: "enbuild-ib-encryption-key"  # created by scripts/create-bootstrap-secrets.sh
 
-# NOTE: deliberately NO headlamp.config.oidc block — Headlamp browses via the
-# permissive backend fallback, not per-user OIDC. To harden, switch to
-# values-production.example.yaml (adds the OIDC cutover + strict).
+  # --- Launch capability (REQUIRED by the platform to create/import clusters) ---
+  # A hub can only manage + browse clusters if it can launch/import them. These
+  # wire the backend to your GitLab (forks each cluster's deploy repo) and the
+  # gRPC edge (where launched spoke agents dial back). The chart's full-platform
+  # guard FAILS the install if any is missing — or set `global.evalMode: true`
+  # for a browse-only, launch-incapable eval hub (but then there are no spoke
+  # clusters to browse in Headlamp).
+  installAgent:
+    existingSecret: "enbuild-ib-install-agent-creds"  # GITLAB_TOKEN + ENBUILD_REPO1_* (scripts/create-bootstrap-secrets.sh)
+    hubUrl: "grpc-edge.example.mil:443"               # <-- REPLACE. host:443 a launched spoke agent dials back to (== grpcVirtualService.host)
+  gitlabConnection:
+    host: "https://gitlab.com/"                       # <-- your GitLab base URL
+    namespaceId: "REPLACE-GITLAB-GROUP-ID"            # <-- REPLACE. GitLab group id where deploy repos are forked
+  grpcVirtualService:
+    host: "grpc-edge.example.mil"                     # <-- REPLACE. external FQDN (cert SAN) spoke agents dial back to
+    gateway: "istio-system/enbuild-grpc-gw"           # <ns>/<istio gateway> that fronts the gRPC edge
+
+# =============================================================================
+# HEADLAMP CLUSTER BROWSING — the endpoint answer + disclosure
+# =============================================================================
+# ►► OUT OF THE BOX there is NO Headlamp endpoint/URL to configure. ◄◄
+# In this permissive posture the backend rebuilds the headlamp-kubeconfigs
+# ConfigMap with TOKENLESS spoke contexts (the in-cluster SA user), so Headlamp
+# browses every managed cluster through the hub proxy with NO OIDC login page and
+# NO server-side discovery. "Open in Headlamp" just works. That is exactly why
+# there is deliberately NO headlamp.config.oidc block in this file.
+#
+# WHY tokenless and not OIDC: Headlamp's per-cluster OIDC does a SERVER-SIDE
+# discovery/token-exchange FROM THE POD, so it needs the issuer reachable from
+# the browser AND the in-cluster Headlamp pod. On the port-forward access model
+# (localhost Keycloak) the pod cannot reach it → `dial tcp ...: connection
+# refused` at cluster login. Tokenless is the reliable default that works on
+# every access model (localhost port-forward OR real FQDN). DISCLOSURE: in this
+# mode Headlamp reads are served under an admin fallback, not per-user auth.
+#
+# ►► THE SECURE PATH IS ALREADY IMPLEMENTED + DOCUMENTED ◄◄
+# For real per-user Headlamp authorization, use values-production.example.yaml:
+# strict tenancy + headlamp.config.oidc.* pointed at a REAL FQDN Keycloak issuer
+# (reachable from browser AND pod). The backend reconciler then automatically
+# switches spoke contexts to `user: oidc`. See HEADLAMP-AUTH-HARDENING.md §4.
+# A loopback/localhost OIDC issuer is REJECTED at install time by the
+# headlamp-oidc guard, so the broken combo can never ship silently.
+# =============================================================================
