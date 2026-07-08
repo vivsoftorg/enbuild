@@ -1,0 +1,32 @@
+{{- /*
+  Agent CA-trust guard (render-time, output-less). Mirrors
+  templates/keycloak-url-guard.yaml / headlamp-oidc-guard.yaml.
+
+  THE TRAP THIS PREVENTS (hit repeatedly; each time a multi-hour silent hang):
+  On a bare/greenfield cluster the hub gRPC AgentGateway presents a SELF-SIGNED
+  hub CA cert (CN=enbuild-hub-ca). A launched spoke's agent completes TCP + TLS
+  to the gateway but CANNOT VERIFY that private CA (it only has the system CA
+  pool), so grpc.Dial() fails as `context deadline exceeded` — indistinguishable
+  from a network problem, with NO install-time error. The agent then retries
+  forever and the spoke never joins the fleet.
+
+  The fix is agent trust: EITHER enbuildBk.agentMtls (enabled + spokeCertEnroll —
+  the hub mints a per-spoke client cert off enbuild-hub-issuer and delivers the
+  hub CA to the agent) OR a provisioned hub CA bundle. This guard makes a
+  self-signed edge with NEITHER fail LOUD at `helm install` instead of hanging.
+
+  SCOPE — fires ONLY when the operator has DECLARED a self-signed edge
+  (grpcVirtualService.selfSignedHubCa=true). It never fires on Big Bang or any
+  publicly-trusted-cert edge (selfSignedHubCa stays false there), so the
+  deliberate live-hub path (agentMtls off, real public cert, flipped on later)
+  is untouched. Additive + default-false = existing installs byte-unchanged.
+*/ -}}
+{{- $vs := default (dict) .Values.enbuildBk.grpcVirtualService }}
+{{- if and $vs.enabled $vs.selfSignedHubCa }}
+{{- $mt := default (dict) .Values.enbuildBk.agentMtls }}
+{{- $mtlsOn := eq (toString (default "" $mt.enabled)) "true" }}
+{{- $enrollOn := eq (toString (default "" $mt.spokeCertEnroll)) "true" }}
+{{- if not (or $mtlsOn $enrollOn) }}
+{{- fail "enbuildBk.grpcVirtualService.selfSignedHubCa=true (the agent gRPC gateway presents a self-signed hub CA) but NO agent trust is configured — spoke agents cannot verify CN=enbuild-hub-ca and will silently time out dialing the hub for hours (grpc.Dial: context deadline exceeded — looks like a network problem but is cert-trust). Fix: enable enbuildBk.agentMtls (set agentMtls.enabled=\"true\" + agentMtls.spokeCertEnroll=\"true\" — the hub mints a per-spoke client cert off enbuild-hub-issuer and delivers the hub CA to the agent), OR provision the hub CA bundle to the agent. See the fresh-hub greenfield runbook (p1-cluster-mgmt/docs/onboarding/how-to/stand-up-a-fresh-hub.md). On Big Bang or any publicly-trusted-cert edge, leave grpcVirtualService.selfSignedHubCa=false." }}
+{{- end }}
+{{- end }}

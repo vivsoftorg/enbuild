@@ -342,6 +342,17 @@ enbuildBk:
     host: ""                      # REQUIRED external gRPC FQDN agents dial (cert SAN)
     additionalHosts: []           # extra :authority names to route
     gateway: istio-gateway/public-ingressgateway   # <ns>/<gateway>
+    # [CUSTOMER] Set true ONLY on a bare/greenfield cluster where the agent gRPC
+    # gateway presents a SELF-SIGNED hub CA cert (CN=enbuild-hub-ca) — NOT a
+    # publicly-trusted cert like Big Bang's public-ingressgateway. When true, a
+    # spoke agent CANNOT verify the gateway cert unless you ALSO configure agent
+    # trust: enable enbuildBk.agentMtls (delivers the hub CA + mints per-spoke
+    # certs) or provision the hub CA bundle to the agent. Leaving trust unset with
+    # a self-signed edge makes agents silently time out dialing the hub for hours
+    # ("looks like a network problem but isn't" — the connect-back CA-trust trap).
+    # The agent-catrust-guard turns that into an immediate helm-install error.
+    # DEFAULT false = the Big Bang / publicly-trusted-cert assumption (byte-unchanged).
+    selfSignedHubCa: false
   # --- install-agent (how the hub installs the agent onto spoke clusters) ---
   reaperSvc:
     # [CUSTOMER] Operator Secret with REAPER_SVC_AWS_ACCESS_KEY_ID +
