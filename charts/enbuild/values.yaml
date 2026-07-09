@@ -371,7 +371,16 @@ enbuildBk:
     tlsServerName: ""             # [CUSTOMER] hub cert SAN for TLS SNI on the NLB-DNS path
     hubInternalIps: ""            # [CUSTOMER] legacy CSV of NLB IPs (air-gap /etc/hosts)
     # [INTERNAL] agent image + chart source pins (fleet-moves-together, ADR-0034).
-    agentImageTag: "ac99ae1830c427a65db31a6874e5d4414d90133f"
+    # agentImageTag MUST default empty. The agent version's single source of truth is
+    # the enbuild-agent CHART (ADR-0034/0047: version==appVersion==image.tag); install-agent
+    # resolves it from OCI. A NON-empty value here becomes the BE env ENBUILD_AGENT_IMAGE_TAG,
+    # which the catalog forwards into every launch — a stale value silently DOWNGRADES every
+    # spoke to an old agent (no ClusterComplianceReport relay / per-source lanes / LifecycleType 11),
+    # invisibly, on a fresh customer hub. It was hardcoded to a stale sha (ac99ae18) and poisoned
+    # rke2 launches. Keep it "" so launches ride the chart pin; set a value ONLY as a deliberate,
+    # maintained fleet-wide override (a per-catalog template pin still wins over it — BE fix,
+    # catalog.service.ts).
+    agentImageTag: ""
     chartRepo: "https://gitlab.com/enbuild-staging/iac-templates/platform-one-eks.git"
     # MUST track `main` — the maintained branch whose install-agent-core.sh lib and
     # enbuild-core/enbuild-stack charts are kept consistent together. The old
