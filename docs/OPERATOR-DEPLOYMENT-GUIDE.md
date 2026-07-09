@@ -48,7 +48,8 @@ entered in the ENBUILD admin UI; see the note above.)
 > `keycloak.demoRealm.enabled=true` (see `charts/enbuild/examples/values-quickstart.yaml`).
 > `pki.recreateHubIssuer` restores the `enbuild-hub-issuer` CA ClusterIssuer pointing
 > at the existing CA — it does not rotate certs (CA bootstrap: see
-> `charts/enbuild/docs/TIER2-LAUNCH-CAPABLE-STANDUP.md` §3).
+> `charts/enbuild/docs/LAUNCH-CAPABLE-STANDUP.md` §3, or
+> `charts/enbuild/scripts/create-hub-ca.sh`).
 
 > **Mission Apps (Iron Bank app-lane) prerequisites.** Deploying an Iron Bank
 > Mission App (podinfo, Postgres, … — the `/mission-apps` gallery) onto a managed

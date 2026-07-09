@@ -8,8 +8,14 @@
 #
 # This file is PRODUCTION-SAFE BY DEFAULT: Keycloak auth (the chart default; the
 # backend FAILS CLOSED without a token-verification source), real-DNS/cert
-# placeholders you replace, and NO pinned image SHAs (the released chart's tags
-# apply). It contains NO eval shortcuts.
+# placeholders you replace, and NO eval shortcuts.
+#
+# ⚠️ IMAGE TAGS — ALWAYS layer `-f deploy/customer-prototype/values-images.yaml`
+#   LAST. It pins the CURRENT validated image set (bumped as one coherent group).
+#   This overlay intentionally carries NO image tags so it never drifts behind the
+#   maintained pin file. Without values-images.yaml the chart defaults each tag to
+#   appVersion, which is NOT a published SHA → every pod ImagePullBackOffs.
+#     helm ... -f examples/values-aks.yaml -f deploy/customer-prototype/values-images.yaml
 #
 #   • Replace every `aks.example.com` with your real DNS suffix.
 #   • Point <console>.<domain>, <keycloak>.<domain>, hub-grpc.<domain> at the
@@ -25,8 +31,8 @@
 #     (keys `realm-enbuild.json` + `KC_BOOTSTRAP_ADMIN_PASSWORD`) hand-crafted out-of-band.
 #
 # THROWAWAY EVAL (no DNS/cert, self-contained auth): ALSO pass
-# examples/values-aks-eval.yaml AFTER this file —
-#   helm ... -f examples/values-aks.yaml -f examples/values-aks-eval.yaml
+# examples/dev/values-aks-eval.yaml AFTER this file —
+#   helm ... -f examples/values-aks.yaml -f examples/dev/values-aks-eval.yaml
 # That eval layer swaps in a nip.io domain, local auth, and pinned build SHAs.
 # NEVER use the eval layer for a real deployment.
 # =============================================================================
@@ -93,12 +99,9 @@ lightning_features:
 
 # ---- ENBUILD backend ---------------------------------------------------------
 enbuildBk:
-  # Image tags pinned to the VALIDATED ccm-p1 RELEASE (2026-07-06): backend +
-  # frontend carry the launch-dedup + v3-SKU fixes; user + mq-consumer are the
-  # current release. Bump all four as ONE coherent set on upgrade. (image.tag
-  # defaults to appVersion, which is a stale placeholder — pin explicitly.)
-  image:
-    tag: "792601ea9b8d8a091d80bd724e1ba5cd1338948d"
+  # Image tag: NOT pinned here — layer `-f deploy/customer-prototype/values-images.yaml`
+  # LAST for the current validated backend+frontend+user+mq-consumer set. This overlay
+  # carries no image tags so it never drifts behind the maintained pin file.
   #
   # Auth = keycloak (chart default). The backend FAILS CLOSED in keycloak mode
   # without a token-verification source, so keycloak.backendUrl below is required.
@@ -147,20 +150,17 @@ enbuildBk:
     enabled: false
 
 enbuildUi:
-  image:
-    tag: "401aab8df5acaec989de8b50204d1060371d16d2"   # validated ccm-p1 release (v3 dropdown dist)
+  # Image tag: see deploy/customer-prototype/values-images.yaml (layer it LAST).
   hostname: enbuild
   keycloak:
     url: https://keycloak.aks.example.com   # ← REPLACE (must equal enbuildBk.keycloak.url)
     realm: enbuild
     clientId: enbuild-ui
 
-enbuildUser:
-  image:
-    tag: "8d473885fc7945166def7411dd1ba56954eb2404"   # validated ccm-p1 release (current)
+# enbuildUser image tag: see deploy/customer-prototype/values-images.yaml (layer it LAST).
+# (No other enbuildUser overrides here — the chart defaults apply.)
 enbuildConsumer:
-  image:
-    tag: "93c52dfd602ec6c144079a51a7cd3ec9ec6f7da7"   # validated ccm-p1 release (current)
+  # Image tag: see deploy/customer-prototype/values-images.yaml (layer it LAST).
   # AKS Istio FIX (production-correct): exclude the mq consumer's AMQP outbound
   # from the sidecar (pairs with rabbitmq.podAnnotations above).
   podAnnotations:

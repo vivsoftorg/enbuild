@@ -6,7 +6,7 @@ each step links to the detailed doc for that piece.
 
 > **Which path am I on?**
 > - **AWS GovCloud / Big Bang (IL4+):** the hub runs inside Big Bang. Use the Big Bang
->   path — see [`charts/enbuild/docs/TIER2-LAUNCH-CAPABLE-STANDUP.md`](../charts/enbuild/docs/TIER2-LAUNCH-CAPABLE-STANDUP.md).
+>   path — see [`charts/enbuild/docs/LAUNCH-CAPABLE-STANDUP.md`](../charts/enbuild/docs/LAUNCH-CAPABLE-STANDUP.md).
 >   This document does **not** apply.
 > - **Commercial AKS / GKE (this document):** the hub runs on a vanilla managed
 >   Kubernetes cluster with an Istio edge. Spokes are launched into the **same cloud**
@@ -27,8 +27,8 @@ add the matching `-eval` overlay **after** it.
 
 | Cloud | Production overlay | Throwaway eval overlay |
 |-------|--------------------|------------------------|
-| Azure AKS | `examples/values-aks.yaml` | `examples/values-aks-eval.yaml` |
-| Google GKE | `examples/values-gke.yaml` | `examples/values-gke-eval.yaml` |
+| Azure AKS | `examples/values-aks.yaml` | `examples/dev/values-aks-eval.yaml` |
+| Google GKE | `examples/values-gke.yaml` | `examples/dev/values-gke-eval.yaml` |
 
 The eval overlays swap in a `nip.io` domain (no DNS setup), **local auth** (no external
 Keycloak IdP), the bundled demo realm, and cheaper storage. **Never use an `-eval`
@@ -165,4 +165,4 @@ live pod/service/deployment counts flowing to the hub.
 | Same-cloud connect-back procedure | `charts/enbuild/docs/CONNECT-BACK-SAME-CLOUD.md` |
 | GKE spoke catalog + operator setup | `platform-one-gke` repo |
 | AKS spoke catalog + operator setup | `platform-one-azure` repo |
-| AWS GovCloud / Big Bang path | `charts/enbuild/docs/TIER2-LAUNCH-CAPABLE-STANDUP.md` |
+| AWS GovCloud / Big Bang path | `charts/enbuild/docs/LAUNCH-CAPABLE-STANDUP.md` |

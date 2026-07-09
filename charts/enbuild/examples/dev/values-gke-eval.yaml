@@ -2,7 +2,7 @@
 # ENBUILD hub — GKE EVAL layer  ·  ⚠️  THROWAWAY EVAL ONLY — NOT FOR PRODUCTION
 # =============================================================================
 # Layer AFTER the production GKE overlay:
-#   helm ... -f examples/values-gke.yaml -f examples/values-gke-eval.yaml
+#   helm ... -f examples/values-gke.yaml -f examples/dev/values-gke-eval.yaml
 #
 # Swaps the production defaults for a self-contained eval on a GKE cluster with
 # NO real DNS/cert and NO external Keycloak users:
@@ -54,6 +54,14 @@ enbuildBk:
   gitlabConnection:
     host: "https://gitlab.com/"
     namespaceId: "70306609"
+  # full-platform-guard (G-2) FAILS `helm install` unless installAgent.hubUrl is
+  # set — it is the host:443 a launched spoke agent dials back to. Set it here so
+  # the eval overlay passes the guard with ZERO --set flags after the operator's
+  # `sed 's/REPLACE_LB_IP/<lb-ip>/'`. It MUST equal grpcVirtualService.host (below)
+  # with a :443 port; tlsServerName = the gateway cert SAN for the agent's TLS SNI.
+  installAgent:
+    hubUrl: "hub-grpc.REPLACE_LB_IP.nip.io:443"
+    tlsServerName: "hub-grpc.REPLACE_LB_IP.nip.io"
   keycloak:
     url: https://keycloak.REPLACE_LB_IP.nip.io
   grpcVirtualService:
