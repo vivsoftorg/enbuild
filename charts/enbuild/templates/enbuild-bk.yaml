@@ -279,6 +279,26 @@ spec:
         - name: NODE_EXTRA_CA_CERTS
           value: {{ printf "/etc/enbuild/siem-ca/%s" $siemCaKey | quote }}
         {{- end }}
+        {{- /*
+          Graduation gate (SOO §3.4 — prove an upgrade on a lower tier before prod).
+          OPTIONAL, defaults OFF. When enbuildBk.graduation.enabled is truthy, a Big
+          Bang functional/performance upgrade on a PROD-tier cluster is refused until
+          that version has proved out (applied + converged healthy) on the LOWER tier.
+          Read by the backend resolveGraduationConfig (ConfigService.get ?? env).
+          Backend restart on change. UNSET → nothing renders → stock deploy unchanged
+          (same operator-managed pattern as observability above — a helm upgrade must
+          NOT wipe this, which is exactly why it lives in values, not a hand-edited env).
+        */ -}}
+        {{- with (default (dict) .Values.enbuildBk.graduation) }}
+        {{- if .enabled }}
+        - name: GRADUATION_GATE_ENABLED
+          value: {{ .enabled | quote }}
+        - name: GRADUATION_PROD_CLUSTERS
+          value: {{ default "" .prodClusters | quote }}
+        - name: GRADUATION_LOWER_TIER_CLUSTER
+          value: {{ default "" .lowerTierCluster | quote }}
+        {{- end }}
+        {{- end }}
         envFrom:
         {{- /*
           MongoDB credentials. When mongodb.existingSecret is set the operator

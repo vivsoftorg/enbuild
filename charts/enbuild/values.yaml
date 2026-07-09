@@ -218,6 +218,17 @@ enbuildBk:
     existingSecret: ""
     privateKeyPem: ""             # dev/test inline path only
 
+  # --- [CUSTOMER] Graduation gate (SOO §3.4 — prove upgrades on a lower tier first) ---
+  # OPTIONAL, defaults OFF. When enabled, a Big Bang functional/performance upgrade on
+  # a PROD-tier cluster is refused until the same version has proved out (applied +
+  # converged healthy) on the LOWER tier. Both clusters need Big Bang + agent reporting.
+  # Backend restart on change. Leave enabled:false → NO env rendered → stock deploy
+  # byte-for-byte unchanged. (These render as the GRADUATION_* backend env vars.)
+  graduation:
+    enabled: false                # true/"true"/"1" arms the gate (off by default)
+    prodClusters: ""              # comma/space-separated prod-tier cluster slugs
+    lowerTierCluster: ""          # single lower-tier cluster slug (must ≠ prod)
+
   # --- [CUSTOMER] Observability & SIEM data sources (SOO §1.5) ---
   # Declarative, GitOps-repeatable config for the three observability surfaces so
   # the client never hand-edits the Deployment env (which a helm upgrade wipes).
