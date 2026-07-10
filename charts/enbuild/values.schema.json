@@ -137,6 +137,41 @@
           "type": "object",
           "properties": { "existingSecret": { "type": "string" } }
         },
+        "bbReleaseCatalog": {
+          "type": "object",
+          "properties": {
+            "host": { "type": "string", "pattern": "^https?://[^/]+(?:/.*)?$" },
+            "project": { "type": "string", "minLength": 1 },
+            "token": {
+              "type": "object",
+              "properties": {
+                "existingSecret": { "type": "string" },
+                "key": { "type": "string", "minLength": 1 }
+              }
+            },
+            "approvedVersions": {
+              "type": "array",
+              "uniqueItems": true,
+              "items": {
+                "type": "string",
+                "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+(?:[-+][0-9A-Za-z.-]+)?$"
+              }
+            },
+            "approvedMetadata": {
+              "type": "object",
+              "propertyNames": {
+                "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+(?:[-+][0-9A-Za-z.-]+)?$"
+              },
+              "additionalProperties": {
+                "type": "object",
+                "required": ["kubeVersion"],
+                "properties": {
+                  "kubeVersion": { "type": "string", "minLength": 1 }
+                }
+              }
+            }
+          }
+        },
         "securityTooling": {
           "type": "object",
           "properties": { "existingSecret": { "type": "string" } }

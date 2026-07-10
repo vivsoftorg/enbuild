@@ -39,6 +39,7 @@ entered in the ENBUILD admin UI; see the note above.)
 | `private-registry` (or your name) | `.dockerconfigjson` | Pulling first-party + dependency images from a private/Iron Bank registry. | Yes (private registry) |
 | `enbuild-security-tooling` (optional) | Twistlock/Anchore/Falco env | hub-self security views. | Optional |
 | `enbuild-export-signing` (optional) | `SIEM_SIGNING_KEY` | Signed `/audit/export-bundle`. | Optional |
+| `enbuild-bb-release-catalog` (optional) | `BB_RELEASE_GITLAB_TOKEN` | Read-only access to a private approved GitLab mirror used to verify exact Big Bang release tags and chart metadata before upgrade MRs. | Optional; only for a private mirror |
 | `<release>-keycloak-secrets` | `realm-enbuild.json`, `KC_BOOTSTRAP_ADMIN_PASSWORD` | Self-hosted Keycloak SSO (rendered when `keycloak.enabled=true`). Realm + admin password — never in git. | Yes when `keycloak.enabled` |
 
 > Keycloak (`keycloak.enabled`) and the PKI ClusterIssuer (`pki.recreateHubIssuer`)
@@ -75,6 +76,11 @@ kubectl -n "$NS" create secret generic enbuild-install-agent-creds \
   --from-literal=GITLAB_TOKEN='<gitlab PAT, read/write repos+registry>' \
   --from-literal=ENBUILD_REPO1_USER='<registry1.dso.mil user>' \
   --from-literal=ENBUILD_REPO1_TOKEN='<registry1.dso.mil token>'
+
+# Optional: read-only token for a private approved Big Bang release mirror.
+# Reference this Secret with enbuildBk.bbReleaseCatalog.token.existingSecret.
+kubectl -n "$NS" create secret generic enbuild-bb-release-catalog \
+  --from-literal=BB_RELEASE_GITLAB_TOKEN='<read-only mirror token>'
 
 # At-rest encryption key
 kubectl -n "$NS" create secret generic enbuild-encryption-key \

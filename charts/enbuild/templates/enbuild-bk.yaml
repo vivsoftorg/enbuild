@@ -299,6 +299,37 @@ spec:
           value: {{ default "" .lowerTierCluster | quote }}
         {{- end }}
         {{- end }}
+        {{- /*
+          SOO §3.4 authoritative Big Bang release catalog. The backend verifies
+          the exact release tag + chart metadata before authoring any lifecycle
+          MR. host/project make the authority portable to an approved GitLab
+          mirror. Air-gapped operators provide an explicit allowlist plus
+          kubeVersion metadata; toJson keeps the structured values surface from
+          forcing operators to hand-escape JSON. The mirror token is sourced
+          only from an operator-managed Secret. All lookups are nil-safe for
+          reuse-values upgrades from releases predating this block.
+        */ -}}
+        {{- $bbCatalog := default (dict) .Values.enbuildBk.bbReleaseCatalog }}
+        - name: BB_RELEASE_GITLAB_HOST
+          value: {{ default "https://repo1.dso.mil" $bbCatalog.host | quote }}
+        - name: BB_RELEASE_GITLAB_PROJECT
+          value: {{ default "big-bang/bigbang" $bbCatalog.project | quote }}
+        {{- with $bbCatalog.approvedVersions }}
+        - name: BB_RELEASE_APPROVED_VERSIONS
+          value: {{ join "," . | quote }}
+        {{- end }}
+        {{- with $bbCatalog.approvedMetadata }}
+        - name: BB_RELEASE_APPROVED_METADATA
+          value: {{ toJson . | quote }}
+        {{- end }}
+        {{- $bbCatalogToken := default (dict) $bbCatalog.token }}
+        {{- with $bbCatalogToken.existingSecret }}
+        - name: BB_RELEASE_GITLAB_TOKEN
+          valueFrom:
+            secretKeyRef:
+              name: {{ . | quote }}
+              key: {{ default "BB_RELEASE_GITLAB_TOKEN" $bbCatalogToken.key | quote }}
+        {{- end }}
         envFrom:
         {{- /*
           MongoDB credentials. When mongodb.existingSecret is set the operator

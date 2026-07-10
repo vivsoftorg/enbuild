@@ -229,6 +229,27 @@ enbuildBk:
     prodClusters: ""              # comma/space-separated prod-tier cluster slugs
     lowerTierCluster: ""          # single lower-tier cluster slug (must ≠ prod)
 
+  # --- [CUSTOMER] Authoritative Big Bang release catalog (SOO §3.4) ---
+  # Every Big Bang update/upgrade is checked against an exact published release
+  # before ENBUILD can open a GitOps MR. The defaults query Repo1. Customers with
+  # an approved GitLab mirror can rebind host/project without a product fork.
+  # For a private mirror, put BB_RELEASE_GITLAB_TOKEN in an operator-created
+  # Secret and reference it below; never place the token in values.
+  #
+  # Air-gapped sites can instead supply BOTH approvedVersions and matching
+  # approvedMetadata. kubeVersion is required so Kubernetes/Big Bang ordering
+  # remains fail-closed offline; an unlisted version or one without metadata is
+  # refused. When approvedVersions is non-empty it is the authority, so do not
+  # combine it with a remote mirror expecting the remote source to win.
+  bbReleaseCatalog:
+    host: "https://repo1.dso.mil"
+    project: "big-bang/bigbang"
+    token:
+      existingSecret: ""          # Secret containing the private-mirror token
+      key: "BB_RELEASE_GITLAB_TOKEN"
+    approvedVersions: []          # e.g. ["3.25.0", "3.26.0"]
+    approvedMetadata: {}          # e.g. {"3.26.0": {"kubeVersion": ">=1.31.0-0"}}
+
   # --- [CUSTOMER] Observability & SIEM data sources (SOO §1.5) ---
   # Declarative, GitOps-repeatable config for the three observability surfaces so
   # the client never hand-edits the Deployment env (which a helm upgrade wipes).

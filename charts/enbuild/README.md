@@ -120,6 +120,9 @@ entries in [`values.yaml`](values.yaml). The essential ones:
 | `enbuildBk.installAgent.hubUrl` / `.existingSecret` | `host:443` agents dial back to + the admin-creds Secret | `enbuild.apps.example.mil:443` / `enbuild-install-agent-creds` |
 | `enbuildBk.encryptionKey.existingSecret` | at-rest key Secret | `enbuild-encryption-key` |
 | `enbuildBk.messaging.existingSecret` | broker connection Secret | `enbuild-rabbitmq` |
+| `enbuildBk.bbReleaseCatalog.host` / `.project` | authoritative published Big Bang tags (defaults to Repo1; rebind for an approved mirror) | `https://gitlab.example.mil` / `platform/bigbang` |
+| `enbuildBk.bbReleaseCatalog.token.existingSecret` | optional private-mirror token Secret (key `BB_RELEASE_GITLAB_TOKEN`) | `enbuild-bb-release-catalog` |
+| `enbuildBk.bbReleaseCatalog.approvedVersions` / `.approvedMetadata` | air-gap-only exact release allowlist + required Kubernetes compatibility metadata | `["3.26.0"]` / `{"3.26.0":{"kubeVersion":">=1.31.0-0"}}` |
 | `mongodb.enabled` / `.existingSecret` / `.mongo_endpoint_override` | bundle vs external Mongo (always required either way) + creds | `false` / `enbuild-mongo` / external URI |
 | `rabbitmq.auth.existingPasswordSecret` / `.existingErlangSecret` | broker creds | `enbuild-rabbitmq` |
 | `keycloak.enabled` | deploy bundled SSO (else use an external IdP) | `true` |
