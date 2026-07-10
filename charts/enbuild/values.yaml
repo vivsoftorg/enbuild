@@ -355,12 +355,12 @@ enbuildBk:
     gateway: istio-gateway/public-ingressgateway   # <ns>/<gateway>
   # --- install-agent (how the hub installs the agent onto spoke clusters) ---
   reaperSvc:
-    # [CUSTOMER] Operator Secret with REAPER_SVC_AWS_ACCESS_KEY_ID +
-    # REAPER_SVC_AWS_SECRET_ACCESS_KEY for the teardown Reaper's cloud-release
-    # gate + tag-then-delete ELB sweep. Without it, EVERY cluster destroy
-    # orphans the Istio gateway ELB (gate times out, sweep is a no-op). The svc
-    # identity needs AddTags + tag-conditioned elb:DeleteLoadBalancer. Same
-    # operator-managed-secret idiom as installAgent. (CCM orphan-ELB fix.)
+    # [CUSTOMER] Optional DEDICATED operator Secret with
+    # REAPER_SVC_AWS_ACCESS_KEY_ID + REAPER_SVC_AWS_SECRET_ACCESS_KEY for the
+    # teardown Reaper. The same keys may instead live in installAgent.existingSecret:
+    # the backend envFroms that entire Secret, and the customer hub IaC uses
+    # that existing path when create_reaper_iam=true. Do not add explicit env
+    # entries. Without either source, cloud reads fail closed and sweep is off.
     existingSecret: ""
   installAgent:
     # [CUSTOMER] Operator Secret with GITLAB_TOKEN + ENBUILD_REPO1_USER +

@@ -400,9 +400,12 @@ spec:
           forDelete returns null → cloudReleased() never confirms release (times
           out and hands off to terraform destroy with the ELB still live) and the
           sweep is a no-op → EVERY cluster destroy orphans the Istio gateway ELB.
-          Same operator-managed existingSecret idiom as installAgent above;
-          nil-safe (unset = pre-fix behavior). Rotation = recreate Secret +
-          rollout restart BE (envFrom read at pod start).
+          Same operator-managed existingSecret idiom as installAgent above.
+          The keys MAY live in installAgent.existingSecret instead — that whole
+          Secret is already envFrom'd, which is the hub IaC's default path.
+          nil-safe (unset = installAgent path or pre-fix behavior). Rotation =
+          update the Secret and change enbuildBk.podAnnotations with its checksum
+          (the IaC does this), or explicitly roll the backend pod.
         */}}
         {{- with (default (dict) .Values.enbuildBk.reaperSvc).existingSecret }}
         - secretRef:

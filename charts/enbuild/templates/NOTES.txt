@@ -59,28 +59,44 @@
     enbuildBk.observability.* in values is unaffected by the key — see
     docs/OPERATOR-DEPLOYMENT-GUIDE.md.)
 {{- end }}
-{{- if not (default (dict) .Values.enbuildBk.reaperSvc).existingSecret }}
+{{- /*
+  Reaper credentials may ride either the dedicated reaperSvc Secret OR the
+  installAgent Secret. The backend envFroms both whole Secrets, and the
+  customer hub IaC deliberately uses the existing installAgent path so key
+  rotation has one source of truth. Inspect the live pre-created installAgent
+  Secret before warning; a name alone is not proof that both keys exist.
+*/ -}}
+{{- $reaperSecretName := (default (dict) .Values.enbuildBk.reaperSvc).existingSecret | default "" -}}
+{{- $installAgentSecretName := (default (dict) .Values.enbuildBk.installAgent).existingSecret | default "" -}}
+{{- $installAgentSecret := dict -}}
+{{- if $installAgentSecretName -}}
+{{- $installAgentSecret = (lookup "v1" "Secret" .Release.Namespace $installAgentSecretName) | default (dict) -}}
+{{- end -}}
+{{- $installAgentSecretData := dig "data" (dict) $installAgentSecret -}}
+{{- $installAgentHasReaper := and (hasKey $installAgentSecretData "REAPER_SVC_AWS_ACCESS_KEY_ID") (hasKey $installAgentSecretData "REAPER_SVC_AWS_SECRET_ACCESS_KEY") -}}
+{{- if and (not $reaperSecretName) (not $installAgentHasReaper) }}
 
-⚠️  Teardown Reaper cloud-release creds are NOT set — cluster DESTROY will orphan the gateway ELB.
+⚠️  Teardown Reaper cloud-release creds were NOT detected — cluster DESTROY cannot prove or sweep AWS residuals.
 
-    enbuildBk.reaperSvc.existingSecret is empty, so the teardown Reaper has no
-    AWS identity for its cloud-release gate + tag-then-delete ELB sweep. Every
-    cluster destroy then TIMES OUT the release gate and the sweep is a no-op:
-    the Istio ingressgateway's ELB is left ORPHANED in the account (a silent
-    recurring cloud cost) and teardown stalls at "verifying". The Secret needs
-    REAPER_SVC_AWS_ACCESS_KEY_ID + REAPER_SVC_AWS_SECRET_ACCESS_KEY for an
-    identity with AddTags + tag-conditioned elb:DeleteLoadBalancer.
+    Neither enbuildBk.reaperSvc.existingSecret nor the live Secret referenced by
+    enbuildBk.installAgent.existingSecret supplied BOTH
+    REAPER_SVC_AWS_ACCESS_KEY_ID + REAPER_SVC_AWS_SECRET_ACCESS_KEY. The release
+    gate therefore holds on an unconfirmed cloud read and the residual sweep is
+    disabled; teardown does not falsely report the account clean.
 
-    1) Create the Secret:
-         kubectl -n {{ .Release.Namespace }} create secret generic {{ .Release.Name }}-reaper-svc \
-           --from-literal=REAPER_SVC_AWS_ACCESS_KEY_ID='<access key id>' \
-           --from-literal=REAPER_SVC_AWS_SECRET_ACCESS_KEY='<secret access key>'
+    Preferred customer-hub path: leave create_reaper_iam=true in
+    terraform/hub-cluster/aws-eks. Terraform creates the same-account,
+    tag-scoped IAM user and adds both keys to the EXISTING install-agent Secret;
+    no explicit Deployment env entries or second Secret are required.
 
-    2) Pin it and roll:
-         helm upgrade {{ .Release.Name }} . --reuse-values \
-           --set enbuildBk.reaperSvc.existingSecret={{ .Release.Name }}-reaper-svc
+    Chart-only/BYO path: add the paired keys to the operator-managed Secret
+    referenced by enbuildBk.installAgent.existingSecret, or point
+    enbuildBk.reaperSvc.existingSecret at a dedicated Secret. Then roll the
+    backend pod (or change enbuildBk.podAnnotations with a Secret checksum).
 
-    (Deploys with no cluster-destroy lifecycle can ignore this.)
+    The generated identity is intentionally SAME-ACCOUNT only. Cross-account
+    projects require a per-project AssumeRole cleanup identity; the backend
+    fails closed instead of running the global Reaper against the wrong account.
 {{- end }}
 {{- if and (not (default (dict) .Values.enbuildBk.messaging).existingSecret) (not .Values.rabbitmq.enabled) }}
 
