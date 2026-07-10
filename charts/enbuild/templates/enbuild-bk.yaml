@@ -394,15 +394,17 @@ spec:
         {{- end }}
         {{- /*
           REAPER_SVC delete credential (CCM orphan-ELB permanent fix, 2026-06-28).
-          REAPER_SVC_AWS_ACCESS_KEY_ID / REAPER_SVC_AWS_SECRET_ACCESS_KEY for the
-          teardown Reaper's cloud-release GATE (AWS Describe poll) and its
-          tag-then-delete residual SWEEP. WITHOUT this wired, teardown-creds
-          forDelete returns null → cloudReleased() never confirms release (times
-          out and hands off to terraform destroy with the ELB still live) and the
-          sweep is a no-op → EVERY cluster destroy orphans the Istio gateway ELB.
+          REAPER_SVC_AWS_ACCESS_KEY_ID / REAPER_SVC_AWS_SECRET_ACCESS_KEY /
+          REAPER_SVC_AWS_ACCOUNT_ID for the teardown Reaper's cloud-release GATE
+          (AWS Describe poll) and its tag-then-delete residual SWEEP. Optional
+          REAPER_SVC_RESOURCE_TAG_KEY / _VALUE must be a complete pair matching
+          the IAM tag gate; omitting both uses enbuild-reaper-approved=true.
+          WITHOUT a complete credential source, the delete path fails closed and
+          the residual sweep is a no-op.
           Same operator-managed existingSecret idiom as installAgent above.
-          The keys MAY live in installAgent.existingSecret instead — that whole
-          Secret is already envFrom'd, which is the hub IaC's default path.
+          The complete required set MAY live in installAgent.existingSecret
+          instead — that whole Secret is already envFrom'd, which is the hub
+          IaC's default path. Do not split the set across the two Secrets.
           nil-safe (unset = installAgent path or pre-fix behavior). Rotation =
           update the Secret and change enbuildBk.podAnnotations with its checksum
           (the IaC does this), or explicitly roll the backend pod.

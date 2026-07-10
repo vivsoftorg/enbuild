@@ -63,33 +63,72 @@
   Reaper credentials may ride either the dedicated reaperSvc Secret OR the
   installAgent Secret. The backend envFroms both whole Secrets, and the
   customer hub IaC deliberately uses the existing installAgent path so key
-  rotation has one source of truth. Inspect the live pre-created installAgent
-  Secret before warning; a name alone is not proof that both keys exist.
+  rotation has one source of truth. Inspect BOTH live pre-created Secrets before
+  warning: a configured name is not proof of a complete, non-empty contract.
+  Each source stands alone so split credentials are never blessed. A custom
+  resource marker is optional, but its key/value form an atomic pair.
 */ -}}
-{{- $reaperSecretName := (default (dict) .Values.enbuildBk.reaperSvc).existingSecret | default "" -}}
-{{- $installAgentSecretName := (default (dict) .Values.enbuildBk.installAgent).existingSecret | default "" -}}
+{{- $reaperSecretName := (default (dict) .Values.enbuildBk.reaperSvc).existingSecret | default "" | toString | trim -}}
+{{- $installAgentSecretName := (default (dict) .Values.enbuildBk.installAgent).existingSecret | default "" | toString | trim -}}
+{{- $reaperSecret := dict -}}
+{{- if $reaperSecretName -}}
+{{- $reaperSecret = (lookup "v1" "Secret" .Release.Namespace $reaperSecretName) | default (dict) -}}
+{{- end -}}
 {{- $installAgentSecret := dict -}}
 {{- if $installAgentSecretName -}}
 {{- $installAgentSecret = (lookup "v1" "Secret" .Release.Namespace $installAgentSecretName) | default (dict) -}}
 {{- end -}}
+{{- $reaperSecretData := dig "data" (dict) $reaperSecret -}}
 {{- $installAgentSecretData := dig "data" (dict) $installAgentSecret -}}
-{{- $installAgentHasReaper := and (hasKey $installAgentSecretData "REAPER_SVC_AWS_ACCESS_KEY_ID") (hasKey $installAgentSecretData "REAPER_SVC_AWS_SECRET_ACCESS_KEY") -}}
-{{- if and (not $reaperSecretName) (not $installAgentHasReaper) }}
+{{- $reaperAccessKey := get $reaperSecretData "REAPER_SVC_AWS_ACCESS_KEY_ID" | default "" | toString | b64dec | trim -}}
+{{- $reaperSecretKey := get $reaperSecretData "REAPER_SVC_AWS_SECRET_ACCESS_KEY" | default "" | toString | b64dec | trim -}}
+{{- $reaperAccountId := get $reaperSecretData "REAPER_SVC_AWS_ACCOUNT_ID" | default "" | toString | b64dec | trim -}}
+{{- $reaperMarkerKey := get $reaperSecretData "REAPER_SVC_RESOURCE_TAG_KEY" | default "" | toString | b64dec | trim -}}
+{{- $reaperMarkerValue := get $reaperSecretData "REAPER_SVC_RESOURCE_TAG_VALUE" | default "" | toString | b64dec | trim -}}
+{{- $reaperMarkerValid := or (and (eq $reaperMarkerKey "") (eq $reaperMarkerValue "")) (and (ne $reaperMarkerKey "") (ne $reaperMarkerValue "")) -}}
+{{- $reaperHasContract := and (ne $reaperAccessKey "") (ne $reaperSecretKey "") (regexMatch "^[0-9]{12}$" $reaperAccountId) $reaperMarkerValid -}}
+{{- $installAccessKey := get $installAgentSecretData "REAPER_SVC_AWS_ACCESS_KEY_ID" | default "" | toString | b64dec | trim -}}
+{{- $installSecretKey := get $installAgentSecretData "REAPER_SVC_AWS_SECRET_ACCESS_KEY" | default "" | toString | b64dec | trim -}}
+{{- $installAccountId := get $installAgentSecretData "REAPER_SVC_AWS_ACCOUNT_ID" | default "" | toString | b64dec | trim -}}
+{{- $installMarkerKey := get $installAgentSecretData "REAPER_SVC_RESOURCE_TAG_KEY" | default "" | toString | b64dec | trim -}}
+{{- $installMarkerValue := get $installAgentSecretData "REAPER_SVC_RESOURCE_TAG_VALUE" | default "" | toString | b64dec | trim -}}
+{{- $installMarkerValid := or (and (eq $installMarkerKey "") (eq $installMarkerValue "")) (and (ne $installMarkerKey "") (ne $installMarkerValue "")) -}}
+{{- $installAgentHasContract := and (ne $installAccessKey "") (ne $installSecretKey "") (regexMatch "^[0-9]{12}$" $installAccountId) $installMarkerValid -}}
+{{- $installHasAnyField := or (hasKey $installAgentSecretData "REAPER_SVC_AWS_ACCESS_KEY_ID") (hasKey $installAgentSecretData "REAPER_SVC_AWS_SECRET_ACCESS_KEY") (hasKey $installAgentSecretData "REAPER_SVC_AWS_ACCOUNT_ID") (hasKey $installAgentSecretData "REAPER_SVC_RESOURCE_TAG_KEY") (hasKey $installAgentSecretData "REAPER_SVC_RESOURCE_TAG_VALUE") -}}
+{{- $reaperSourceAcceptable := or (eq $reaperSecretName "") $reaperHasContract -}}
+{{- $installSourceAcceptable := or (eq $installAgentSecretName "") (and (not (empty $installAgentSecret)) (or (not $installHasAnyField) $installAgentHasContract)) -}}
+{{- $hasUsableReaperContract := and (or $reaperHasContract $installAgentHasContract) $reaperSourceAcceptable $installSourceAcceptable -}}
+{{- if not $hasUsableReaperContract }}
 
-⚠️  Teardown Reaper cloud-release creds were NOT detected — cluster DESTROY cannot prove or sweep AWS residuals.
+⚠️  A complete Teardown Reaper contract was NOT detected — cluster DESTROY cannot prove or sweep AWS residuals.
 
-    Neither enbuildBk.reaperSvc.existingSecret nor the live Secret referenced by
-    enbuildBk.installAgent.existingSecret supplied BOTH
-    REAPER_SVC_AWS_ACCESS_KEY_ID + REAPER_SVC_AWS_SECRET_ACCESS_KEY. The release
-    gate therefore holds on an unconfirmed cloud read and the residual sweep is
-    disabled; teardown does not falsely report the account clean.
+    No usable self-contained contract was found in the live Secrets referenced
+    by enbuildBk.reaperSvc.existingSecret or
+    enbuildBk.installAgent.existingSecret:
+      • REAPER_SVC_AWS_ACCESS_KEY_ID       (non-empty)
+      • REAPER_SVC_AWS_SECRET_ACCESS_KEY   (non-empty)
+      • REAPER_SVC_AWS_ACCOUNT_ID          (12-digit same-account ID)
+
+    Do not split these keys across the two Secrets. The dedicated reaperSvc
+    Secret must be complete; an installAgent Secret with any REAPER_SVC_* field
+    must also be complete so its envFrom values cannot create a mixed contract.
+    A custom IAM approval marker is optional, but REAPER_SVC_RESOURCE_TAG_KEY and
+    REAPER_SVC_RESOURCE_TAG_VALUE must either BOTH be non-empty or BOTH be
+    absent. Omitting both uses the safe product default
+    enbuild-reaper-approved=true. A custom pair must exactly match the Reaper
+    IAM policy and must not reuse an ordinary tag already present on resources.
+
+    With no complete source, the release gate holds on an unconfirmed cloud
+    read and the residual sweep is disabled; teardown does not falsely report
+    the account clean.
 
     Preferred customer-hub path: leave create_reaper_iam=true in
     terraform/hub-cluster/aws-eks. Terraform creates the same-account,
-    tag-scoped IAM user and adds both keys to the EXISTING install-agent Secret;
-    no explicit Deployment env entries or second Secret are required.
+    tag-scoped IAM user and adds the complete contract to the EXISTING
+    install-agent Secret; no explicit Deployment env entries or second Secret
+    are required.
 
-    Chart-only/BYO path: add the paired keys to the operator-managed Secret
+    Chart-only/BYO path: add the complete contract to the operator-managed Secret
     referenced by enbuildBk.installAgent.existingSecret, or point
     enbuildBk.reaperSvc.existingSecret at a dedicated Secret. Then roll the
     backend pod (or change enbuildBk.podAnnotations with a Secret checksum).

@@ -356,11 +356,15 @@ enbuildBk:
   # --- install-agent (how the hub installs the agent onto spoke clusters) ---
   reaperSvc:
     # [CUSTOMER] Optional DEDICATED operator Secret with
-    # REAPER_SVC_AWS_ACCESS_KEY_ID + REAPER_SVC_AWS_SECRET_ACCESS_KEY for the
-    # teardown Reaper. The same keys may instead live in installAgent.existingSecret:
-    # the backend envFroms that entire Secret, and the customer hub IaC uses
-    # that existing path when create_reaper_iam=true. Do not add explicit env
-    # entries. Without either source, cloud reads fail closed and sweep is off.
+    # REAPER_SVC_AWS_ACCESS_KEY_ID + REAPER_SVC_AWS_SECRET_ACCESS_KEY +
+    # REAPER_SVC_AWS_ACCOUNT_ID for the same-account teardown Reaper. The same
+    # complete set may instead live in installAgent.existingSecret: the backend
+    # envFroms that entire Secret, and the customer hub IaC uses that existing
+    # path when create_reaper_iam=true. Do not split the required set across the
+    # two Secrets. Optional REAPER_SVC_RESOURCE_TAG_KEY + _VALUE must be supplied
+    # together and exactly match the IAM tag gate; omitting both uses the safe
+    # enbuild-reaper-approved=true product default. Without one complete source,
+    # cloud reads fail closed and the residual sweep is off.
     existingSecret: ""
   installAgent:
     # [CUSTOMER] Operator Secret with GITLAB_TOKEN + ENBUILD_REPO1_USER +

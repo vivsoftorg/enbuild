@@ -62,19 +62,29 @@ kubectl -n enbuild create secret generic enbuild-ib-install-agent \
   --from-literal=ENBUILD_REPO1_TOKEN='<registry1.dso.mil pull token>'
 ```
 
-The teardown Reaper's cloud credential is a **separate** Secret wired via its own
-value (`enbuildBk.reaperSvc.existingSecret`) — *not* the install-agent Secret
-above (`create-bootstrap-secrets.sh` does not emit it, so create it by hand):
+The teardown Reaper's same-account cloud credential can ride the existing
+install-agent Secret (the customer hub IaC's default) or a **separate** Secret
+wired via `enbuildBk.reaperSvc.existingSecret`. Each Secret is evaluated as a
+self-contained source; do not split the required keys between them. For the
+dedicated chart-only/BYO path, create:
 
 ```bash
 kubectl -n enbuild create secret generic enbuild-ib-reaper-svc \
   --from-literal=REAPER_SVC_AWS_ACCESS_KEY_ID='<aws key for the teardown reaper>' \
-  --from-literal=REAPER_SVC_AWS_SECRET_ACCESS_KEY='<aws secret>'
+  --from-literal=REAPER_SVC_AWS_SECRET_ACCESS_KEY='<aws secret>' \
+  --from-literal=REAPER_SVC_AWS_ACCOUNT_ID='<12-digit aws account id>' \
+  --from-literal=REAPER_SVC_RESOURCE_TAG_KEY='enbuild-reaper-approved' \
+  --from-literal=REAPER_SVC_RESOURCE_TAG_VALUE='true'
 ```
 
-Without the `enbuild-ib-reaper-svc` keys teardowns still run, but the cloud-release
-gate times out and every destroy orphans the spoke's Istio gateway ELB — see the
-`enbuildBk.reaperSvc` comment in [`values.yaml`](../values.yaml).
+The access key, secret key, and account ID are all required and must describe a
+same-account identity. The marker key/value are optional only as a pair: omit
+both to use the safe `enbuild-reaper-approved=true` product default, or set both
+to the exact pair enforced by the identity's IAM tag gate. Never reuse an
+ordinary tag already present on resources as this approval marker. Without one
+complete credential source, teardown still runs but the tag-scoped residual
+sweep is input-gated and fails closed; see the `enbuildBk.reaperSvc` comment in
+[`values.yaml`](../values.yaml).
 
 ## 3. Hub PKI (mTLS hub↔spoke) — one-time CA bootstrap
 
@@ -129,7 +139,8 @@ enbuildBk:
     hubUrl: <hub-grpc-host>:443          # what spoke agents dial back to
     tlsServerName: <cert-SAN>            # SNI override, only if the DNS host differs from the cert SAN
   reaperSvc:
-    existingSecret: enbuild-ib-reaper-svc  # teardown Reaper cloud creds (REAPER_SVC_*); omit to skip
+    # Complete same-account REAPER_SVC_* contract; may instead live in installAgent Secret.
+    existingSecret: enbuild-ib-reaper-svc
   grpcVirtualService:
     enabled: true
     gateway: <ns>/<gateway>              # YOUR Istio gateway, e.g. istio-gateway/public-ingressgateway
