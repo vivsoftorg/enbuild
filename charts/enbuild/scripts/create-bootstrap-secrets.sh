@@ -19,6 +19,7 @@
 #   enbuild-ib-rabbitmq-creds    rabbitmq-password / rabbitmq-erlang-cookie             (rabbitmq.auth.existing*Secret)
 #   enbuild-ib-image-pull-secret .dockerconfigjson (registry1 + gitlab)                 (global.imagePullSecretName)
 #   enbuild-ib-install-agent     GITLAB_TOKEN/ENBUILD_REPO1_USER/ENBUILD_REPO1_TOKEN    (enbuildBk.installAgent.existingSecret) [optional]
+#   enbuild-ib-reaper-svc        REAPER_SVC_AWS_ACCESS_KEY_ID/_SECRET_ACCESS_KEY/_ACCOUNT_ID (enbuildBk.reaperSvc.existingSecret) [optional, cluster destroy]
 #   enbuild-ib-observability     SIEM_AUTH_HEADER/PROMETHEUS_TOKEN/LOKI_TOKEN (subset)  (enbuildBk.observability.existingSecret) [optional, SOO §1.5]
 #   enbuild-ib-export-signing    SIEM_SIGNING_KEY (ECDSA P-256 PEM, auto-generated)     (enbuildBk.exportSigning.existingSecret) [recommended, CCM-32 Auditable]
 #
@@ -48,6 +49,23 @@ GITLAB_TOKEN="${GITLAB_TOKEN:-}"
 IA_GITLAB_TOKEN="${IA_GITLAB_TOKEN:-}"
 IA_REPO1_USER="${IA_REPO1_USER:-${REPO1_USER}}"
 IA_REPO1_TOKEN="${IA_REPO1_TOKEN:-${REPO1_TOKEN}}"
+
+# --- teardown Reaper delete credentials (OPTIONAL). Only needed for cluster
+#     DESTROY (the cloud-release gate + tag-then-delete ELB sweep). WITHOUT them,
+#     teardown orphans the Istio gateway ELB. The BE enforces an account-scope
+#     contract (teardown-creds.service.ts): if the delete creds are set, the
+#     12-digit REAPER_SVC_AWS_ACCOUNT_ID is REQUIRED (it refuses an unscoped cloud
+#     read + validates the id == the account the creds resolve to), so all three
+#     are written together. The complete set may live here in a DEDICATED reaper-svc
+#     Secret (enbuildBk.reaperSvc.existingSecret) OR in the install-agent Secret —
+#     do NOT split it across both (chart NOTES validates each source as a whole).
+#     Optional REAPER_RESOURCE_TAG_KEY/_VALUE narrow the ELB tag gate (must match
+#     the IAM condition); omit both to use the enbuild-reaper-approved=true default. ---
+REAPER_ACCESS_KEY_ID="${REAPER_ACCESS_KEY_ID:-}"
+REAPER_SECRET_ACCESS_KEY="${REAPER_SECRET_ACCESS_KEY:-}"
+REAPER_ACCOUNT_ID="${REAPER_ACCOUNT_ID:-}"            # 12-digit AWS account the creds resolve to (REQUIRED with the above)
+REAPER_RESOURCE_TAG_KEY="${REAPER_RESOURCE_TAG_KEY:-}"
+REAPER_RESOURCE_TAG_VALUE="${REAPER_RESOURCE_TAG_VALUE:-}"
 
 # --- observability/SIEM bearer tokens (OPTIONAL, SOO §1.5). Only the SECRET
 #     tokens go here; the non-secret endpoints are set in values
@@ -90,7 +108,7 @@ kubectl get namespace "$NAMESPACE" >/dev/null 2>&1 || { log "creating namespace 
 # Bundled Mongo (mongodb.enabled=true) hardcodes envFrom <release>-mongo-secrets,
 # so the name MUST be exactly this. The backend assembles MONGODB_ENDPOINT from
 # these fields. MONGO_SERVER points at the bundled single-node service.
-section "1/8 MongoDB credentials"
+section "1/9 MongoDB credentials"
 if secret_exists "${RELEASE}-mongo-secrets" && [ "$FORCE" != "1" ]; then
   log "exists, kept: ${RELEASE}-mongo-secrets"
 else
@@ -103,14 +121,14 @@ else
 fi
 
 # 2) At-rest encryption key ----------------------------------------------------
-section "2/8 Backend at-rest ENCRYPTION_KEY"
+section "2/9 Backend at-rest ENCRYPTION_KEY"
 apply_secret "${RELEASE}-encryption-key" generic "${RELEASE}-encryption-key" \
   --from-literal=ENCRYPTION_KEY="$(rand 48)"
 
 # 3+4) RabbitMQ broker password + erlang cookie + backend connection string ----
 # ONE password drives both the broker (rabbitmq-password) and the backend's
 # RABBIT_MQ_CONNECTION_STRING — they can never diverge.
-section "3/8 RabbitMQ credentials (broker) + 4/8 backend connection string"
+section "3/9 RabbitMQ credentials (broker) + 4/9 backend connection string"
 if secret_exists "${RELEASE}-rabbitmq-creds" && [ "$FORCE" != "1" ]; then
   log "exists, kept: ${RELEASE}-rabbitmq-creds (reusing its password for messaging)"
   RMQ_PW="$(kubectl -n "$NAMESPACE" get secret "${RELEASE}-rabbitmq-creds" -o jsonpath='{.data.rabbitmq-password}' | base64 -d)"
@@ -127,7 +145,7 @@ kubectl -n "$NAMESPACE" create secret generic "${RELEASE}-messaging" \
 log "created/updated: ${RELEASE}-messaging"
 
 # 5) Image pull secret (combined registries) -----------------------------------
-section "5/8 Image-pull secret (${GITLAB_REGISTRY} + ${REPO1_REGISTRY})"
+section "5/9 Image-pull secret (${GITLAB_REGISTRY} + ${REPO1_REGISTRY})"
 if secret_exists "${RELEASE}-image-pull-secret" && [ "$FORCE" != "1" ]; then
   log "exists, kept: ${RELEASE}-image-pull-secret"
 elif [ -n "$REPO1_USER$REPO1_TOKEN$GITLAB_USER$GITLAB_TOKEN" ]; then
@@ -155,7 +173,7 @@ else
 fi
 
 # 6) install-agent secret (OPTIONAL — only for catalog launches) ---------------
-section "6/8 install-agent secret (optional — catalog launches)"
+section "6/9 install-agent secret (optional — catalog launches)"
 if [ -n "$IA_GITLAB_TOKEN" ]; then
   apply_secret "${RELEASE}-install-agent" generic "${RELEASE}-install-agent" \
     --from-literal=GITLAB_TOKEN="$IA_GITLAB_TOKEN" \
@@ -166,8 +184,36 @@ else
   log "catalog LAUNCHES need it (enbuildBk.installAgent.existingSecret)."
 fi
 
-# 7) observability/SIEM bearer tokens (OPTIONAL — SOO §1.5) ---------------------
-section "7/8 observability/SIEM secret (optional — SIEM/Loki/Prometheus tokens)"
+# 7) teardown Reaper secret (OPTIONAL — cluster DESTROY / ELB reclaim) ----------
+# Dedicated reaper-svc Secret (enbuildBk.reaperSvc.existingSecret) with the complete
+# same-account delete-cred set. All three core keys go together: the BE HALTS the
+# residual sweep if REAPER_SVC_AWS_ACCOUNT_ID is absent or mismatched (account-scope
+# safety contract). Created only when REAPER_ACCESS_KEY_ID is set; the optional
+# resource-tag pair is added only when BOTH are provided.
+section "7/9 teardown Reaper secret (optional — cluster destroy / ELB reclaim)"
+if [ -n "$REAPER_ACCESS_KEY_ID" ]; then
+  if [ -z "$REAPER_ACCOUNT_ID" ]; then
+    log "WARNING — REAPER_ACCESS_KEY_ID set but REAPER_ACCOUNT_ID is EMPTY. The BE"
+    log "requires the 12-digit account id whenever delete creds are configured, or"
+    log "teardown HALTS at the sweep. Set REAPER_ACCOUNT_ID and re-run."
+  fi
+  set -- generic "${RELEASE}-reaper-svc" \
+    --from-literal=REAPER_SVC_AWS_ACCESS_KEY_ID="$REAPER_ACCESS_KEY_ID" \
+    --from-literal=REAPER_SVC_AWS_SECRET_ACCESS_KEY="$REAPER_SECRET_ACCESS_KEY" \
+    --from-literal=REAPER_SVC_AWS_ACCOUNT_ID="$REAPER_ACCOUNT_ID"
+  if [ -n "$REAPER_RESOURCE_TAG_KEY" ] && [ -n "$REAPER_RESOURCE_TAG_VALUE" ]; then
+    set -- "$@" --from-literal=REAPER_SVC_RESOURCE_TAG_KEY="$REAPER_RESOURCE_TAG_KEY" \
+                --from-literal=REAPER_SVC_RESOURCE_TAG_VALUE="$REAPER_RESOURCE_TAG_VALUE"
+  fi
+  apply_secret "${RELEASE}-reaper-svc" "$@"
+  log "set enbuildBk.reaperSvc.existingSecret=${RELEASE}-reaper-svc"
+else
+  log "SKIPPED — no REAPER_ACCESS_KEY_ID. Hub + launches work without it; cluster"
+  log "DESTROY needs it (enbuildBk.reaperSvc.existingSecret) or ELBs orphan on teardown."
+fi
+
+# 8) observability/SIEM bearer tokens (OPTIONAL — SOO §1.5) ---------------------
+section "8/9 observability/SIEM secret (optional — SIEM/Loki/Prometheus tokens)"
 if [ -n "$OBS_SIEM_AUTH_HEADER$OBS_PROMETHEUS_TOKEN$OBS_LOKI_TOKEN" ]; then
   # Only include the keys actually provided (any subset).
   set -- generic "${RELEASE}-observability"
@@ -188,7 +234,7 @@ fi
 # returns signed:false with an honest verifyHint. Auto-generated + IDEMPOTENT:
 # kept on re-run so the public key an auditor pinned stays stable (FORCE=1 to
 # rotate). Wired via enbuildBk.exportSigning.existingSecret in all 3 postures.
-section "8/8 audit-export signing key (SIEM_SIGNING_KEY, ECDSA P-256)"
+section "9/9 audit-export signing key (SIEM_SIGNING_KEY, ECDSA P-256)"
 if secret_exists "${RELEASE}-export-signing" && [ "$FORCE" != "1" ]; then
   log "exists, kept: ${RELEASE}-export-signing  (FORCE=1 to rotate the signing key)"
 elif command -v openssl >/dev/null 2>&1; then
@@ -204,7 +250,7 @@ else
 fi
 
 section "Done. Secrets in ns/$NAMESPACE:"
-kubectl -n "$NAMESPACE" get secret | grep -E "^${RELEASE}-(mongo-secrets|encryption-key|messaging|rabbitmq-creds|image-pull-secret|install-agent|observability|export-signing)" || true
+kubectl -n "$NAMESPACE" get secret | grep -E "^${RELEASE}-(mongo-secrets|encryption-key|messaging|rabbitmq-creds|image-pull-secret|install-agent|reaper-svc|observability|export-signing)" || true
 cat <<EOF
 
 Next: helm upgrade --install ${RELEASE} . -n ${NAMESPACE} --create-namespace \\
