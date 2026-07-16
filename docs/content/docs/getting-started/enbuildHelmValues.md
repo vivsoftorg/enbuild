@@ -192,6 +192,7 @@ The following key value pairs are used to configure ENBUILD.
 | `enbuildCTF.cors_origins`               | Allowed CORS origins for CTF backend                                   | `['http://localhost:5173','http://localhost:5000','http://localhost:3000']` |
 | `enbuildCTF.log_level`                  | Log level for CTF backend                                              | `DEBUG`                                                                     |
 | `enbuildCTF.aws_region`                 | AWS region for CTF backend to use AWS services like S3                 | `us-east-1`                                                                 |
+| `enbuildCTF.model_id`                   | Model ID for CTF backend to use with AI services                       | `us.anthropic.claude-haiku-4-5-20251001-v1:0`                               |
 | `enbuildCTF.resources.requests.memory`  | Memory resource request for CTF backend                                | `1Gi`                                                                       |
 | `enbuildCTF.resources.requests.cpu`     | CPU resource request for CTF backend                                   | `500m`                                                                      |
 | `enbuildCTF.resources.limits.memory`    | Memory resource limit for CTF backend                                  | `1Gi`                                                                       |

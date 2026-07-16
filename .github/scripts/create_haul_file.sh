@@ -43,7 +43,7 @@ fi
 
 # Start creating the Hauler file
 cat <<EOL >$HAULER_FILE
-apiVersion: content.hauler.cattle.io/v1alpha1
+apiVersion: content.hauler.cattle.io/v1
 kind: Charts
 metadata:
   name: enbuild-chart-hauler
@@ -53,7 +53,7 @@ spec:
       repoURL: https://vivsoftorg.github.io/enbuild
       version: ${HELM_CHART_VERSION}
 ---
-apiVersion: content.hauler.cattle.io/v1alpha1
+apiVersion: content.hauler.cattle.io/v1
 kind: Images
 metadata:
   name: enbuild-images-hauler 
