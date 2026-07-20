@@ -70,6 +70,9 @@ jobs:
       - name: helm dependency update
         run: helm dependency update ./charts/enbuild
 
+      - name: Keycloak writer Secret render contract
+        run: bash ./charts/enbuild/scripts/test-keycloak-writer-wiring.sh
+
       - name: helm lint (every example values file)
         run: |
           set -e

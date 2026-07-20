@@ -372,12 +372,22 @@ spec:
             name: {{ . }}
         {{- end }}
         {{- /*
-          SSO / Keycloak SECRET auth keys. Operator pre-creates a Secret with
-          KEYCLOAK_CLIENT_SECRET + KEYCLOAK_ADMIN_CLIENT_SECRET (and optionally
-          KEYCLOAK_REALM_PUBLIC_KEY). Non-secret Keycloak config rides
-          backend-secret. Recommended for production (authMechanism=keycloak).
+          SSO / Keycloak SECRET auth keys. Production uses the operator Secret
+          named by enbuildBk.keycloak.existingSecret. The bundled demo-realm
+          path self-wires its chart-rendered Secret, which carries the same
+          confidential client credential imported into Keycloak. That makes
+          Project RBAC writes hands-off on a fresh eval install while preserving
+          the explicit existingSecret contract for every non-demo deployment.
         */ -}}
-        {{- with (default (dict) .Values.enbuildBk.keycloak).existingSecret }}
+        {{- $keycloakBackendSecret := (default (dict) .Values.enbuildBk.keycloak).existingSecret | default "" | toString | trim -}}
+        {{- if and
+              (eq $keycloakBackendSecret "")
+              .Values.keycloak.enabled
+              (default (dict) .Values.keycloak.demoRealm).enabled
+              (eq (.Values.keycloak.existingSecret | default "" | toString | trim) "") -}}
+          {{- $keycloakBackendSecret = printf "%s-keycloak-secrets" .Release.Name -}}
+        {{- end }}
+        {{- with $keycloakBackendSecret }}
         - secretRef:
             name: {{ . }}
         {{- end }}

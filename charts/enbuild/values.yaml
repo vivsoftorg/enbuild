@@ -551,10 +551,12 @@ keycloak:
   # When enabled (AND keycloak.existingSecret is empty), the chart renders the
   # `<release>-keycloak-secrets` Secret from the bundled files/demo-realm-enbuild.json
   # so the bundled Keycloak boots a WORKING SSO login (console + Headlamp OIDC +
-  # tenancy groups) with ZERO operator realm prep. The realm ships NO real signing
-  # keys/certs/secrets — Keycloak generates the RSA key + hashes the demo passwords
-  # on import. DEMO-ONLY: change every persona password + the enbuild client secret
-  # (or use keycloak.existingSecret with your own realm) before any non-demo use.
+  # tenancy groups) with ZERO operator realm prep. Keycloak generates the RSA key
+  # and hashes the demo passwords on import. The chart projects the bundled demo
+  # client's existing credential into the backend pod so Project RBAC writes work
+  # immediately; no operator Platform-Settings step or backend roll is required.
+  # DEMO-ONLY: change every persona password + the enbuild client secret (or use
+  # keycloak.existingSecret with your own realm) before any non-demo use.
   #
   # ONE-HOST CONTRACT — to wire a clean browser SSO demo a customer sets only these,
   # ALL pointing at the SAME Keycloak browser host https://<host> (do NOT hand-edit
