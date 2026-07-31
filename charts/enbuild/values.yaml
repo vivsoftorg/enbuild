@@ -420,6 +420,15 @@ enbuildBk:
     # An AF P1 / non-enbuild-staging customer overrides these (or sets them at
     # runtime via admin-settings) so the import pulls the agent image + the spoke
     # private-registry pull-secret from THEIR registry, with no code fork.
+    # [CUSTOMER] F-R2-28 — OCI location the `enbuild-app` chart is published to on YOUR GitLab.
+    # Empty is correct ONLY on gitlab.com (the backend's built-in default applies). On any other
+    # GitLab this is REQUIRED: leaving it empty makes the hub write a gitlab.com chart source into
+    # every app HelmRelease, which your spokes cannot reach — the release then sits
+    # SourceNotReady/Stalled and looks like an application bug rather than a config gap.
+    # e.g. "oci://registry.dso.mil/ccm/vivsoft/vivsoft-platform-ui"
+    # Must also match the registry your APPS_CHART_REGISTRY pull-secret is minted for.
+    # See docs/onboarding/how-to/deploy-against-your-own-gitlab.md
+    appChartOciUrl: ""
     repo1Registry: ""             # spoke private-registry docker-server (empty → registry1.dso.mil)
     agentImageRegistry: ""        # registry host for the agent image (composed with agentImageRepository)
     agentImageRepository: ""      # agent image path; full path, or path-after-registry when agentImageRegistry set

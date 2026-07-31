@@ -225,6 +225,18 @@ spec:
         - name: ENBUILD_AGENT_CHART_REF
           value: {{ default "main" $ia.chartRef | quote }}
         {{- /*
+          F-R2-28 (repo1-native acceptance, 2026-07-30) — the OCI source the app lane writes into
+          every enbuild-app HelmRelease. Defaults EMPTY so a stock gitlab.com deploy keeps the
+          backend's own built-in default and is byte-identical to before. A customer on their own
+          GitLab (e.g. AF P1 on repo1.dso.mil) MUST set this: without it the hub emits a
+          gitlab.com chart source their spokes cannot reach, so every app HelmRelease sits
+          SourceNotReady/Stalled and reads like an application bug. The backend logs this loudly
+          and its startup platform-target audit reports it, but only the operator can set it.
+          See docs/onboarding/how-to/deploy-against-your-own-gitlab.md
+        */}}
+        - name: ENBUILD_APP_CHART_OCI_URL
+          value: {{ default "" $ia.appChartOciUrl | quote }}
+        {{- /*
           Portability knobs (ADR-0049 follow-up). All default empty/registry1 so a
           stock P1/Iron Bank deploy is unchanged; a customer (e.g. AF P1 against
           repo1.dso.mil + their own registry) overrides these to make the import
