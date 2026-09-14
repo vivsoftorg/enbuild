@@ -1,5 +1,11 @@
+# Local chart smoke/demo only: no catalog launches, imports or spoke connection.
+# For a full platform use the launch-capable guide and environment-specific inputs.
+# First run RELEASE=enbuild-ib NAMESPACE=enbuild charts/enbuild/scripts/create-bootstrap-secrets.sh,
+# then install as release enbuild-ib in namespace enbuild (see README in this directory).
 global:
+  evalMode: true
   image:
+    registry: registry.gitlab.com
     pullPolicy: IfNotPresent
   # This quick profile reaches the console via `kubectl port-forward`, so the
   # Istio edge (chart default ON) is switched off — the chart fail-closes when an
@@ -13,7 +19,7 @@ global:
 mongodb:
   enabled: true
   mongo_root_username: "enbuild"
-  mongo_root_password: "SuperSecret"   # placeholder — change it
+  existingSecret: enbuild-ib-mongo-secrets
   image:
     registry: docker.io
     repository: library/mongo
@@ -23,3 +29,35 @@ mongodb:
 # copy the keycloak blocks from charts/enbuild/examples/values-quickstart.yaml.
 enbuildBk:
   authMechanism: local
+  encryptionKey:
+    existingSecret: enbuild-ib-encryption-key
+  messaging:
+    existingSecret: enbuild-ib-messaging
+  grpcVirtualService:
+    enabled: false
+  image:
+    tag: d6ce2c368bb1fb9d427532c034135be382429a5c
+
+enbuildUi:
+  image:
+    tag: 43217826b156eba676b2883615351cede723298a
+
+enbuildConsumer:
+  image:
+    tag: a425711eec447ad41b1f9ca9041f57ed8c27a678
+
+enbuildUser:
+  image:
+    tag: 5b55a426b3f8ef08072464f8e1178ee573f9bf9a
+
+# Preserve the chart's Bitnami RabbitMQ layout using its archived public image.
+# This fixture checks chart startup/probes; it is not a production image profile.
+rabbitmq:
+  auth:
+    existingPasswordSecret: enbuild-ib-rabbitmq-creds
+    existingErlangSecret: enbuild-ib-rabbitmq-creds
+  image:
+    registry: docker.io
+    repository: bitnamilegacy/rabbitmq
+    tag: 3.12.14-debian-12-r0
+    digest: sha256:24e748a477f926ac4141fff8d6730951958e847a2d075f9973dfd977abdcef52
