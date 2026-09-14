@@ -67,6 +67,20 @@ REAPER_ACCOUNT_ID="${REAPER_ACCOUNT_ID:-}"            # 12-digit AWS account the
 REAPER_RESOURCE_TAG_KEY="${REAPER_RESOURCE_TAG_KEY:-}"
 REAPER_RESOURCE_TAG_VALUE="${REAPER_RESOURCE_TAG_VALUE:-}"
 
+# Reject incomplete delete credentials before any namespace or Secret write.
+# Do not infer an account from the operator's ambient AWS credentials: the
+# backend verifies the supplied delete identity with STS before cloud access.
+if [ -n "$REAPER_ACCESS_KEY_ID$REAPER_SECRET_ACCESS_KEY$REAPER_ACCOUNT_ID$REAPER_RESOURCE_TAG_KEY$REAPER_RESOURCE_TAG_VALUE" ]; then
+  if [ -z "$REAPER_ACCESS_KEY_ID" ] || [ -z "$REAPER_SECRET_ACCESS_KEY" ] || ! [[ "$REAPER_ACCOUNT_ID" =~ ^[0-9]{12}$ ]]; then
+    printf '%s\n' 'ERROR: Reaper requires REAPER_ACCESS_KEY_ID, REAPER_SECRET_ACCESS_KEY and a 12-digit REAPER_ACCOUNT_ID together; no resources were changed.' >&2
+    exit 1
+  fi
+  if { [ -n "$REAPER_RESOURCE_TAG_KEY" ] && [ -z "$REAPER_RESOURCE_TAG_VALUE" ]; } || { [ -z "$REAPER_RESOURCE_TAG_KEY" ] && [ -n "$REAPER_RESOURCE_TAG_VALUE" ]; }; then
+    printf '%s\n' 'ERROR: Set both REAPER_RESOURCE_TAG_KEY and REAPER_RESOURCE_TAG_VALUE, or omit both; no resources were changed.' >&2
+    exit 1
+  fi
+fi
+
 # --- observability/SIEM bearer tokens (OPTIONAL, SOO §1.5). Only the SECRET
 #     tokens go here; the non-secret endpoints are set in values
 #     (enbuildBk.observability.*). Any subset may be supplied; the secret is
@@ -192,11 +206,6 @@ fi
 # resource-tag pair is added only when BOTH are provided.
 section "7/9 teardown Reaper secret (optional — cluster destroy / ELB reclaim)"
 if [ -n "$REAPER_ACCESS_KEY_ID" ]; then
-  if [ -z "$REAPER_ACCOUNT_ID" ]; then
-    log "WARNING — REAPER_ACCESS_KEY_ID set but REAPER_ACCOUNT_ID is EMPTY. The BE"
-    log "requires the 12-digit account id whenever delete creds are configured, or"
-    log "teardown HALTS at the sweep. Set REAPER_ACCOUNT_ID and re-run."
-  fi
   set -- generic "${RELEASE}-reaper-svc" \
     --from-literal=REAPER_SVC_AWS_ACCESS_KEY_ID="$REAPER_ACCESS_KEY_ID" \
     --from-literal=REAPER_SVC_AWS_SECRET_ACCESS_KEY="$REAPER_SECRET_ACCESS_KEY" \

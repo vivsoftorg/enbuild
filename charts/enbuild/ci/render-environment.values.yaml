@@ -1,0 +1,24 @@
+# Synthetic render-only bindings for the topology/example overlays.
+# Not credentials, a deployable environment, or evidence of cloud connectivity.
+enbuildBk:
+  encryptionKey:
+    existingSecret: enbuild-ci-encryption-key
+  installAgent:
+    existingSecret: enbuild-ci-install-agent
+    hubUrl: grpc.example.invalid:443
+  gitlabConnection:
+    host: https://repo1.example.invalid
+    namespaceId: "1"
+  grpcVirtualService:
+    host: grpc.example.invalid
+    gateway: istio-system/ci-gateway
+  keycloak:
+    url: https://keycloak.example.invalid
+    issuer: https://keycloak.example.invalid/realms/enbuild
+    existingSecret: enbuild-ci-keycloak-auth
+enbuildUi:
+  keycloak:
+    url: https://keycloak.example.invalid
+keycloak:
+  hostname: https://keycloak.example.invalid
+  existingSecret: enbuild-ci-keycloak-realm

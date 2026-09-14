@@ -70,6 +70,9 @@ jobs:
       - name: helm dependency update
         run: helm dependency update ./charts/enbuild
 
+      - name: Reaper bootstrap fails before writes on incomplete credentials
+        run: python3 ./charts/enbuild/scripts/test-reaper-bootstrap.py
+
       - name: Keycloak writer Secret render contract
         run: bash ./charts/enbuild/scripts/test-keycloak-writer-wiring.sh
 
@@ -83,14 +86,20 @@ jobs:
 
       - name: helm template + kubeconform (every example values file)
         run: |
-          set -e
+          set -euo pipefail
+          rendered="$(mktemp)"
+          trap 'rm -f "$rendered"' EXIT
           for f in examples/enbuild/*.yaml; do
             echo "=== template + kubeconform: $f ==="
+            # Examples are topology overlays. Supply explicit synthetic full-hub
+            # bindings for render validation; never weaken production guards.
             helm template enbuild-test ./charts/enbuild --values "$f" \
+              --values charts/enbuild/ci/render-environment.values.yaml \
               --set global.image.registry_credentials.username=fake \
               --set global.image.registry_credentials.password=fake \
-              --set mongodb.mongo_root_password=fake \
-              | kubeconform -strict -summary -ignore-missing-schemas
+              --set mongodb.mongo_root_password=fake > "$rendered"
+            test -s "$rendered"
+            kubeconform -strict -summary -ignore-missing-schemas "$rendered"
           done
 
   kind-install-smoke:
@@ -121,26 +130,32 @@ jobs:
           docker exec enbuild-pr-smoke-control-plane sh -c \
             "sysctl -w fs.inotify.max_user_instances=8192 && sysctl -w fs.inotify.max_user_watches=524288"
 
+      - name: Generate disposable local Mongo, encryption and RabbitMQ credentials
+        env:
+          RELEASE: enbuild-ib
+          NAMESPACE: enbuild
+        run: bash charts/enbuild/scripts/create-bootstrap-secrets.sh
+
       - name: helm install (using quick_install.yaml — non-IB images, public)
         # We can't pull IB images from public CI runners, so we install with
         # the GitLab-registry images. The chart defaults under test (probe
         # shell wrapper, nginx server_name) work on both image sets, so this
         # is a valid regression check for the bugs above.
         run: |
-          helm install enbuild-pr ./charts/enbuild \
+          helm install enbuild-ib ./charts/enbuild \
             --namespace enbuild --create-namespace \
             --values examples/enbuild/quick_install.yaml \
             --wait --timeout 10m
 
       - name: Wait for core deployments to be Available
         run: |
-          kubectl -n enbuild rollout status deployment/enbuild-pr-enbuild-ui --timeout=5m
-          kubectl -n enbuild rollout status deployment/enbuild-pr-enbuild-backend --timeout=5m
-          kubectl -n enbuild rollout status deployment/enbuild-pr-enbuild-mq --timeout=5m
+          kubectl -n enbuild rollout status deployment/enbuild-ib-enbuild-ui --timeout=5m
+          kubectl -n enbuild rollout status deployment/enbuild-ib-enbuild-backend --timeout=5m
+          kubectl -n enbuild rollout status deployment/enbuild-ib-enbuild-mq --timeout=5m
 
       - name: Port-forward UI service in the background
         run: |
-          kubectl -n enbuild port-forward svc/enbuild-pr-enbuild-ui 8080:80 &
+          kubectl -n enbuild port-forward svc/enbuild-ib-enbuild-ui 8080:80 &
           echo $! > /tmp/pf.pid
           sleep 5
 
@@ -206,7 +221,7 @@ jobs:
           kubectl -n enbuild get pods
           echo "=== events ==="
           kubectl -n enbuild get events --sort-by=.lastTimestamp | tail -30
-          for d in enbuild-pr-enbuild-ui enbuild-pr-enbuild-backend enbuild-pr-enbuild-mq; do
+          for d in enbuild-ib-enbuild-ui enbuild-ib-enbuild-backend enbuild-ib-enbuild-mq; do
             echo "=== logs: $d ==="
             kubectl -n enbuild logs deployment/$d --tail=80 || true
             echo "=== describe: $d ==="
