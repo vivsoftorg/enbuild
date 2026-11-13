@@ -57,6 +57,10 @@ global:
 ## @param lightning_features.deploy_lightning.ai_lightning [default: false] Enable AI Lightning deployment
 ## @param lightning_features.operations_lightning.headlamp [default: false] Enable Headlamp deployment
 ## @param lightning_features.operations_lightning.monitoring [default: false] Enable Loki Stack deployment
+## @param oauth2.enabled [default: false] Require oauth2-proxy (Keycloak) sign-in before /headlamp/. Needs an oauth2-proxy Service named oauth2-proxy in the same namespace.
+oauth2:
+  enabled: false
+
 lightning_features:
   develop_lightning:
     application: false

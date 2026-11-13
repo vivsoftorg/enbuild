@@ -5,10 +5,38 @@ metadata:
   labels:
 {{- include "enbuild-helm-chart.labels" . | nindent 4 }}
 data:
+  oauth2.conf: |-
+    # oauth2.enabled: /auth-check and /oauth2/ locations.
+    # Intentionally left empty when disabled.
+{{- if .Values.oauth2.enabled }}
+
+    # ========== AUTH CHECK (oauth2.enabled) ==========
+    location = /auth-check {
+        internal;
+        proxy_pass http://{{ .Release.Name }}-enbuild-user/api/v1/roles/auth;
+        proxy_pass_request_body off;
+        proxy_set_header Content-Length "";
+        proxy_set_header Cookie        $http_cookie;
+        proxy_set_header Authorization $http_x_auth_token;
+        proxy_set_header X-Original-URI $request_uri;
+    }
+
+    # ========== OAUTH2 PROXY (oauth2.enabled) ==========
+    location /oauth2/ {
+        proxy_pass http://oauth2-proxy:80;
+        proxy_set_header X-Auth-Request-Redirect $request_uri;
+    }
+
+    location = /oauth2/auth {
+        proxy_pass http://oauth2-proxy:80;
+        # nginx auth_request includes headers but not body
+        proxy_set_header Content-Length   "";
+        proxy_pass_request_body           off;
+    }
+{{- end }}
   override.conf: |-
     # blank override.conf
-    # Intentionally left empty
-
+    # Intentionally left empty. Infra (Kustomize configMapGenerator) supplies manual content.
 
   default.conf: |-
     map $http_upgrade $connection_upgrade {
@@ -33,6 +61,7 @@ data:
       # and is unaffected by this line.
       server_name localhost _;
 
+      include oauth2.conf;
       include override.conf;
 
       proxy_pass_header Authorization;
@@ -74,6 +103,12 @@ data:
 
       location /headlamp/ {
         proxy_pass http://{{ .Release.Name }}-headlamp/headlamp/;
+{{- if .Values.oauth2.enabled }}
+
+        # Sign-in gate (oauth2.enabled). Requires the /oauth2/ locations above.
+        auth_request /oauth2/auth;
+        error_page 401 =403 /oauth2/sign_in;
+{{- end }}
 
         # WebSocket upgrade for Headlamp exec/logs/port-forward (multiplexer.go).
         proxy_http_version 1.1;
