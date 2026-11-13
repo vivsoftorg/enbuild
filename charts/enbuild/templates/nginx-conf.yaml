@@ -75,6 +75,13 @@ data:
       location /headlamp/ {
         proxy_pass http://{{ .Release.Name }}-headlamp/headlamp/;
 
+        # WebSocket upgrade for Headlamp exec/logs/port-forward (multiplexer.go).
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection $connection_upgrade;
+        proxy_read_timeout 3600;
+        proxy_send_timeout 3600;
+
         # sub_filter can't rewrite a gzipped upstream — force plain HTML.
         proxy_set_header Accept-Encoding "";
         sub_filter_once off;

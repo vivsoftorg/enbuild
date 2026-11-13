@@ -1,6 +1,6 @@
 repos:
 - repo: https://github.com/bitnami/readme-generator-for-helm
-  rev: "2.6.1"
+  rev: "3.0.0"
   hooks:
     - id: helm-readme-generator
       # in order to run helm-readme-generator only once
