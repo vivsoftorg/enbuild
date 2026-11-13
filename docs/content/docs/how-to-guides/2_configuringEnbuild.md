@@ -52,7 +52,7 @@ By default , github is not enabled, so first you need to enable github, by click
 - ***Gitlab Group*** - The Gitlab Group where the deployment repositories will be created
 - ***Gitlab Namespace ID*** - The Gitlab Namespace ID of the group or user (e.g. 70306609)
 
-<picture><img src="/images/getting-started/setup_github_repositroy.png" alt="Screenshot of ENBUILD Github VCS Configuration Screen"></img></picture>
+<picture><img src="/images/getting-started/setup_gitlab_repositroy.png" alt="Screenshot of ENBUILD Github VCS Configuration Screen"></img></picture>
 
 :exclamation: **Note:** You need to restart the enbuild-enbuild-mq-\* pod after changing the VCS (GITHUB and GITLAB) setting.
 

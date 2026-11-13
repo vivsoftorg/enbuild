@@ -65,25 +65,6 @@ creation_rules:
 
      <picture><img src="/images/how-to-guides/repoCreds.png" alt="Repo Credentials"></img></picture>
 
-- Next, choose the component **Repo** from the **settings** category and click on the **SECRETS** tab and provide the `registryCredentials`and `git credentials`  this is basically used by BigBang Helm chart to pull the container images and cloning the dependant helm charts used by bigbang.
-
-<picture><img src="/images/how-to-guides/repoSecrets.png" alt="Repo Secrets"></img></picture>
-
-  - The values of these will be same as previous section.
-
-```
-  registryCredentials:
-  registry: registry.gitlab.com
-  username: registry_username
-  password: registry_password
-  email: ""
-git:
-  credentials:
-  username: repository_usernane
-  password: registry_password
-```
-
--  Similarly you can check other components and edit the values of the component deployment. If you feel the value is sensitive you can add that in secrets tab, so that enbuild will encrypt it using the KMS key provided before committing to the git repo.
 
 # The different types of components avalable are listed below: 
 
